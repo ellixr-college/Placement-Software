@@ -36,7 +36,7 @@ export async function generateMetadata({
   const resume = await fetchResume(slug);
   const name = resume?.data?.fullName?.trim();
   return {
-    title: name ? `${name} — Résumé` : 'Résumé',
+    title: name ? `${name} — Resume` : 'Resume',
     robots: { index: false, follow: false },
   };
 }

@@ -150,7 +150,7 @@ export default function StudentHome() {
       <div className="grid grid-cols-3 gap-3">
         <QuickLink href="/me/jobs" title="Jobs" sub="Browse & apply" />
         <QuickLink href="/me/profile" title="Profile" sub="Edit · verify" />
-        <QuickLink href="/me/resume" title="Résumé" sub="Build · share" />
+        <QuickLink href="/me/resume" title="Resume" sub="Build · share" />
       </div>
 
       {/* Next interview hero */}

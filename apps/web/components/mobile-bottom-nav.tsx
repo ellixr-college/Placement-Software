@@ -7,7 +7,7 @@ import { cn } from '@ellixr/ui';
 const items = [
   { href: '/me', label: 'Home', icon: HomeIcon },
   { href: '/me/jobs', label: 'Jobs', icon: BriefcaseIcon },
-  { href: '/me/resume', label: 'Résumé', icon: DocIcon },
+  { href: '/me/resume', label: 'Resume', icon: DocIcon },
   { href: '/notifications', label: 'Alerts', icon: BellIcon },
 ];
 

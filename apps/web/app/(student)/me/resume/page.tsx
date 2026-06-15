@@ -65,7 +65,7 @@ export default function ResumeEditorPage() {
   return (
     <div className="space-y-5 pb-4">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-strong">My résumé</h1>
+        <h1 className="text-2xl font-semibold text-strong">My resume</h1>
         <p className="text-sm text-subtle">Fill in your details, pick a template, and share the link.</p>
       </header>
 
@@ -278,7 +278,7 @@ export default function ResumeEditorPage() {
       {/* Sticky save bar */}
       <div className="sticky bottom-24 z-10 flex items-center gap-3 rounded-pill bg-white/95 p-2 shadow-nav backdrop-blur">
         <Button className="flex-1" onClick={onSave} disabled={saving}>
-          {saving ? 'Saving…' : 'Save résumé'}
+          {saving ? 'Saving…' : 'Save resume'}
         </Button>
         {saved && <span className="pr-2 text-sm text-success">Saved ✓</span>}
       </div>
