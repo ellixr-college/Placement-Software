@@ -10,7 +10,9 @@ services:
     region: singapore # closest Render region to the CockroachDB Mumbai (ap-south-1) cluster
     autoDeploy: true
     # Render already provides pnpm (detected from packageManager); no corepack.
-    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @ellixr/database generate && pnpm --filter @ellixr/api build
+    # --prod=false forces devDependencies (prisma, nest CLI) to install despite
+    # NODE_ENV=production, which the build needs.
+    buildCommand: pnpm install --frozen-lockfile --prod=false && pnpm --filter @ellixr/database generate && pnpm --filter @ellixr/api build
     startCommand: node apps/api/dist/main.js
     healthCheckPath: /api/v1/health
     envVars:
