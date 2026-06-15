@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
 import { resetPassword } from '../../../../lib/auth-actions';
+import { PasswordInput } from '../../../../components/password-input';
 
 export default function ResetPasswordPage() {
   const params = useParams<{ token: string }>();
@@ -44,16 +45,14 @@ export default function ResetPasswordPage() {
         </p>
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">
-          <input
-            type="password"
+          <PasswordInput
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="h-11 w-full rounded-md border border-border bg-white px-4 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
             placeholder="New password"
           />
-          <input
-            type="password"
+          <PasswordInput
             required
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}

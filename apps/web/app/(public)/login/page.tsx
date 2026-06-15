@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
 import { homePathForRole } from '@ellixr/auth';
 import { login } from '../../../lib/auth-actions';
+import { PasswordInput } from '../../../components/password-input';
 
 export default function LoginPage() {
   return (
@@ -70,8 +71,7 @@ function LoginForm() {
               Forgot?
             </Link>
           </div>
-          <input
-            type="password"
+          <PasswordInput
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}

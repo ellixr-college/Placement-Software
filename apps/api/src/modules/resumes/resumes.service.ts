@@ -46,7 +46,7 @@ export class ResumesService {
         studentId: student.id,
         collegeId: student.collegeId,
         publicSlug: await this.uniqueSlug(),
-        template: 'classic',
+        template: 'professional',
         data: seed as unknown as Prisma.InputJsonValue,
         isPublished: true,
       },

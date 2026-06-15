@@ -79,6 +79,44 @@ export class CollegesService {
     return this.prisma.college.update({ where: { id }, data: dto as never });
   }
 
+  /**
+   * Resets the college's super-admin password (the earliest-created COLLEGE_ADMIN).
+   * We never store/return the original password (it's a one-way bcrypt hash), so
+   * "recover access" means issuing a NEW temp password, forcing a change on next
+   * login, and revoking existing sessions.
+   */
+  async resetAdminPassword(id: string, newPassword?: string) {
+    await this.findOne(id);
+    const admin = await this.prisma.user.findFirst({
+      where: { collegeId: id, role: UserRole.COLLEGE_ADMIN },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (!admin) throw new NotFoundException('This college has no admin account');
+
+    const passwordGenerated = !newPassword;
+    const password = newPassword ?? randomBytes(12).toString('base64url');
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: admin.id },
+        data: { passwordHash, mustChangePassword: true },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId: admin.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
+
+    return {
+      adminId: admin.id,
+      adminEmail: admin.email,
+      passwordGenerated,
+      // Only returned when WE generated it — if the admin typed one they know it.
+      tempPassword: passwordGenerated ? password : null,
+    };
+  }
+
   async setStatus(id: string, isActive: boolean) {
     await this.findOne(id);
     const college = await this.prisma.college.update({

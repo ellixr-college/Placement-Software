@@ -49,9 +49,17 @@ const preset: Partial<Config> = {
         'gradient-ocean': 'linear-gradient(135deg, #7CC0FF 0%, #5B8DEF 100%)',
         'gradient-violet': 'linear-gradient(135deg, #A9B6FF 0%, #7C8BFF 100%)',
       },
+      // Uniform 10px corners across the project. Circular tokens (pill / full,
+      // used by avatars, badges, progress bars, nav) intentionally stay round.
       borderRadius: {
-        card: '1.25rem',
-        md: '0.75rem',
+        sm: '10px',
+        DEFAULT: '10px',
+        md: '10px',
+        lg: '10px',
+        xl: '10px',
+        '2xl': '10px',
+        '3xl': '10px',
+        card: '10px',
         pill: '9999px',
       },
       boxShadow: {

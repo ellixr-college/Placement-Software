@@ -42,19 +42,19 @@ export class StudentsController {
   }
 
   @Post()
-  @Roles(UserRole.PLACEMENT_OFFICER)
+  @Roles(UserRole.PLACEMENT_OFFICER, UserRole.COLLEGE_ADMIN)
   async create(@CurrentUser() user: JwtPayload, @Body() dto: CreateStudentDto) {
     return { data: await this.students.create(this.collegeId(user), dto) };
   }
 
   @Post('import')
-  @Roles(UserRole.PLACEMENT_OFFICER)
+  @Roles(UserRole.PLACEMENT_OFFICER, UserRole.COLLEGE_ADMIN)
   async importCsv(@CurrentUser() user: JwtPayload, @Body() dto: ImportStudentsDto) {
     return { data: await this.students.importCsv(this.collegeId(user), dto.csv) };
   }
 
   @Patch(':id')
-  @Roles(UserRole.PLACEMENT_OFFICER)
+  @Roles(UserRole.PLACEMENT_OFFICER, UserRole.COLLEGE_ADMIN)
   async update(
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
@@ -64,7 +64,7 @@ export class StudentsController {
   }
 
   @Patch(':id/status')
-  @Roles(UserRole.PLACEMENT_OFFICER)
+  @Roles(UserRole.PLACEMENT_OFFICER, UserRole.COLLEGE_ADMIN)
   async setStatus(
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
@@ -74,7 +74,7 @@ export class StudentsController {
   }
 
   @Post(':id/verify')
-  @Roles(UserRole.PLACEMENT_OFFICER)
+  @Roles(UserRole.PLACEMENT_OFFICER, UserRole.COLLEGE_ADMIN)
   async verify(
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,

@@ -5,9 +5,11 @@ import type {
   ResumeProject,
 } from '@ellixr/shared';
 
-/** Picks the chosen template; falls back to Classic for unknown ids. */
+/** Picks the chosen template; falls back to Professional for unknown ids. */
 export function ResumeView({ template, data }: { template: string; data: ResumeData }) {
-  return template === 'modern' ? <ModernTemplate data={data} /> : <ClassicTemplate data={data} />;
+  if (template === 'modern') return <ModernTemplate data={data} />;
+  if (template === 'classic') return <ClassicTemplate data={data} />;
+  return <ProfessionalTemplate data={data} />;
 }
 
 function has<T>(arr: T[] | undefined): arr is T[] {
@@ -181,11 +183,11 @@ function EducationBlock({ ed }: { ed: ResumeEducation }) {
 }
 
 // ─────────────────────────────── Modern ───────────────────────────────
-// Two-column with a coral sidebar for contact/skills; bolder, designed feel.
+// Two-column with a blue sidebar for contact/skills; bolder, designed feel.
 function ModernTemplate({ data }: { data: ResumeData }) {
   return (
     <article className="mx-auto grid max-w-[860px] grid-cols-[260px_1fr] bg-white text-[13px] leading-relaxed text-neutral-800 print:max-w-none">
-      <aside className="bg-[#F0764A] px-6 py-10 text-white">
+      <aside className="bg-[#3B6EF5] px-6 py-10 text-white">
         <h1 className="text-2xl font-bold leading-tight">{data.fullName || 'Your Name'}</h1>
         {data.headline && <p className="mt-1 text-sm text-white/90">{data.headline}</p>}
 
@@ -300,8 +302,183 @@ function SideBlock({ title, children }: { title: string; children: React.ReactNo
 function ModernSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-6">
-      <h2 className="mb-2 text-sm font-bold uppercase tracking-widest text-[#F0764A]">{title}</h2>
+      <h2 className="mb-2 text-sm font-bold uppercase tracking-widest text-[#3B6EF5]">{title}</h2>
       {children}
     </section>
+  );
+}
+
+// ────────────────────────────── Professional ──────────────────────────────
+// Clean single-column B&W: centered name + title, an icon contact row, and
+// uppercase section headings separated by full-width rules. Print/ATS friendly.
+function ProfessionalTemplate({ data }: { data: ResumeData }) {
+  return (
+    <article className="mx-auto max-w-[820px] bg-white px-12 py-12 text-[12.5px] leading-relaxed text-neutral-800 print:px-0 print:py-0">
+      <header className="text-center">
+        <h1 className="text-4xl font-extrabold uppercase tracking-tight text-neutral-900">
+          {data.fullName || 'Your Name'}
+        </h1>
+        {data.headline && <p className="mt-1 text-lg text-neutral-600">{data.headline}</p>}
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-xs text-neutral-600">
+          {data.phone && (
+            <span className="inline-flex items-center gap-1.5">
+              <PhoneIcon />
+              {data.phone}
+            </span>
+          )}
+          {data.email && (
+            <span className="inline-flex items-center gap-1.5">
+              <MailIcon />
+              {data.email}
+            </span>
+          )}
+          {data.location && (
+            <span className="inline-flex items-center gap-1.5">
+              <PinIcon />
+              {data.location}
+            </span>
+          )}
+        </div>
+        {has(data.links) && (
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-x-4 text-xs">
+            {data.links.map((l, i) => (
+              <a key={i} href={l.url} className="text-blue-700 underline">
+                {l.label || l.url}
+              </a>
+            ))}
+          </div>
+        )}
+      </header>
+
+      {data.summary && (
+        <ProSection title="About Me">
+          <p className="whitespace-pre-line">{data.summary}</p>
+        </ProSection>
+      )}
+
+      {has(data.education) && (
+        <ProSection title="Education">
+          <div className="space-y-3">
+            {data.education.map((ed, i) => {
+              const degree = [ed.degree, ed.field].filter(Boolean).join(', ');
+              return (
+                <div key={i}>
+                  <p className="text-xs text-neutral-500">
+                    {[ed.institution, dateRange(ed.startYear, ed.endYear)].filter(Boolean).join(' | ')}
+                  </p>
+                  <p className="font-bold text-neutral-900">{degree || ed.institution}</p>
+                  {ed.score && <p className="text-xs text-neutral-600">{ed.score}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </ProSection>
+      )}
+
+      {has(data.experience) && (
+        <ProSection title="Work Experience">
+          <div className="space-y-3">
+            {data.experience.map((e, i) => (
+              <div key={i}>
+                <p className="text-xs text-neutral-500">
+                  {[e.company, dateRange(e.startDate, e.endDate)].filter(Boolean).join(' | ')}
+                </p>
+                <p className="font-bold text-neutral-900">{e.role || e.company}</p>
+                {has(e.bullets) && (
+                  <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                    {e.bullets.map((b, j) => (
+                      <li key={j}>{b}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </ProSection>
+      )}
+
+      {has(data.projects) && (
+        <ProSection title="Projects">
+          <div className="space-y-3">
+            {data.projects.map((p, i) => (
+              <ProjectBlock key={i} p={p} />
+            ))}
+          </div>
+        </ProSection>
+      )}
+
+      {has(data.skills) && (
+        <ProSection title="Skills">
+          <ul className="grid grid-cols-2 gap-x-8 gap-y-1 sm:grid-cols-3">
+            {data.skills.map((s, i) => (
+              <li key={i} className="list-inside list-disc">
+                {s}
+              </li>
+            ))}
+          </ul>
+        </ProSection>
+      )}
+
+      {has(data.certifications) && (
+        <ProSection title="Certifications">
+          <ul className="list-disc space-y-1 pl-5">
+            {data.certifications.map((c, i) => (
+              <li key={i}>
+                {c.name}
+                {c.issuer && ` — ${c.issuer}`}
+                {c.year && ` (${c.year})`}
+              </li>
+            ))}
+          </ul>
+        </ProSection>
+      )}
+
+      {has(data.achievements) && (
+        <ProSection title="Achievements">
+          <ul className="list-disc space-y-1 pl-5">
+            {data.achievements.map((a, i) => (
+              <li key={i}>{a}</li>
+            ))}
+          </ul>
+        </ProSection>
+      )}
+    </article>
+  );
+}
+
+function ProSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-5 border-t border-neutral-300 pt-4">
+      <h2 className="mb-2 text-base font-extrabold uppercase tracking-wide text-neutral-900">
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg className="h-3.5 w-3.5 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.6a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2Z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function MailIcon() {
+  return (
+    <svg className="h-3.5 w-3.5 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m2 6 10 7L22 6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg className="h-3.5 w-3.5 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
   );
 }

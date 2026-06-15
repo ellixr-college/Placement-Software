@@ -4,7 +4,7 @@ import type { JwtPayload } from '@ellixr/shared';
 import { CurrentUser, Roles } from '../../common/decorators';
 import { AuditService } from '../../common/audit.module';
 import { CollegesService } from './colleges.service';
-import { CreateCollegeDto, UpdateCollegeDto } from './dto';
+import { CreateCollegeDto, ResetAdminPasswordDto, UpdateCollegeDto } from './dto';
 
 @Controller('colleges')
 @Roles(UserRole.PLATFORM_ADMIN)
@@ -46,6 +46,25 @@ export class CollegesController {
   @Patch(':id')
   async update(@Param('id') id: string, @Body() dto: UpdateCollegeDto) {
     return { data: await this.colleges.update(id, dto) };
+  }
+
+  @Post(':id/reset-admin-password')
+  async resetAdminPassword(
+    @CurrentUser() actor: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: ResetAdminPasswordDto,
+    @Ip() ip: string,
+  ) {
+    const result = await this.colleges.resetAdminPassword(id, dto.password);
+    await this.audit.record(actor, {
+      action: 'ADMIN_PASSWORD_RESET',
+      targetType: 'user',
+      targetId: result.adminId,
+      collegeId: id,
+      metadata: { adminEmail: result.adminEmail, passwordGenerated: result.passwordGenerated },
+      ip,
+    });
+    return { data: result };
   }
 
   @Patch(':id/status')

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { Badge, Button, Card, SectionCard } from '@ellixr/ui';
 import { isValidEmail, isValidPhone } from '@ellixr/shared';
 import { useSession } from '../../../../lib/session';
+import { PasswordInput } from '../../../../components/password-input';
+import { CopyButton } from '../../../../components/copy-button';
 import {
   createUser,
   deactivateUser,
@@ -102,11 +104,12 @@ export default function TeamSettingsPage() {
               <span className="font-medium text-strong">{created.user.email}</span>
             </p>
             {created.passwordGenerated && created.tempPassword && (
-              <p className="mt-1">
-                <span className="text-subtle">Temp password:</span>{' '}
+              <p className="mt-1 flex items-center gap-2">
+                <span className="text-subtle">Temp password:</span>
                 <code className="rounded bg-app px-1.5 py-0.5 font-mono text-strong">
                   {created.tempPassword}
                 </code>
+                <CopyButton value={created.tempPassword} className="px-2 py-1" />
               </p>
             )}
           </div>
@@ -260,9 +263,8 @@ function NewMemberForm({ onCreated }: { onCreated: (r: CreateUserResult) => void
           {!phoneOk && <FieldError>Enter a valid 10-digit mobile number.</FieldError>}
         </Field>
         <Field label="Password">
-          <input
+          <PasswordInput
             className={inputCls}
-            type="text"
             value={form.password}
             onChange={set('password')}
             placeholder="Leave blank to auto-generate"

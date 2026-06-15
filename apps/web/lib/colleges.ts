@@ -56,3 +56,18 @@ export const setCollegeStatus = (id: string, isActive: boolean) =>
     method: 'PATCH',
     body: JSON.stringify({ isActive }),
   });
+
+export interface ResetAdminPasswordResult {
+  adminId: string;
+  adminEmail: string;
+  passwordGenerated: boolean;
+  tempPassword: string | null;
+}
+
+// Issues a NEW temp password for the college's super-admin (originals are
+// bcrypt-hashed and cannot be retrieved). Optionally set a specific password.
+export const resetCollegeAdminPassword = (id: string, password?: string) =>
+  api<ResetAdminPasswordResult>(`/colleges/${id}/reset-admin-password`, {
+    method: 'POST',
+    body: JSON.stringify(password ? { password } : {}),
+  });

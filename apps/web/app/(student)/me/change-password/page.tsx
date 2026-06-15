@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button, Card } from '@ellixr/ui';
 import { changePassword } from '../../../../lib/auth-actions';
 import { useSession } from '../../../../lib/session';
+import { PasswordInput } from '../../../../components/password-input';
 
 /**
  * Forced first-login password change. A Placement Officer registers students
@@ -100,8 +101,7 @@ function Field({
   return (
     <div className="space-y-1">
       <label className="text-sm font-medium text-strong">{label}</label>
-      <input
-        type="password"
+      <PasswordInput
         required
         value={value}
         onChange={(e) => onChange(e.target.value)}

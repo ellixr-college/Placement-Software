@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, Card } from '@ellixr/ui';
 import { createStudent, type CreateStudentInput } from '../../../../lib/students';
+import { CopyButton } from '../../../../components/copy-button';
 
 const EMPTY = {
   fullName: '',
@@ -73,13 +74,19 @@ export default function NewStudentPage() {
             credentials — they&apos;ll be asked to set a new password on first login.
           </p>
           <dl className="space-y-2 rounded-md bg-app p-4 text-sm">
-            <div className="flex justify-between gap-4">
+            <div className="flex items-center justify-between gap-4">
               <dt className="text-subtle">Email</dt>
-              <dd className="font-mono text-strong">{created.email}</dd>
+              <dd className="flex items-center gap-2 font-mono text-strong">
+                {created.email}
+                <CopyButton value={created.email} className="px-2 py-1" />
+              </dd>
             </div>
-            <div className="flex justify-between gap-4">
+            <div className="flex items-center justify-between gap-4">
               <dt className="text-subtle">Temporary password</dt>
-              <dd className="font-mono text-strong">{created.tempPassword}</dd>
+              <dd className="flex items-center gap-2 font-mono text-strong">
+                {created.tempPassword}
+                <CopyButton value={created.tempPassword} className="px-2 py-1" />
+              </dd>
             </div>
           </dl>
           <p className="text-xs text-subtle">

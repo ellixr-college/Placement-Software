@@ -16,7 +16,7 @@ import { getMyResume, saveMyResume, type MyResume } from '../../../../lib/resume
 export default function ResumeEditorPage() {
   const [meta, setMeta] = useState<MyResume | null>(null);
   const [data, setData] = useState<ResumeData>(emptyResumeData());
-  const [template, setTemplate] = useState('classic');
+  const [template, setTemplate] = useState('professional');
   const [published, setPublished] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

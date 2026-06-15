@@ -1,0 +1,28 @@
+# Render Blueprint for the Ellixr API (NestJS).
+# Deploy: Render Dashboard → New → Blueprint → pick this repo.
+# Free plan (sleeps after ~15 min idle). DATABASE_URL + WEB_ORIGIN are set in the
+# dashboard (sync:false); the JWT secrets are generated for you.
+services:
+  - type: web
+    name: ellixr-api
+    runtime: node
+    plan: free
+    region: singapore # closest Render region to the CockroachDB Mumbai (ap-south-1) cluster
+    autoDeploy: true
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @ellixr/database generate && pnpm --filter @ellixr/api build
+    startCommand: node apps/api/dist/main.js
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: COOKIE_SECURE
+        value: "true"
+      # Render injects PORT automatically; the API already reads it.
+      - key: JWT_ACCESS_SECRET
+        generateValue: true # Render generates a strong random value
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false # paste the CockroachDB production connection string in the dashboard
+      - key: WEB_ORIGIN
+        sync: false # set to your Vercel URL, e.g. https://ellixr.vercel.app

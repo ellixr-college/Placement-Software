@@ -46,6 +46,14 @@ export class CreateCollegeDto {
   adminPassword?: string;
 }
 
+export class ResetAdminPasswordDto {
+  // Optional: set a specific password. If omitted, a random temp one is generated.
+  @IsOptional()
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters' })
+  password?: string;
+}
+
 export class UpdateCollegeDto {
   @IsOptional() @IsString() name?: string;
   @EmptyToUndefined() @IsOptional() @Matches(PHONE_REGEX, { message: PHONE_MESSAGE }) contactPhone?: string;

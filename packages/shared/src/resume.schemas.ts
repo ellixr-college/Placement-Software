@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /** Available starter resume templates. Student picks one for their public page. */
-export const RESUME_TEMPLATES = ['classic', 'modern'] as const;
+export const RESUME_TEMPLATES = ['professional', 'classic', 'modern'] as const;
 export type ResumeTemplate = (typeof RESUME_TEMPLATES)[number];
 
 const trimmed = (max: number) => z.string().trim().max(max);

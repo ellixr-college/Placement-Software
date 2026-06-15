@@ -3,12 +3,16 @@
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { isValidEmail, isValidPhone, toTitleCase } from '@ellixr/shared';
+import { PasswordInput } from '../../../../components/password-input';
+import { CopyButton } from '../../../../components/copy-button';
 import {
   createCollege,
   listColleges,
+  resetCollegeAdminPassword,
   setCollegeStatus,
   type College,
   type CreateCollegeResult,
+  type ResetAdminPasswordResult,
 } from '../../../../lib/colleges';
 
 export default function PlatformCollegesPage() {
@@ -18,6 +22,8 @@ export default function PlatformCollegesPage() {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [created, setCreated] = useState<CreateCollegeResult | null>(null);
+  const [reset, setReset] = useState<ResetAdminPasswordResult | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -42,6 +48,25 @@ export default function PlatformCollegesPage() {
       load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not update status');
+    }
+  }
+
+  async function resetPassword(c: College) {
+    if (
+      !confirm(
+        `Reset the super-admin password for ${c.name}?\n\nTheir current password stops working immediately and they'll set a new one on next login.`,
+      )
+    )
+      return;
+    setBusyId(c.id);
+    setError(null);
+    setCreated(null);
+    try {
+      setReset(await resetCollegeAdminPassword(c.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not reset password');
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -81,11 +106,12 @@ export default function PlatformCollegesPage() {
               <span className="font-medium text-strong">{created.college.contactEmail}</span>
             </p>
             {created.passwordGenerated && created.adminTempPassword && (
-              <p className="mt-1">
-                <span className="text-subtle">Temp password:</span>{' '}
+              <p className="mt-1 flex items-center gap-2">
+                <span className="text-subtle">Temp password:</span>
                 <code className="rounded bg-app px-1.5 py-0.5 font-mono text-strong">
                   {created.adminTempPassword}
                 </code>
+                <CopyButton value={created.adminTempPassword} className="px-2 py-1" />
               </p>
             )}
           </div>
@@ -93,6 +119,35 @@ export default function PlatformCollegesPage() {
             They'll be prompted to set a new password on first login. The College Admin manages their
             own officers, students, companies, jobs and alumni from here on.
           </p>
+        </Card>
+      )}
+
+      {/* One-time reveal after a password reset */}
+      {reset && (
+        <Card className="space-y-2 border border-primary-200 bg-primary-50/40 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <p className="text-sm font-semibold text-strong">
+              New password for {reset.adminEmail}
+            </p>
+            <button onClick={() => setReset(null)} className="text-xs text-subtle hover:text-strong">
+              Dismiss
+            </button>
+          </div>
+          <p className="text-sm text-body">
+            Share it once — it isn&apos;t stored and won&apos;t be shown again. They&apos;ll be
+            prompted to set their own on next login.
+          </p>
+          {reset.tempPassword && (
+            <div className="flex max-w-sm items-center gap-2">
+              <PasswordInput
+                readOnly
+                value={reset.tempPassword}
+                onChange={() => {}}
+                className="h-10 w-full rounded-md border border-border bg-white px-3 font-mono text-sm text-strong outline-none"
+              />
+              <CopyButton value={reset.tempPassword} />
+            </div>
+          )}
         </Card>
       )}
 
@@ -173,12 +228,21 @@ export default function PlatformCollegesPage() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => toggleStatus(c)}
-                      className="text-xs font-medium text-primary-600 hover:underline"
-                    >
-                      {c.isActive ? 'Suspend' : 'Reactivate'}
-                    </button>
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        onClick={() => resetPassword(c)}
+                        disabled={busyId === c.id}
+                        className="text-xs font-medium text-primary-600 hover:underline disabled:opacity-50"
+                      >
+                        {busyId === c.id ? 'Resetting…' : 'Reset password'}
+                      </button>
+                      <button
+                        onClick={() => toggleStatus(c)}
+                        className="text-xs font-medium text-primary-600 hover:underline"
+                      >
+                        {c.isActive ? 'Suspend' : 'Reactivate'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -328,9 +392,8 @@ function NewCollegeForm({ onCreated }: { onCreated: (result: CreateCollegeResult
             {!adminEmailOk && <FieldError>Enter a valid email address.</FieldError>}
           </Field>
           <Field label="Password">
-            <input
+            <PasswordInput
               className={inputCls}
-              type="text"
               value={form.adminPassword}
               onChange={(e) => setField('adminPassword', e.target.value)}
               placeholder="Leave blank to auto-generate"
