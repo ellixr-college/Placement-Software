@@ -9,10 +9,13 @@ services:
     plan: free
     region: singapore # closest Render region to the CockroachDB Mumbai (ap-south-1) cluster
     autoDeploy: true
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @ellixr/database generate && pnpm --filter @ellixr/api build
+    # Render already provides pnpm (detected from packageManager); no corepack.
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @ellixr/database generate && pnpm --filter @ellixr/api build
     startCommand: node apps/api/dist/main.js
     healthCheckPath: /api/v1/health
     envVars:
+      - key: NODE_VERSION
+        value: "20" # pin to LTS — newer Node can break native modules (bcrypt)
       - key: NODE_ENV
         value: production
       - key: COOKIE_SECURE
