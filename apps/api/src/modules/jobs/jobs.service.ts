@@ -1,0 +1,495 @@
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PRISMA } from '../../common/prisma.module';
+import { Prisma } from '@ellixr/database';
+import type { PrismaClient, Student } from '@ellixr/database';
+import {
+  CreateJobDto,
+  CreatePlatformJobDto,
+  ListJobsQuery,
+  UpdateJobDto,
+  UpdatePlatformJobDto,
+} from './dto';
+import {
+  checkEligibility,
+  type EligibilityJob,
+  type EligibilityStudent,
+} from './eligibility';
+
+@Injectable()
+export class JobsService {
+  constructor(@Inject(PRISMA) private readonly prisma: PrismaClient) {}
+
+  // ─────────────── Placement Officer: job lifecycle ───────────────
+
+  async create(collegeId: string, createdById: string, dto: CreateJobDto) {
+    const company = await this.prisma.company.findFirst({
+      where: { id: dto.companyId, collegeId },
+    });
+    if (!company) throw new BadRequestException('Company not found');
+
+    const { companyId, ctcMin, ctcMax, minCgpa, applicationDeadline, ...rest } = dto;
+    return this.prisma.job.create({
+      data: {
+        collegeId,
+        companyId,
+        createdById,
+        ...rest,
+        ctcMin: ctcMin != null ? new Prisma.Decimal(ctcMin) : null,
+        ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null,
+        minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null,
+        applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
+      },
+      include: { company: true },
+    });
+  }
+
+  async list(collegeId: string, q: ListJobsQuery) {
+    const page = q.page ?? 1;
+    const limit = q.limit ?? 25;
+    // The officer's list shows their own college jobs PLUS platform jobs broadcast
+    // to their college (read-only — they can manage their applicants but not the job).
+    const where: Prisma.JobWhereInput = {
+      ...this.visibleToCollege(collegeId),
+      ...(q.status ? { status: q.status as Prisma.JobWhereInput['status'] } : {}),
+      ...(q.search ? { title: { contains: q.search, mode: 'insensitive' } } : {}),
+    };
+
+    const [total, jobs] = await this.prisma.$transaction([
+      this.prisma.job.count({ where }),
+      this.prisma.job.findMany({
+        where,
+        // Count only THIS college's applicants, even for a shared platform job.
+        include: {
+          company: true,
+          _count: { select: { applications: { where: { collegeId } } } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      items: jobs.map((j) => this.publicJob(j)),
+      meta: { total, page, limit, pages: Math.ceil(total / limit) },
+    };
+  }
+
+  async findOne(collegeId: string, id: string) {
+    const job = await this.prisma.job.findFirst({
+      where: { id, ...this.visibleToCollege(collegeId) },
+      include: {
+        company: true,
+        _count: { select: { applications: { where: { collegeId } } } },
+      },
+    });
+    if (!job) throw new NotFoundException('Job not found');
+    return this.publicJob(job);
+  }
+
+  async update(collegeId: string, id: string, dto: UpdateJobDto) {
+    const job = await this.prisma.job.findFirst({ where: { id, collegeId } });
+    if (!job) throw new NotFoundException('Job not found');
+    if (job.status === 'CLOSED') throw new BadRequestException('Cannot edit a closed job');
+
+    const { ctcMin, ctcMax, minCgpa, applicationDeadline, ...rest } = dto;
+    const updated = await this.prisma.job.update({
+      where: { id },
+      data: {
+        ...rest,
+        ...(ctcMin !== undefined ? { ctcMin: ctcMin != null ? new Prisma.Decimal(ctcMin) : null } : {}),
+        ...(ctcMax !== undefined ? { ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null } : {}),
+        ...(minCgpa !== undefined ? { minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null } : {}),
+        ...(applicationDeadline !== undefined
+          ? { applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null }
+          : {}),
+      },
+      include: { company: true, _count: { select: { applications: true } } },
+    });
+    return this.publicJob(updated);
+  }
+
+  async publish(collegeId: string, id: string) {
+    const job = await this.prisma.job.findFirst({ where: { id, collegeId } });
+    if (!job) throw new NotFoundException('Job not found');
+    if (job.status === 'PUBLISHED') throw new BadRequestException('Job already published');
+    if (job.status === 'CLOSED') throw new BadRequestException('Cannot publish a closed job');
+
+    const updated = await this.prisma.job.update({
+      where: { id },
+      data: { status: 'PUBLISHED', publishedAt: new Date() },
+      include: { company: true, _count: { select: { applications: true } } },
+    });
+
+    // Compute the eligible set as a preview/count. Phase 4 wires the notification send.
+    const eligible = await this.eligibleStudents(collegeId, id);
+    return { job: this.publicJob(updated), eligibleCount: eligible.length };
+  }
+
+  async close(collegeId: string, id: string) {
+    const job = await this.prisma.job.findFirst({ where: { id, collegeId } });
+    if (!job) throw new NotFoundException('Job not found');
+    if (job.status === 'CLOSED') throw new BadRequestException('Job already closed');
+
+    const updated = await this.prisma.job.update({
+      where: { id },
+      data: { status: 'CLOSED', closedAt: new Date() },
+      include: { company: true, _count: { select: { applications: true } } },
+    });
+    return this.publicJob(updated);
+  }
+
+  // Officer preview: every active, verified, non-placed student who matches.
+  async eligibleStudents(collegeId: string, jobId: string) {
+    const job = await this.prisma.job.findFirst({ where: { id: jobId, collegeId } });
+    if (!job) throw new NotFoundException('Job not found');
+
+    const students = await this.prisma.student.findMany({
+      where: { collegeId, isActive: true, verificationStatus: 'VERIFIED', status: { not: 'PLACED' } },
+      include: { user: true },
+    });
+
+    const criteria = toEligibilityJob(job);
+    return students
+      .filter((s) => checkEligibility(toEligibilityStudent(s), criteria).eligible)
+      .map((s) => ({
+        id: s.id,
+        rollNumber: s.rollNumber,
+        fullName: s.user.fullName,
+        email: s.user.email,
+        branch: s.branch,
+        cgpa: s.cgpa != null ? Number(s.cgpa) : null,
+      }));
+  }
+
+  // ─────────────── Platform Admin: cross-college broadcast jobs ───────────────
+
+  async createPlatform(createdById: string, dto: CreatePlatformJobDto) {
+    await this.assertCollegesExist(dto.targetCollegeIds);
+
+    const { companyName, targetCollegeIds, ctcMin, ctcMax, minCgpa, applicationDeadline, ...rest } =
+      dto;
+    const job = await this.prisma.job.create({
+      data: {
+        scope: 'PLATFORM',
+        collegeId: null,
+        companyId: null,
+        companyName,
+        targetCollegeIds,
+        createdById,
+        ...rest,
+        ctcMin: ctcMin != null ? new Prisma.Decimal(ctcMin) : null,
+        ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null,
+        minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null,
+        applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
+      },
+    });
+    return this.publicJob({ ...job, company: null });
+  }
+
+  async listPlatform(q: ListJobsQuery) {
+    const page = q.page ?? 1;
+    const limit = q.limit ?? 25;
+    const where: Prisma.JobWhereInput = {
+      scope: 'PLATFORM',
+      ...(q.status ? { status: q.status as Prisma.JobWhereInput['status'] } : {}),
+      ...(q.search ? { title: { contains: q.search, mode: 'insensitive' } } : {}),
+    };
+
+    const [total, jobs] = await this.prisma.$transaction([
+      this.prisma.job.count({ where }),
+      this.prisma.job.findMany({
+        where,
+        include: { _count: { select: { applications: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      items: jobs.map((j) => this.publicJob({ ...j, company: null })),
+      meta: { total, page, limit, pages: Math.ceil(total / limit) },
+    };
+  }
+
+  async findOnePlatform(id: string) {
+    const job = await this.prisma.job.findFirst({
+      where: { id, scope: 'PLATFORM' },
+      include: { _count: { select: { applications: true } } },
+    });
+    if (!job) throw new NotFoundException('Job not found');
+    return this.publicJob({ ...job, company: null });
+  }
+
+  async updatePlatform(id: string, dto: UpdatePlatformJobDto) {
+    const job = await this.prisma.job.findFirst({ where: { id, scope: 'PLATFORM' } });
+    if (!job) throw new NotFoundException('Job not found');
+    if (job.status === 'CLOSED') throw new BadRequestException('Cannot edit a closed job');
+    if (dto.targetCollegeIds) await this.assertCollegesExist(dto.targetCollegeIds);
+
+    const { ctcMin, ctcMax, minCgpa, applicationDeadline, ...rest } = dto;
+    const updated = await this.prisma.job.update({
+      where: { id },
+      data: {
+        ...rest,
+        ...(ctcMin !== undefined ? { ctcMin: ctcMin != null ? new Prisma.Decimal(ctcMin) : null } : {}),
+        ...(ctcMax !== undefined ? { ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null } : {}),
+        ...(minCgpa !== undefined ? { minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null } : {}),
+        ...(applicationDeadline !== undefined
+          ? { applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null }
+          : {}),
+      },
+      include: { _count: { select: { applications: true } } },
+    });
+    return this.publicJob({ ...updated, company: null });
+  }
+
+  async publishPlatform(id: string) {
+    const job = await this.prisma.job.findFirst({ where: { id, scope: 'PLATFORM' } });
+    if (!job) throw new NotFoundException('Job not found');
+    if (job.status === 'PUBLISHED') throw new BadRequestException('Job already published');
+    if (job.status === 'CLOSED') throw new BadRequestException('Cannot publish a closed job');
+    if (job.targetCollegeIds.length === 0) {
+      throw new BadRequestException('Select at least one target college before publishing');
+    }
+
+    const updated = await this.prisma.job.update({
+      where: { id },
+      data: { status: 'PUBLISHED', publishedAt: new Date() },
+      include: { _count: { select: { applications: true } } },
+    });
+    return this.publicJob({ ...updated, company: null });
+  }
+
+  async closePlatform(id: string) {
+    const job = await this.prisma.job.findFirst({ where: { id, scope: 'PLATFORM' } });
+    if (!job) throw new NotFoundException('Job not found');
+    if (job.status === 'CLOSED') throw new BadRequestException('Job already closed');
+
+    const updated = await this.prisma.job.update({
+      where: { id },
+      data: { status: 'CLOSED', closedAt: new Date() },
+      include: { _count: { select: { applications: true } } },
+    });
+    return this.publicJob({ ...updated, company: null });
+  }
+
+  private async assertCollegesExist(ids: string[]) {
+    const found = await this.prisma.college.count({ where: { id: { in: ids } } });
+    if (found !== ids.length) throw new BadRequestException('One or more target colleges are invalid');
+  }
+
+  // ─────────────── Student-facing ───────────────
+
+  // A student sees a job if it's their own college's job, OR a platform-broadcast
+  // job that targets their college. (collegeId is non-null for any real student.)
+  private visibleToCollege(collegeId: string): Prisma.JobWhereInput {
+    return {
+      OR: [
+        { collegeId },
+        { scope: 'PLATFORM', targetCollegeIds: { has: collegeId } },
+      ],
+    };
+  }
+
+  // Eligible + published jobs feed for the authenticated student, annotated with
+  // whether they've already applied.
+  async studentFeed(userId: string) {
+    const student = await this.studentForUser(userId);
+
+    const jobs = await this.prisma.job.findMany({
+      where: { status: 'PUBLISHED', ...this.visibleToCollege(student.collegeId) },
+      include: { company: true },
+      orderBy: { publishedAt: 'desc' },
+    });
+
+    const me = toEligibilityStudent(student);
+    const eligibleJobs = jobs.filter((j) => checkEligibility(me, toEligibilityJob(j)).eligible);
+
+    const myApps = await this.prisma.application.findMany({
+      where: { studentId: student.id, jobId: { in: eligibleJobs.map((j) => j.id) } },
+      select: { jobId: true, stage: true },
+    });
+    const appliedMap = new Map(myApps.map((a) => [a.jobId, a.stage]));
+
+    return eligibleJobs.map((j) => ({
+      ...this.publicJob(j),
+      applied: appliedMap.has(j.id),
+      myStage: appliedMap.get(j.id) ?? null,
+    }));
+  }
+
+  async studentJobDetail(userId: string, jobId: string) {
+    const student = await this.studentForUser(userId);
+    const job = await this.prisma.job.findFirst({
+      where: { id: jobId, ...this.visibleToCollege(student.collegeId) },
+      include: { company: true },
+    });
+    if (!job || job.status !== 'PUBLISHED') throw new NotFoundException('Job not found');
+
+    const { eligible } = checkEligibility(toEligibilityStudent(student), toEligibilityJob(job));
+    if (!eligible) throw new NotFoundException('Job not found'); // don't leak ineligible jobs
+
+    const app = await this.prisma.application.findUnique({
+      where: { jobId_studentId: { jobId, studentId: student.id } },
+      select: { stage: true },
+    });
+    return { ...this.publicJob(job), applied: !!app, myStage: app?.stage ?? null };
+  }
+
+  async apply(userId: string, jobId: string) {
+    const student = await this.studentForUser(userId);
+    const job = await this.prisma.job.findFirst({
+      where: { id: jobId, ...this.visibleToCollege(student.collegeId) },
+    });
+    if (!job || job.status !== 'PUBLISHED') throw new NotFoundException('Job not found');
+
+    if (job.applicationDeadline && job.applicationDeadline.getTime() < Date.now()) {
+      throw new BadRequestException('Application deadline has passed');
+    }
+
+    // Re-validate eligibility server-side — the feed is not the authority.
+    const { eligible, reasons } = checkEligibility(
+      toEligibilityStudent(student),
+      toEligibilityJob(job),
+    );
+    if (!eligible) throw new ForbiddenException(`Not eligible: ${reasons.join(', ')}`);
+
+    const existing = await this.prisma.application.findUnique({
+      where: { jobId_studentId: { jobId, studentId: student.id } },
+    });
+    if (existing) throw new BadRequestException('Already applied to this job');
+
+    return this.prisma.application.create({
+      data: {
+        collegeId: student.collegeId,
+        jobId,
+        studentId: student.id,
+        stage: 'APPLIED',
+        stageHistory: {
+          create: { fromStage: null, toStage: 'APPLIED', changedById: userId, note: 'Applied' },
+        },
+      },
+    });
+  }
+
+  private async studentForUser(userId: string): Promise<Student> {
+    const student = await this.prisma.student.findUnique({ where: { userId } });
+    if (!student) throw new ForbiddenException('No student profile for this account');
+    return student;
+  }
+
+  private publicJob(j: {
+    id: string;
+    scope: string;
+    title: string;
+    description: string | null;
+    jobType: string;
+    workMode: string | null;
+    location: string | null;
+    experienceMin: number | null;
+    experienceMax: number | null;
+    ctcMin: Prisma.Decimal | null;
+    ctcMax: Prisma.Decimal | null;
+    eligibleCourses: string[];
+    eligibleBranches: string[];
+    minCgpa: Prisma.Decimal | null;
+    maxActiveBacklogs: number | null;
+    maxTotalBacklogs: number | null;
+    graduationYears: number[];
+    status: string;
+    applicationDeadline: Date | null;
+    publishedAt: Date | null;
+    closedAt: Date | null;
+    createdAt: Date;
+    collegeId: string | null;
+    targetCollegeIds: string[];
+    companyId: string | null;
+    companyName: string | null;
+    company?: { id: string; name: string; logoUrl: string | null; industry: string | null } | null;
+    _count?: { applications: number };
+  }) {
+    const isPlatform = j.scope === 'PLATFORM';
+    return {
+      id: j.id,
+      scope: j.scope,
+      isPlatform,
+      title: j.title,
+      description: j.description,
+      jobType: j.jobType,
+      workMode: j.workMode,
+      location: j.location,
+      experienceMin: j.experienceMin,
+      experienceMax: j.experienceMax,
+      ctcMin: j.ctcMin != null ? Number(j.ctcMin) : null,
+      ctcMax: j.ctcMax != null ? Number(j.ctcMax) : null,
+      eligibleCourses: j.eligibleCourses,
+      eligibleBranches: j.eligibleBranches,
+      minCgpa: j.minCgpa != null ? Number(j.minCgpa) : null,
+      maxActiveBacklogs: j.maxActiveBacklogs,
+      maxTotalBacklogs: j.maxTotalBacklogs,
+      graduationYears: j.graduationYears,
+      status: j.status,
+      applicationDeadline: j.applicationDeadline,
+      publishedAt: j.publishedAt,
+      closedAt: j.closedAt,
+      createdAt: j.createdAt,
+      collegeId: j.collegeId,
+      targetCollegeIds: j.targetCollegeIds,
+      companyId: j.companyId,
+      // Platform jobs carry a free-text company name; college jobs a Company row.
+      companyName: j.company?.name ?? j.companyName ?? null,
+      company: j.company
+        ? { id: j.company.id, name: j.company.name, logoUrl: j.company.logoUrl, industry: j.company.industry }
+        : undefined,
+      applicationCount: j._count?.applications,
+    };
+  }
+}
+
+function toEligibilityStudent(s: {
+  verificationStatus: string;
+  status: string;
+  course: string;
+  branch: string;
+  graduationYear: number;
+  cgpa: Prisma.Decimal | null;
+  activeBacklogs: number;
+  totalBacklogs: number;
+}): EligibilityStudent {
+  return {
+    verificationStatus: s.verificationStatus,
+    status: s.status,
+    course: s.course,
+    branch: s.branch,
+    graduationYear: s.graduationYear,
+    cgpa: s.cgpa != null ? Number(s.cgpa) : null,
+    activeBacklogs: s.activeBacklogs,
+    totalBacklogs: s.totalBacklogs,
+  };
+}
+
+function toEligibilityJob(j: {
+  eligibleCourses: string[];
+  eligibleBranches: string[];
+  graduationYears: number[];
+  minCgpa: Prisma.Decimal | null;
+  maxActiveBacklogs: number | null;
+  maxTotalBacklogs: number | null;
+}): EligibilityJob {
+  return {
+    eligibleCourses: j.eligibleCourses,
+    eligibleBranches: j.eligibleBranches,
+    graduationYears: j.graduationYears,
+    minCgpa: j.minCgpa != null ? Number(j.minCgpa) : null,
+    maxActiveBacklogs: j.maxActiveBacklogs,
+    maxTotalBacklogs: j.maxTotalBacklogs,
+  };
+}
