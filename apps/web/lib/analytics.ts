@@ -41,8 +41,17 @@ export interface Breakdowns {
   byCompany: { company: string; hires: number; avgPackage: number | null }[];
 }
 
+export interface Insights {
+  studentsWithMultipleOffers: number;
+  multipleOfferStudents: { name: string; rollNumber: string; offers: number; bestPackage: number | null }[];
+  dreamThreshold: number | null;
+  dreamOffers: number;
+  repeatRecruiters: { company: string; hires: number }[];
+}
+
 export const getPlacementMetrics = () => api<PlacementMetrics>('/analytics/placement');
 export const getJobMetrics = () => api<JobMetrics>('/analytics/jobs');
 export const getStudentMetrics = () => api<StudentMetrics>('/analytics/students');
 export const getFunnel = () => api<FunnelStage[]>('/analytics/funnel');
 export const getBreakdowns = () => api<Breakdowns>('/analytics/breakdowns');
+export const getInsights = () => api<Insights>('/analytics/insights');

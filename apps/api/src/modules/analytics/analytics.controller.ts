@@ -38,4 +38,9 @@ export class AnalyticsController {
   async breakdowns(@CurrentUser() user: JwtPayload) {
     return { data: await this.analytics.breakdowns(this.collegeId(user)) };
   }
+
+  @Get('insights')
+  async insights(@CurrentUser() user: JwtPayload) {
+    return { data: await this.analytics.insights(this.collegeId(user)) };
+  }
 }

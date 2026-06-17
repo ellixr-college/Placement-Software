@@ -131,6 +131,71 @@ export class AnalyticsService {
     return ALL_STAGES.map((stage) => ({ stage, count: counts.get(stage) ?? 0 }));
   }
 
+  // ─────────────── Insights (enrichment) ───────────────
+  // Multiple offers, "dream" offers (≥1.5× the average package), and repeat
+  // recruiters (companies that have hired more than one student).
+  async insights(collegeId: string) {
+    const offerApps = await this.prisma.application.findMany({
+      where: { collegeId, stage: { in: [...OFFER_STAGES] } },
+      select: {
+        studentId: true,
+        jobId: true,
+        offerCtc: true,
+        student: { select: { rollNumber: true, user: { select: { fullName: true } } } },
+        job: {
+          select: { companyName: true, company: { select: { name: true } } },
+        },
+      },
+    });
+
+    // ── Multiple offers: distinct jobs offered per student ──
+    const byStudent = new Map<
+      string,
+      { name: string; rollNumber: string; jobIds: Set<string>; best: number | null }
+    >();
+    for (const a of offerApps) {
+      const entry = byStudent.get(a.studentId) ?? {
+        name: a.student.user.fullName,
+        rollNumber: a.student.rollNumber,
+        jobIds: new Set<string>(),
+        best: null,
+      };
+      entry.jobIds.add(a.jobId);
+      const ctc = num(a.offerCtc);
+      if (ctc != null) entry.best = entry.best == null ? ctc : Math.max(entry.best, ctc);
+      byStudent.set(a.studentId, entry);
+    }
+    const multipleOfferStudents = [...byStudent.values()]
+      .filter((s) => s.jobIds.size > 1)
+      .map((s) => ({ name: s.name, rollNumber: s.rollNumber, offers: s.jobIds.size, bestPackage: s.best }))
+      .sort((a, b) => b.offers - a.offers);
+
+    // ── Dream offers: packages ≥ 1.5× the average package ──
+    const packages = offerApps.map((a) => num(a.offerCtc)).filter((n): n is number => n != null);
+    const avg = packages.length ? mean(packages) : 0;
+    const dreamThreshold = avg > 0 ? Math.round(avg * 1.5) : null;
+    const dreamOffers = dreamThreshold != null ? packages.filter((p) => p >= dreamThreshold).length : 0;
+
+    // ── Repeat recruiters: companies hiring more than one student ──
+    const byCompany = new Map<string, number>();
+    for (const a of offerApps) {
+      const name = a.job.company?.name ?? a.job.companyName ?? 'Unknown';
+      byCompany.set(name, (byCompany.get(name) ?? 0) + 1);
+    }
+    const repeatRecruiters = [...byCompany.entries()]
+      .filter(([, hires]) => hires > 1)
+      .map(([company, hires]) => ({ company, hires }))
+      .sort((a, b) => b.hires - a.hires);
+
+    return {
+      studentsWithMultipleOffers: multipleOfferStudents.length,
+      multipleOfferStudents: multipleOfferStudents.slice(0, 20),
+      dreamThreshold,
+      dreamOffers,
+      repeatRecruiters,
+    };
+  }
+
   // ─────────────── Breakdowns ───────────────
   async breakdowns(collegeId: string) {
     const [byBranch, byBatch, byCompany] = await Promise.all([

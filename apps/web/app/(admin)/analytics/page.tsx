@@ -5,11 +5,13 @@ import { SectionCard, StatTile } from '@ellixr/ui';
 import {
   getBreakdowns,
   getFunnel,
+  getInsights,
   getJobMetrics,
   getPlacementMetrics,
   getStudentMetrics,
   type Breakdowns,
   type FunnelStage,
+  type Insights,
   type JobMetrics,
   type PlacementMetrics,
   type StudentMetrics,
@@ -38,24 +40,27 @@ export default function AnalyticsPage() {
   const [students, setStudents] = useState<StudentMetrics | null>(null);
   const [funnel, setFunnel] = useState<FunnelStage[]>([]);
   const [breakdowns, setBreakdowns] = useState<Breakdowns | null>(null);
+  const [insights, setInsights] = useState<Insights | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const [p, j, s, f, b] = await Promise.all([
+        const [p, j, s, f, b, i] = await Promise.all([
           getPlacementMetrics(),
           getJobMetrics(),
           getStudentMetrics(),
           getFunnel(),
           getBreakdowns(),
+          getInsights(),
         ]);
         setPlacement(p);
         setJobs(j);
         setStudents(s);
         setFunnel(f);
         setBreakdowns(b);
+        setInsights(i);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load analytics');
       } finally {
@@ -90,6 +95,66 @@ export default function AnalyticsPage() {
         <StatTile label="Jobs posted" value={String(jobs?.jobsPosted ?? 0)} hint={`${jobs?.jobsPublished ?? 0} published`} />
         <StatTile label="Applications" value={String(jobs?.applicationsReceived ?? 0)} hint="across all jobs" />
       </div>
+
+      {/* Enrichment insights */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+        <StatTile
+          gradient="violet"
+          label="Multiple offers"
+          value={String(insights?.studentsWithMultipleOffers ?? 0)}
+          hint="students with 2+ offers"
+        />
+        <StatTile
+          gradient="sunset"
+          label="Dream offers"
+          value={String(insights?.dreamOffers ?? 0)}
+          hint={insights?.dreamThreshold ? `≥ ${lpa(insights.dreamThreshold)}` : '—'}
+        />
+        <StatTile
+          gradient="ocean"
+          label="Repeat recruiters"
+          value={String(insights?.repeatRecruiters.length ?? 0)}
+          hint="companies hiring 2+"
+        />
+      </div>
+
+      {insights && insights.multipleOfferStudents.length > 0 && (
+        <SectionCard title="Students with multiple offers">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs uppercase text-subtle">
+              <tr>
+                <th className="py-1 font-medium">Student</th>
+                <th className="py-1 font-medium">Roll no.</th>
+                <th className="py-1 font-medium">Offers</th>
+                <th className="py-1 font-medium">Best package</th>
+              </tr>
+            </thead>
+            <tbody>
+              {insights.multipleOfferStudents.map((s) => (
+                <tr key={s.rollNumber} className="border-t border-border">
+                  <td className="py-2 text-strong">{s.name}</td>
+                  <td className="py-2 text-subtle">{s.rollNumber}</td>
+                  <td className="py-2">{s.offers}</td>
+                  <td className="py-2">{lpa(s.bestPackage)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </SectionCard>
+      )}
+
+      {insights && insights.repeatRecruiters.length > 0 && (
+        <SectionCard title="Repeat recruiters">
+          <div className="space-y-2.5">
+            {insights.repeatRecruiters.map((r) => (
+              <div key={r.company} className="flex items-center justify-between text-sm">
+                <span className="text-strong">{r.company}</span>
+                <span className="text-subtle">{r.hires} hires</span>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      )}
 
       {/* Application funnel */}
       <SectionCard title="Application funnel">
