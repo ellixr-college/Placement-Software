@@ -418,6 +418,9 @@ export class JobsService {
     eligibleCourses: string[];
     eligibleBranches: string[];
     minCgpa: Prisma.Decimal | null;
+    minTenthPercentage: Prisma.Decimal | null;
+    minTwelfthPercentage: Prisma.Decimal | null;
+    eligibleGenders: string[];
     maxActiveBacklogs: number | null;
     maxTotalBacklogs: number | null;
     graduationYears: number[];
@@ -450,6 +453,9 @@ export class JobsService {
       eligibleCourses: j.eligibleCourses,
       eligibleBranches: j.eligibleBranches,
       minCgpa: j.minCgpa != null ? Number(j.minCgpa) : null,
+      minTenthPercentage: j.minTenthPercentage != null ? Number(j.minTenthPercentage) : null,
+      minTwelfthPercentage: j.minTwelfthPercentage != null ? Number(j.minTwelfthPercentage) : null,
+      eligibleGenders: j.eligibleGenders,
       maxActiveBacklogs: j.maxActiveBacklogs,
       maxTotalBacklogs: j.maxTotalBacklogs,
       graduationYears: j.graduationYears,
@@ -478,6 +484,9 @@ function toEligibilityStudent(s: {
   branch: string;
   graduationYear: number;
   cgpa: Prisma.Decimal | null;
+  tenthPercentage: Prisma.Decimal | null;
+  twelfthPercentage: Prisma.Decimal | null;
+  gender: string | null;
   activeBacklogs: number;
   totalBacklogs: number;
 }): EligibilityStudent {
@@ -488,6 +497,9 @@ function toEligibilityStudent(s: {
     branch: s.branch,
     graduationYear: s.graduationYear,
     cgpa: s.cgpa != null ? Number(s.cgpa) : null,
+    tenthPercentage: s.tenthPercentage != null ? Number(s.tenthPercentage) : null,
+    twelfthPercentage: s.twelfthPercentage != null ? Number(s.twelfthPercentage) : null,
+    gender: s.gender,
     activeBacklogs: s.activeBacklogs,
     totalBacklogs: s.totalBacklogs,
   };
@@ -498,6 +510,9 @@ function toEligibilityJob(j: {
   eligibleBranches: string[];
   graduationYears: number[];
   minCgpa: Prisma.Decimal | null;
+  minTenthPercentage: Prisma.Decimal | null;
+  minTwelfthPercentage: Prisma.Decimal | null;
+  eligibleGenders: string[];
   maxActiveBacklogs: number | null;
   maxTotalBacklogs: number | null;
 }): EligibilityJob {
@@ -506,6 +521,9 @@ function toEligibilityJob(j: {
     eligibleBranches: j.eligibleBranches,
     graduationYears: j.graduationYears,
     minCgpa: j.minCgpa != null ? Number(j.minCgpa) : null,
+    minTenthPercentage: j.minTenthPercentage != null ? Number(j.minTenthPercentage) : null,
+    minTwelfthPercentage: j.minTwelfthPercentage != null ? Number(j.minTwelfthPercentage) : null,
+    eligibleGenders: j.eligibleGenders,
     maxActiveBacklogs: j.maxActiveBacklogs,
     maxTotalBacklogs: j.maxTotalBacklogs,
   };

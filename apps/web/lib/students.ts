@@ -11,6 +11,11 @@ export interface StudentUser {
   lastLoginAt: string | null;
 }
 
+export interface SemesterMark {
+  label: string;
+  score: string;
+}
+
 export interface Student {
   id: string;
   rollNumber: string;
@@ -21,6 +26,12 @@ export interface Student {
   cgpa: number | null;
   activeBacklogs: number;
   totalBacklogs: number;
+  dateOfBirth: string | null;
+  gender: string | null;
+  personalEmail: string | null;
+  tenthPercentage: number | null;
+  twelfthPercentage: number | null;
+  semesterMarks: SemesterMark[] | null;
   status: string;
   verificationStatus: string;
   verifiedAt: string | null;
@@ -38,7 +49,16 @@ export interface ListMeta {
   pages: number;
 }
 
-export interface CreateStudentInput {
+export interface ExtendedProfileFields {
+  dateOfBirth?: string;
+  gender?: string;
+  personalEmail?: string;
+  tenthPercentage?: number;
+  twelfthPercentage?: number;
+  semesterMarks?: SemesterMark[];
+}
+
+export interface CreateStudentInput extends ExtendedProfileFields {
   fullName: string;
   email: string;
   rollNumber: string;
@@ -117,7 +137,7 @@ export function verifyStudent(
 
 // ─────────────── Student self-service ───────────────
 
-export interface UpdateOwnProfileInput {
+export interface UpdateOwnProfileInput extends ExtendedProfileFields {
   fullName?: string;
   phone?: string;
   enrollmentNumber?: string;

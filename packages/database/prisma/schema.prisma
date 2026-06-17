@@ -196,6 +196,14 @@ model Student {
   cgpa               Decimal?           @db.Decimal(4, 2)
   activeBacklogs     Int                @default(0) @map("active_backlogs")
   totalBacklogs      Int                @default(0) @map("total_backlogs")
+  // Extended profile (employability + eligibility).
+  dateOfBirth        DateTime?          @map("date_of_birth")
+  gender             String?
+  personalEmail      String?            @map("personal_email")
+  tenthPercentage    Decimal?           @db.Decimal(5, 2) @map("tenth_percentage")
+  twelfthPercentage  Decimal?           @db.Decimal(5, 2) @map("twelfth_percentage")
+  // Semester-wise marks: [{ label, score }] as JSON for flexibility.
+  semesterMarks      Json?              @map("semester_marks")
   status             StudentStatus      @default(REGISTERED)
   verificationStatus VerificationStatus @default(PENDING) @map("verification_status")
   verifiedById       String?            @map("verified_by_id")
@@ -346,6 +354,10 @@ model Job {
   eligibleCourses     String[]  @map("eligible_courses")
   eligibleBranches    String[]  @map("eligible_branches")
   minCgpa             Decimal?  @db.Decimal(4, 2) @map("min_cgpa")
+  minTenthPercentage  Decimal?  @db.Decimal(5, 2) @map("min_tenth_percentage")
+  minTwelfthPercentage Decimal? @db.Decimal(5, 2) @map("min_twelfth_percentage")
+  // Empty = any gender. Otherwise only these genders are eligible.
+  eligibleGenders     String[]  @map("eligible_genders")
   maxActiveBacklogs   Int?      @map("max_active_backlogs")
   maxTotalBacklogs    Int?      @map("max_total_backlogs")
   graduationYears     Int[]     @map("graduation_years")

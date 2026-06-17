@@ -64,6 +64,9 @@ export class StudentsService {
           cgpa: dto.cgpa != null ? new Prisma.Decimal(dto.cgpa) : null,
           activeBacklogs: dto.activeBacklogs ?? 0,
           totalBacklogs: dto.totalBacklogs ?? 0,
+          gender: dto.gender,
+          personalEmail: dto.personalEmail,
+          ...this.extendedData(dto),
         },
         include: { user: true },
       });
@@ -158,7 +161,7 @@ export class StudentsService {
 
   async update(collegeId: string, id: string, dto: UpdateStudentDto) {
     await this.findOne(collegeId, id);
-    const { fullName, phone, cgpa, ...studentFields } = dto;
+    const { fullName, phone, cgpa, dateOfBirth, tenthPercentage, twelfthPercentage, semesterMarks, ...studentFields } = dto;
 
     const student = await this.prisma.$transaction(async (tx) => {
       if (fullName !== undefined || phone !== undefined) {
@@ -176,6 +179,7 @@ export class StudentsService {
         data: {
           ...studentFields,
           ...(cgpa !== undefined ? { cgpa: cgpa != null ? new Prisma.Decimal(cgpa) : null } : {}),
+          ...this.extendedData({ dateOfBirth, tenthPercentage, twelfthPercentage, semesterMarks }),
         },
         include: { user: true },
       });
@@ -269,7 +273,7 @@ export class StudentsService {
   // PENDING so the officer re-checks the changed data.
   async updateOwnProfile(userId: string, dto: UpdateOwnProfileDto) {
     const student = await this.ownStudent(userId);
-    const { fullName, phone, cgpa, ...academic } = dto;
+    const { fullName, phone, cgpa, dateOfBirth, tenthPercentage, twelfthPercentage, semesterMarks, ...academic } = dto;
 
     const updated = await this.prisma.$transaction(async (tx) => {
       if (fullName !== undefined || phone !== undefined) {
@@ -286,6 +290,7 @@ export class StudentsService {
         data: {
           ...academic,
           ...(cgpa !== undefined ? { cgpa: cgpa != null ? new Prisma.Decimal(cgpa) : null } : {}),
+          ...this.extendedData({ dateOfBirth, tenthPercentage, twelfthPercentage, semesterMarks }),
           ...(student.verificationStatus === 'VERIFIED'
             ? { verificationStatus: 'PENDING', status: 'REGISTERED', verifiedAt: null }
             : {}),
@@ -388,6 +393,28 @@ export class StudentsService {
     };
   }
 
+  // Builds the prisma write data for the extended profile fields that need
+  // conversion (DOB string→Date, percentages→Decimal, semester marks→Json).
+  private extendedData(d: {
+    dateOfBirth?: string;
+    tenthPercentage?: number;
+    twelfthPercentage?: number;
+    semesterMarks?: { label: string; score: string }[];
+  }) {
+    return {
+      ...(d.dateOfBirth !== undefined ? { dateOfBirth: d.dateOfBirth ? new Date(d.dateOfBirth) : null } : {}),
+      ...(d.tenthPercentage !== undefined
+        ? { tenthPercentage: d.tenthPercentage != null ? new Prisma.Decimal(d.tenthPercentage) : null }
+        : {}),
+      ...(d.twelfthPercentage !== undefined
+        ? { twelfthPercentage: d.twelfthPercentage != null ? new Prisma.Decimal(d.twelfthPercentage) : null }
+        : {}),
+      ...(d.semesterMarks !== undefined
+        ? { semesterMarks: d.semesterMarks as unknown as Prisma.InputJsonValue }
+        : {}),
+    };
+  }
+
   private publicStudent(s: {
     id: string;
     rollNumber: string;
@@ -398,6 +425,12 @@ export class StudentsService {
     cgpa: Prisma.Decimal | null;
     activeBacklogs: number;
     totalBacklogs: number;
+    dateOfBirth: Date | null;
+    gender: string | null;
+    personalEmail: string | null;
+    tenthPercentage: Prisma.Decimal | null;
+    twelfthPercentage: Prisma.Decimal | null;
+    semesterMarks: Prisma.JsonValue;
     status: string;
     verificationStatus: string;
     verifiedAt: Date | null;
@@ -424,6 +457,12 @@ export class StudentsService {
       cgpa: s.cgpa != null ? Number(s.cgpa) : null,
       activeBacklogs: s.activeBacklogs,
       totalBacklogs: s.totalBacklogs,
+      dateOfBirth: s.dateOfBirth,
+      gender: s.gender,
+      personalEmail: s.personalEmail,
+      tenthPercentage: s.tenthPercentage != null ? Number(s.tenthPercentage) : null,
+      twelfthPercentage: s.twelfthPercentage != null ? Number(s.twelfthPercentage) : null,
+      semesterMarks: s.semesterMarks,
       status: s.status,
       verificationStatus: s.verificationStatus,
       verifiedAt: s.verifiedAt,

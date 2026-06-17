@@ -9,6 +9,9 @@ export interface EligibilityStudent {
   branch: string;
   graduationYear: number;
   cgpa: number | null;
+  tenthPercentage: number | null;
+  twelfthPercentage: number | null;
+  gender: string | null;
   activeBacklogs: number;
   totalBacklogs: number;
 }
@@ -18,6 +21,9 @@ export interface EligibilityJob {
   eligibleBranches: string[];
   graduationYears: number[];
   minCgpa: number | null;
+  minTenthPercentage: number | null;
+  minTwelfthPercentage: number | null;
+  eligibleGenders: string[];
   maxActiveBacklogs: number | null;
   maxTotalBacklogs: number | null;
 }
@@ -45,6 +51,24 @@ export function checkEligibility(
   }
   if (job.minCgpa != null && (student.cgpa == null || student.cgpa < job.minCgpa)) {
     reasons.push(`CGPA below ${job.minCgpa}`);
+  }
+  if (
+    job.minTenthPercentage != null &&
+    (student.tenthPercentage == null || student.tenthPercentage < job.minTenthPercentage)
+  ) {
+    reasons.push(`10th below ${job.minTenthPercentage}%`);
+  }
+  if (
+    job.minTwelfthPercentage != null &&
+    (student.twelfthPercentage == null || student.twelfthPercentage < job.minTwelfthPercentage)
+  ) {
+    reasons.push(`12th below ${job.minTwelfthPercentage}%`);
+  }
+  if (
+    job.eligibleGenders.length > 0 &&
+    (!student.gender || !job.eligibleGenders.includes(student.gender))
+  ) {
+    reasons.push('Gender not eligible');
   }
   if (job.maxActiveBacklogs != null && student.activeBacklogs > job.maxActiveBacklogs) {
     reasons.push('Too many active backlogs');

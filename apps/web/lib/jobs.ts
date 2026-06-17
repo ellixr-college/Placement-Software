@@ -16,6 +16,9 @@ export interface Job {
   eligibleCourses: string[];
   eligibleBranches: string[];
   minCgpa: number | null;
+  minTenthPercentage: number | null;
+  minTwelfthPercentage: number | null;
+  eligibleGenders: string[];
   maxActiveBacklogs: number | null;
   maxTotalBacklogs: number | null;
   graduationYears: number[];
@@ -53,6 +56,9 @@ export interface CreateJobInput {
   eligibleBranches: string[];
   graduationYears: number[];
   minCgpa?: number;
+  minTenthPercentage?: number;
+  minTwelfthPercentage?: number;
+  eligibleGenders?: string[];
   maxActiveBacklogs?: number;
   maxTotalBacklogs?: number;
   applicationDeadline?: string;

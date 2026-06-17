@@ -8,6 +8,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   Min,
   MinLength,
 } from 'class-validator';
@@ -33,6 +34,9 @@ export class CreateJobDto {
   graduationYears!: number[];
 
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) minCgpa?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) minTenthPercentage?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) minTwelfthPercentage?: number;
+  @IsOptional() @IsArray() @IsString({ each: true }) eligibleGenders?: string[];
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxActiveBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxTotalBacklogs?: number;
 
@@ -57,6 +61,9 @@ export class UpdateJobDto {
   @IsOptional() @IsArray() @Type(() => Number) @IsInt({ each: true }) graduationYears?: number[];
 
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) minCgpa?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) minTenthPercentage?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) minTwelfthPercentage?: number;
+  @IsOptional() @IsArray() @IsString({ each: true }) eligibleGenders?: string[];
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxActiveBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxTotalBacklogs?: number;
 
@@ -87,6 +94,9 @@ export class CreatePlatformJobDto {
   graduationYears!: number[];
 
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) minCgpa?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) minTenthPercentage?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) minTwelfthPercentage?: number;
+  @IsOptional() @IsArray() @IsString({ each: true }) eligibleGenders?: string[];
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxActiveBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxTotalBacklogs?: number;
 
@@ -114,6 +124,9 @@ export class UpdatePlatformJobDto {
   @IsOptional() @IsArray() @Type(() => Number) @IsInt({ each: true }) graduationYears?: number[];
 
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) minCgpa?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) minTenthPercentage?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) minTwelfthPercentage?: number;
+  @IsOptional() @IsArray() @IsString({ each: true }) eligibleGenders?: string[];
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxActiveBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxTotalBacklogs?: number;
 

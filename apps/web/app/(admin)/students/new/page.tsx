@@ -20,7 +20,14 @@ const EMPTY = {
   cgpa: '',
   activeBacklogs: '',
   totalBacklogs: '',
+  dateOfBirth: '',
+  gender: '',
+  personalEmail: '',
+  tenthPercentage: '',
+  twelfthPercentage: '',
 };
+
+const GENDERS = ['MALE', 'FEMALE', 'OTHER'];
 
 export default function NewStudentPage() {
   const router = useRouter();
@@ -58,6 +65,11 @@ export default function NewStudentPage() {
         cgpa: form.cgpa === '' ? undefined : Number(form.cgpa),
         activeBacklogs: form.activeBacklogs === '' ? undefined : Number(form.activeBacklogs),
         totalBacklogs: form.totalBacklogs === '' ? undefined : Number(form.totalBacklogs),
+        dateOfBirth: form.dateOfBirth || undefined,
+        gender: form.gender || undefined,
+        personalEmail: form.personalEmail.trim() || undefined,
+        tenthPercentage: form.tenthPercentage === '' ? undefined : Number(form.tenthPercentage),
+        twelfthPercentage: form.twelfthPercentage === '' ? undefined : Number(form.twelfthPercentage),
       };
       const res = await createStudent(input);
       setCreated({
@@ -163,6 +175,11 @@ export default function NewStudentPage() {
             value={form.totalBacklogs}
             onChange={set('totalBacklogs')}
           />
+          <Field label="Date of birth" type="date" value={form.dateOfBirth} onChange={set('dateOfBirth')} />
+          <SelectField label="Gender" value={form.gender} onChange={set('gender')} options={GENDERS} placeholder="Not specified" />
+          <Field label="Personal email" type="email" value={form.personalEmail} onChange={set('personalEmail')} />
+          <Field label="10th %" type="number" value={form.tenthPercentage} onChange={set('tenthPercentage')} placeholder="85" />
+          <Field label="12th %" type="number" value={form.twelfthPercentage} onChange={set('twelfthPercentage')} placeholder="82" />
 
           {error && <p className="text-sm text-danger sm:col-span-2">{error}</p>}
 

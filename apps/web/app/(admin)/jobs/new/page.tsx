@@ -10,6 +10,7 @@ import { createJob } from '../../../../lib/jobs';
 
 const JOB_TYPES = ['FULL_TIME', 'INTERNSHIP', 'INTERNSHIP_PPO'];
 const WORK_MODES = ['ONSITE', 'HYBRID', 'REMOTE'];
+const GENDERS = ['MALE', 'FEMALE', 'OTHER'];
 
 export default function NewJobPage() {
   const router = useRouter();
@@ -28,10 +29,15 @@ export default function NewJobPage() {
     ctcMax: '',
     graduationYears: '',
     minCgpa: '',
+    minTenthPercentage: '',
+    minTwelfthPercentage: '',
     maxActiveBacklogs: '',
     maxTotalBacklogs: '',
     applicationDeadline: '',
   });
+  const [pickedGenders, setPickedGenders] = useState<string[]>([]);
+  const toggleGender = (g: string) =>
+    setPickedGenders((gs) => (gs.includes(g) ? gs.filter((x) => x !== g) : [...gs, g]));
   // Eligibility courses/branches — chip selections (catalog) + free-text fallback.
   const [pickedCourses, setPickedCourses] = useState<string[]>([]);
   const [pickedBranches, setPickedBranches] = useState<string[]>([]);
@@ -99,8 +105,11 @@ export default function NewJobPage() {
         ctcMax: num(form.ctcMax),
         eligibleCourses,
         eligibleBranches,
+        eligibleGenders: pickedGenders,
         graduationYears: numList(form.graduationYears),
         minCgpa: num(form.minCgpa),
+        minTenthPercentage: num(form.minTenthPercentage),
+        minTwelfthPercentage: num(form.minTwelfthPercentage),
         maxActiveBacklogs: num(form.maxActiveBacklogs),
         maxTotalBacklogs: num(form.maxTotalBacklogs),
         applicationDeadline: form.applicationDeadline
@@ -179,9 +188,14 @@ export default function NewJobPage() {
             <Field label="Graduation years * (comma-separated)"><input className={inputCls} value={form.graduationYears} onChange={set('graduationYears')} placeholder="2026, 2027" /></Field>
             <div className="grid grid-cols-3 gap-3">
               <Field label="Min CGPA"><input className={inputCls} type="number" value={form.minCgpa} onChange={set('minCgpa')} /></Field>
+              <Field label="Min 10th %"><input className={inputCls} type="number" value={form.minTenthPercentage} onChange={set('minTenthPercentage')} placeholder="60" /></Field>
+              <Field label="Min 12th %"><input className={inputCls} type="number" value={form.minTwelfthPercentage} onChange={set('minTwelfthPercentage')} placeholder="60" /></Field>
               <Field label="Max active backlogs"><input className={inputCls} type="number" value={form.maxActiveBacklogs} onChange={set('maxActiveBacklogs')} /></Field>
               <Field label="Max total backlogs"><input className={inputCls} type="number" value={form.maxTotalBacklogs} onChange={set('maxTotalBacklogs')} /></Field>
             </div>
+            <Field label="Eligible genders (leave empty = any)">
+              <ChipPicker options={GENDERS} selected={pickedGenders} onToggle={toggleGender} />
+            </Field>
             <Field label="Application deadline"><input className={inputCls} type="datetime-local" value={form.applicationDeadline} onChange={set('applicationDeadline')} /></Field>
           </div>
         </div>
