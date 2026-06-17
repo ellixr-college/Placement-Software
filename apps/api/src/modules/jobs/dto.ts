@@ -2,17 +2,35 @@ import { Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   Max,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
 import { JobType, WorkMode } from '@ellixr/database';
+
+// A single custom application question attached to a job.
+export class ApplicationFieldDto {
+  @IsString() @MinLength(1) id!: string;
+  @IsString() @MinLength(1) label!: string;
+  @IsIn(['text', 'textarea', 'select', 'number']) type!: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) options?: string[];
+  @IsOptional() @IsBoolean() required?: boolean;
+}
+
+// Student-submitted answers when applying to a job that has a custom form.
+export class ApplyDto {
+  @IsOptional() @IsObject() formResponses?: Record<string, string>;
+}
 
 export class CreateJobDto {
   @IsString() @MinLength(2) title!: string;
@@ -40,6 +58,9 @@ export class CreateJobDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxActiveBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxTotalBacklogs?: number;
 
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ApplicationFieldDto)
+  applicationFormFields?: ApplicationFieldDto[];
+
   @IsOptional() @IsDateString() applicationDeadline?: string;
 }
 
@@ -66,6 +87,9 @@ export class UpdateJobDto {
   @IsOptional() @IsArray() @IsString({ each: true }) eligibleGenders?: string[];
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxActiveBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxTotalBacklogs?: number;
+
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ApplicationFieldDto)
+  applicationFormFields?: ApplicationFieldDto[];
 
   @IsOptional() @IsDateString() applicationDeadline?: string;
 }
@@ -100,6 +124,9 @@ export class CreatePlatformJobDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxActiveBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxTotalBacklogs?: number;
 
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ApplicationFieldDto)
+  applicationFormFields?: ApplicationFieldDto[];
+
   @IsOptional() @IsDateString() applicationDeadline?: string;
 }
 
@@ -129,6 +156,9 @@ export class UpdatePlatformJobDto {
   @IsOptional() @IsArray() @IsString({ each: true }) eligibleGenders?: string[];
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxActiveBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxTotalBacklogs?: number;
+
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ApplicationFieldDto)
+  applicationFormFields?: ApplicationFieldDto[];
 
   @IsOptional() @IsDateString() applicationDeadline?: string;
 }

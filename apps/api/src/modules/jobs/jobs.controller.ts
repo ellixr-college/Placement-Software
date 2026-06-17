@@ -13,7 +13,7 @@ import type { JwtPayload } from '@ellixr/shared';
 import { CurrentUser, Roles } from '../../common/decorators';
 import { JobsService } from './jobs.service';
 import { ApplicationsService } from './applications.service';
-import { CreateJobDto, ListJobsQuery, UpdateJobDto } from './dto';
+import { ApplyDto, CreateJobDto, ListJobsQuery, UpdateJobDto } from './dto';
 
 // No class-level @Roles: this controller mixes officer management routes and
 // student feed/apply routes, each guarded with method-level @Roles.
@@ -91,7 +91,11 @@ export class JobsController {
 
   @Post(':id/apply')
   @Roles(UserRole.STUDENT)
-  async apply(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
-    return { data: await this.jobs.apply(user.sub, id) };
+  async apply(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: ApplyDto,
+  ) {
+    return { data: await this.jobs.apply(user.sub, id, dto.formResponses) };
   }
 }

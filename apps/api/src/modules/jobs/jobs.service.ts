@@ -22,6 +22,15 @@ import {
   type EligibilityStudent,
 } from './eligibility';
 
+// A custom application question stored on Job.applicationFormFields (as JSON).
+interface ApplicationField {
+  id: string;
+  label: string;
+  type: 'text' | 'textarea' | 'select' | 'number';
+  options?: string[];
+  required?: boolean;
+}
+
 @Injectable()
 export class JobsService {
   constructor(
@@ -37,7 +46,8 @@ export class JobsService {
     });
     if (!company) throw new BadRequestException('Company not found');
 
-    const { companyId, ctcMin, ctcMax, minCgpa, applicationDeadline, ...rest } = dto;
+    const { companyId, ctcMin, ctcMax, minCgpa, applicationDeadline, applicationFormFields, ...rest } =
+      dto;
     return this.prisma.job.create({
       data: {
         collegeId,
@@ -48,6 +58,9 @@ export class JobsService {
         ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null,
         minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null,
         applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
+        ...(applicationFormFields !== undefined
+          ? { applicationFormFields: applicationFormFields as unknown as Prisma.InputJsonValue }
+          : {}),
       },
       include: { company: true },
     });
@@ -102,7 +115,7 @@ export class JobsService {
     if (!job) throw new NotFoundException('Job not found');
     if (job.status === 'CLOSED') throw new BadRequestException('Cannot edit a closed job');
 
-    const { ctcMin, ctcMax, minCgpa, applicationDeadline, ...rest } = dto;
+    const { ctcMin, ctcMax, minCgpa, applicationDeadline, applicationFormFields, ...rest } = dto;
     const updated = await this.prisma.job.update({
       where: { id },
       data: {
@@ -112,6 +125,9 @@ export class JobsService {
         ...(minCgpa !== undefined ? { minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null } : {}),
         ...(applicationDeadline !== undefined
           ? { applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null }
+          : {}),
+        ...(applicationFormFields !== undefined
+          ? { applicationFormFields: applicationFormFields as unknown as Prisma.InputJsonValue }
           : {}),
       },
       include: { company: true, _count: { select: { applications: true } } },
@@ -190,8 +206,16 @@ export class JobsService {
   async createPlatform(createdById: string, dto: CreatePlatformJobDto) {
     await this.assertCollegesExist(dto.targetCollegeIds);
 
-    const { companyName, targetCollegeIds, ctcMin, ctcMax, minCgpa, applicationDeadline, ...rest } =
-      dto;
+    const {
+      companyName,
+      targetCollegeIds,
+      ctcMin,
+      ctcMax,
+      minCgpa,
+      applicationDeadline,
+      applicationFormFields,
+      ...rest
+    } = dto;
     const job = await this.prisma.job.create({
       data: {
         scope: 'PLATFORM',
@@ -205,6 +229,9 @@ export class JobsService {
         ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null,
         minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null,
         applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
+        ...(applicationFormFields !== undefined
+          ? { applicationFormFields: applicationFormFields as unknown as Prisma.InputJsonValue }
+          : {}),
       },
     });
     return this.publicJob({ ...job, company: null });
@@ -251,7 +278,7 @@ export class JobsService {
     if (job.status === 'CLOSED') throw new BadRequestException('Cannot edit a closed job');
     if (dto.targetCollegeIds) await this.assertCollegesExist(dto.targetCollegeIds);
 
-    const { ctcMin, ctcMax, minCgpa, applicationDeadline, ...rest } = dto;
+    const { ctcMin, ctcMax, minCgpa, applicationDeadline, applicationFormFields, ...rest } = dto;
     const updated = await this.prisma.job.update({
       where: { id },
       data: {
@@ -261,6 +288,9 @@ export class JobsService {
         ...(minCgpa !== undefined ? { minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null } : {}),
         ...(applicationDeadline !== undefined
           ? { applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null }
+          : {}),
+        ...(applicationFormFields !== undefined
+          ? { applicationFormFields: applicationFormFields as unknown as Prisma.InputJsonValue }
           : {}),
       },
       include: { _count: { select: { applications: true } } },
@@ -361,7 +391,7 @@ export class JobsService {
     return { ...this.publicJob(job), applied: !!app, myStage: app?.stage ?? null };
   }
 
-  async apply(userId: string, jobId: string) {
+  async apply(userId: string, jobId: string, formResponses?: Record<string, string>) {
     const student = await this.studentForUser(userId);
     const job = await this.prisma.job.findFirst({
       where: { id: jobId, ...this.visibleToCollege(student.collegeId) },
@@ -384,17 +414,41 @@ export class JobsService {
     });
     if (existing) throw new BadRequestException('Already applied to this job');
 
+    // Validate answers against the job's custom application form, if any.
+    const fields = (job.applicationFormFields as ApplicationField[] | null) ?? [];
+    const responses = this.sanitizeResponses(fields, formResponses);
+
     return this.prisma.application.create({
       data: {
         collegeId: student.collegeId,
         jobId,
         studentId: student.id,
         stage: 'APPLIED',
+        formResponses: responses,
         stageHistory: {
           create: { fromStage: null, toStage: 'APPLIED', changedById: userId, note: 'Applied' },
         },
       },
     });
+  }
+
+  // Keep only answers for known fields; enforce required ones.
+  private sanitizeResponses(
+    fields: ApplicationField[],
+    responses?: Record<string, string>,
+  ): Prisma.InputJsonValue | undefined {
+    if (fields.length === 0) return undefined;
+    const out: Record<string, string> = {};
+    for (const f of fields) {
+      const raw = responses?.[f.id];
+      const value = typeof raw === 'string' ? raw.trim() : '';
+      if (!value) {
+        if (f.required) throw new BadRequestException(`"${f.label}" is required`);
+        continue;
+      }
+      out[f.id] = value;
+    }
+    return out;
   }
 
   private async studentForUser(userId: string): Promise<Student> {
@@ -424,6 +478,7 @@ export class JobsService {
     maxActiveBacklogs: number | null;
     maxTotalBacklogs: number | null;
     graduationYears: number[];
+    applicationFormFields?: Prisma.JsonValue;
     status: string;
     applicationDeadline: Date | null;
     publishedAt: Date | null;
@@ -459,6 +514,7 @@ export class JobsService {
       maxActiveBacklogs: j.maxActiveBacklogs,
       maxTotalBacklogs: j.maxTotalBacklogs,
       graduationYears: j.graduationYears,
+      applicationFormFields: (j.applicationFormFields as ApplicationField[] | null) ?? [],
       status: j.status,
       applicationDeadline: j.applicationDeadline,
       publishedAt: j.publishedAt,

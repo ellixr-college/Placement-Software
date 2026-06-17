@@ -120,6 +120,20 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
         )}
       </Card>
 
+      {app.formAnswers && app.formAnswers.length > 0 && (
+        <Card className="space-y-3 p-5">
+          <h2 className="text-sm font-semibold text-strong">Application responses</h2>
+          <dl className="space-y-2">
+            {app.formAnswers.map((a, i) => (
+              <div key={i}>
+                <dt className="text-xs uppercase text-subtle">{a.label}</dt>
+                <dd className="text-sm text-strong">{a.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </Card>
+      )}
+
       <InterviewsCard app={app} onChanged={load} />
 
       {/* Stage history */}

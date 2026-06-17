@@ -368,6 +368,9 @@ model Job {
   maxActiveBacklogs   Int?      @map("max_active_backlogs")
   maxTotalBacklogs    Int?      @map("max_total_backlogs")
   graduationYears     Int[]     @map("graduation_years")
+  // Optional custom application questions: [{ id, label, type, options?, required }].
+  // Students answer these at apply time; answers stored on Application.formResponses.
+  applicationFormFields Json?   @map("application_form_fields")
   status              JobStatus @default(DRAFT)
   applicationDeadline DateTime? @map("application_deadline")
   publishedAt         DateTime? @map("published_at")
@@ -396,6 +399,8 @@ model Application {
   rejectionReason String?          @map("rejection_reason")
   offerCtc        Decimal?         @db.Decimal(12, 2) @map("offer_ctc")
   notes           String?
+  // Answers to the job's custom application questions: { [fieldId]: value }.
+  formResponses   Json?            @map("form_responses")
   updatedAt       DateTime         @updatedAt @map("updated_at")
 
   job          Job                       @relation(fields: [jobId], references: [id], onDelete: Cascade)

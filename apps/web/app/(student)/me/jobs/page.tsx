@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card } from '@ellixr/ui';
-import { applyToJob, getJobFeed, type Job } from '../../../../lib/jobs';
+import { applyToJob, getJobFeed, type ApplicationField, type Job } from '../../../../lib/jobs';
 
 /**
  * Student job feed (mobile). Shows only PUBLISHED jobs the authenticated student
@@ -13,6 +13,7 @@ export default function StudentJobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [applyingId, setApplyingId] = useState<string | null>(null);
+  const [formJob, setFormJob] = useState<Job | null>(null);
 
   async function load() {
     try {
@@ -28,11 +29,21 @@ export default function StudentJobsPage() {
     load();
   }, []);
 
-  async function apply(id: string) {
+  // Jobs with a custom application form open a modal first; others apply directly.
+  function onApplyClick(j: Job) {
+    if (j.applicationFormFields && j.applicationFormFields.length > 0) {
+      setFormJob(j);
+    } else {
+      apply(j.id);
+    }
+  }
+
+  async function apply(id: string, responses?: Record<string, string>) {
     setApplyingId(id);
     setError(null);
     try {
-      await applyToJob(id);
+      await applyToJob(id, responses);
+      setFormJob(null);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not apply');
@@ -49,6 +60,15 @@ export default function StudentJobsPage() {
       </header>
 
       {error && <p className="text-sm text-danger">{error}</p>}
+
+      {formJob && (
+        <ApplyModal
+          job={formJob}
+          submitting={applyingId === formJob.id}
+          onCancel={() => setFormJob(null)}
+          onSubmit={(responses) => apply(formJob.id, responses)}
+        />
+      )}
 
       {loading ? (
         <p className="text-subtle">Loading…</p>
@@ -77,7 +97,7 @@ export default function StudentJobsPage() {
                 {j.applied ? (
                   <Button size="sm" variant="ghost" disabled>Applied</Button>
                 ) : (
-                  <Button size="sm" disabled={applyingId === j.id} onClick={() => apply(j.id)}>
+                  <Button size="sm" disabled={applyingId === j.id} onClick={() => onApplyClick(j)}>
                     {applyingId === j.id ? 'Applying…' : 'Apply'}
                   </Button>
                 )}
@@ -89,6 +109,105 @@ export default function StudentJobsPage() {
           );
         })
       )}
+    </div>
+  );
+}
+
+const fieldCls =
+  'w-full rounded-md border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary-400';
+
+function ApplyModal({
+  job,
+  submitting,
+  onCancel,
+  onSubmit,
+}: {
+  job: Job;
+  submitting: boolean;
+  onCancel: () => void;
+  onSubmit: (responses: Record<string, string>) => void;
+}) {
+  const fields = job.applicationFormFields ?? [];
+  const [responses, setResponses] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+
+  function set(id: string, value: string) {
+    setResponses((r) => ({ ...r, [id]: value }));
+  }
+
+  function submit() {
+    for (const f of fields) {
+      if (f.required && !(responses[f.id] ?? '').trim()) {
+        setError(`"${f.label}" is required`);
+        return;
+      }
+    }
+    setError(null);
+    onSubmit(responses);
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+      role="dialog"
+      aria-modal="true"
+    >
+      <Card className="max-h-[85vh] w-full max-w-md space-y-4 overflow-y-auto p-5">
+        <div>
+          <h2 className="text-lg font-semibold text-strong">Apply to {job.title}</h2>
+          <p className="text-sm text-subtle">
+            {job.companyName ?? job.company?.name} · a few questions before you apply
+          </p>
+        </div>
+
+        {fields.map((f: ApplicationField) => (
+          <label key={f.id} className="block space-y-1">
+            <span className="text-xs font-medium text-subtle">
+              {f.label}
+              {f.required && <span className="text-danger"> *</span>}
+            </span>
+            {f.type === 'textarea' ? (
+              <textarea
+                rows={3}
+                className={fieldCls}
+                value={responses[f.id] ?? ''}
+                onChange={(e) => set(f.id, e.target.value)}
+              />
+            ) : f.type === 'select' ? (
+              <select
+                className={fieldCls}
+                value={responses[f.id] ?? ''}
+                onChange={(e) => set(f.id, e.target.value)}
+              >
+                <option value="">Select…</option>
+                {(f.options ?? []).map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type={f.type === 'number' ? 'number' : 'text'}
+                className={fieldCls}
+                value={responses[f.id] ?? ''}
+                onChange={(e) => set(f.id, e.target.value)}
+              />
+            )}
+          </label>
+        ))}
+
+        {error && <p className="text-sm text-danger">{error}</p>}
+
+        <div className="flex gap-2">
+          <Button className="flex-1" onClick={submit} loading={submitting}>
+            {submitting ? 'Applying…' : 'Submit application'}
+          </Button>
+          <Button variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 }

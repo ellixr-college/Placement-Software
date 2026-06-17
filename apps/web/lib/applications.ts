@@ -36,6 +36,8 @@ export interface Application {
   };
   interviews: InterviewRound[];
   stageHistory: StageHistoryEntry[];
+  // Answers to the job's custom application questions (label/value pairs).
+  formAnswers?: { label: string; value: string }[];
   student?: { id: string; rollNumber: string; fullName: string; branch: string };
 }
 

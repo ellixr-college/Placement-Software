@@ -295,6 +295,7 @@ export class ApplicationsService {
       rejectionReason: string | null;
       offerCtc: Prisma.Decimal | null;
       notes: string | null;
+      formResponses?: Prisma.JsonValue;
       job: {
         id: string;
         title: string;
@@ -302,6 +303,7 @@ export class ApplicationsService {
         location: string | null;
         companyName: string | null;
         company: { id: string; name: string; logoUrl: string | null } | null;
+        applicationFormFields?: Prisma.JsonValue;
       };
       interviews: Array<{
         id: string;
@@ -344,6 +346,7 @@ export class ApplicationsService {
       },
       interviews: a.interviews,
       stageHistory: a.stageHistory,
+      formAnswers: this.formAnswers(a.job.applicationFormFields, a.formResponses),
       ...(withStudent && a.student
         ? {
             student: {
@@ -355,5 +358,17 @@ export class ApplicationsService {
           }
         : {}),
     };
+  }
+
+  // Pair the job's custom questions with this application's stored answers.
+  private formAnswers(
+    fields: Prisma.JsonValue | undefined,
+    responses: Prisma.JsonValue | undefined,
+  ): Array<{ label: string; value: string }> {
+    const list = Array.isArray(fields) ? (fields as Array<{ id: string; label: string }>) : [];
+    const answers = (responses ?? {}) as Record<string, string>;
+    return list
+      .map((f) => ({ label: f.label, value: answers[f.id] ?? '' }))
+      .filter((a) => a.value !== '');
   }
 }

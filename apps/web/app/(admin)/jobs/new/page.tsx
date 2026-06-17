@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
 import { listCompanies, type Company } from '../../../../lib/companies';
 import { listMyCourses, type CollegeCourse } from '../../../../lib/courses';
-import { createJob } from '../../../../lib/jobs';
+import { createJob, type ApplicationField, type ApplicationFieldType } from '../../../../lib/jobs';
 
 const JOB_TYPES = ['FULL_TIME', 'INTERNSHIP', 'INTERNSHIP_PPO'];
 const WORK_MODES = ['ONSITE', 'HYBRID', 'REMOTE'];
@@ -35,6 +35,7 @@ export default function NewJobPage() {
     maxTotalBacklogs: '',
     applicationDeadline: '',
   });
+  const [formFields, setFormFields] = useState<ApplicationField[]>([]);
   const [pickedGenders, setPickedGenders] = useState<string[]>([]);
   const toggleGender = (g: string) =>
     setPickedGenders((gs) => (gs.includes(g) ? gs.filter((x) => x !== g) : [...gs, g]));
@@ -112,6 +113,7 @@ export default function NewJobPage() {
         minTwelfthPercentage: num(form.minTwelfthPercentage),
         maxActiveBacklogs: num(form.maxActiveBacklogs),
         maxTotalBacklogs: num(form.maxTotalBacklogs),
+        applicationFormFields: formFields.length > 0 ? cleanFields(formFields) : undefined,
         applicationDeadline: form.applicationDeadline
           ? new Date(form.applicationDeadline).toISOString()
           : undefined,
@@ -200,9 +202,116 @@ export default function NewJobPage() {
           </div>
         </div>
 
+        <div className="border-t border-border pt-4">
+          <p className="mb-1 text-sm font-semibold text-strong">Custom application form (optional)</p>
+          <p className="mb-3 text-xs text-subtle">
+            Extra questions students answer when applying (e.g. portfolio link, notice period).
+          </p>
+          <FormBuilder fields={formFields} onChange={setFormFields} />
+        </div>
+
         {error && <p className="text-sm text-danger">{error}</p>}
         <Button onClick={submit} loading={saving} disabled={!valid}>{saving ? 'Creating…' : 'Create draft'}</Button>
       </Card>
+    </div>
+  );
+}
+
+const FIELD_TYPES: { value: ApplicationFieldType; label: string }[] = [
+  { value: 'text', label: 'Short text' },
+  { value: 'textarea', label: 'Paragraph' },
+  { value: 'number', label: 'Number' },
+  { value: 'select', label: 'Dropdown' },
+];
+
+// Drop incomplete rows and normalise select options before submit.
+function cleanFields(fields: ApplicationField[]): ApplicationField[] {
+  return fields
+    .filter((f) => f.label.trim())
+    .map((f) => ({
+      id: f.id,
+      label: f.label.trim(),
+      type: f.type,
+      required: f.required ?? false,
+      ...(f.type === 'select' ? { options: (f.options ?? []).filter(Boolean) } : {}),
+    }));
+}
+
+function FormBuilder({
+  fields,
+  onChange,
+}: {
+  fields: ApplicationField[];
+  onChange: (f: ApplicationField[]) => void;
+}) {
+  function add() {
+    onChange([
+      ...fields,
+      { id: `q${Date.now().toString(36)}`, label: '', type: 'text', required: false },
+    ]);
+  }
+  function update(i: number, patch: Partial<ApplicationField>) {
+    onChange(fields.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
+  }
+  function remove(i: number) {
+    onChange(fields.filter((_, idx) => idx !== i));
+  }
+
+  return (
+    <div className="space-y-3">
+      {fields.map((f, i) => (
+        <div key={f.id} className="space-y-2 rounded-card border border-border p-3">
+          <div className="flex gap-2">
+            <input
+              className={inputCls}
+              value={f.label}
+              onChange={(e) => update(i, { label: e.target.value })}
+              placeholder="Question label"
+            />
+            <select
+              className="h-10 w-36 shrink-0 rounded-md border border-border bg-white px-2 text-sm outline-none focus:border-primary-400"
+              value={f.type}
+              onChange={(e) => update(i, { type: e.target.value as ApplicationFieldType })}
+            >
+              {FIELD_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {f.type === 'select' && (
+            <input
+              className={inputCls}
+              value={(f.options ?? []).join(', ')}
+              onChange={(e) =>
+                update(i, { options: e.target.value.split(',').map((s) => s.trim()) })
+              }
+              placeholder="Options, comma-separated"
+            />
+          )}
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 text-xs text-subtle">
+              <input
+                type="checkbox"
+                checked={f.required ?? false}
+                onChange={(e) => update(i, { required: e.target.checked })}
+              />
+              Required
+            </label>
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              className="text-xs text-danger hover:underline"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      ))}
+      <Button type="button" size="sm" variant="outline" onClick={add}>
+        Add question
+      </Button>
     </div>
   );
 }

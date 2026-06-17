@@ -2,6 +2,16 @@
 
 import { api, apiList } from './api';
 
+export type ApplicationFieldType = 'text' | 'textarea' | 'select' | 'number';
+
+export interface ApplicationField {
+  id: string;
+  label: string;
+  type: ApplicationFieldType;
+  options?: string[];
+  required?: boolean;
+}
+
 export interface Job {
   id: string;
   title: string;
@@ -22,6 +32,7 @@ export interface Job {
   maxActiveBacklogs: number | null;
   maxTotalBacklogs: number | null;
   graduationYears: number[];
+  applicationFormFields?: ApplicationField[];
   status: string;
   applicationDeadline: string | null;
   publishedAt: string | null;
@@ -61,6 +72,7 @@ export interface CreateJobInput {
   eligibleGenders?: string[];
   maxActiveBacklogs?: number;
   maxTotalBacklogs?: number;
+  applicationFormFields?: ApplicationField[];
   applicationDeadline?: string;
 }
 
@@ -104,6 +116,12 @@ export function getJobFeed(): Promise<Job[]> {
   return api<Job[]>(`/jobs`);
 }
 
-export function applyToJob(id: string): Promise<{ id: string }> {
-  return api(`/jobs/${id}/apply`, { method: 'POST' });
+export function applyToJob(
+  id: string,
+  formResponses?: Record<string, string>,
+): Promise<{ id: string }> {
+  return api(`/jobs/${id}/apply`, {
+    method: 'POST',
+    body: JSON.stringify(formResponses ? { formResponses } : {}),
+  });
 }
