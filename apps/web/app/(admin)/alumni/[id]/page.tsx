@@ -4,6 +4,7 @@ import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Badge, Button, Card } from '@ellixr/ui';
+import { useConfirm } from '../../../../components/confirm-provider';
 import {
   deleteAlumni,
   getAlumni,
@@ -15,6 +16,7 @@ import {
 export default function AlumniDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const confirm = useConfirm();
   const [alumni, setAlumni] = useState<Alumni | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +38,14 @@ export default function AlumniDetailPage({ params }: { params: Promise<{ id: str
   }, [id]);
 
   async function remove() {
-    if (!confirm('Remove this alumnus permanently?')) return;
+    const ok = await confirm({
+      title: 'Remove this alumnus?',
+      message: 'This permanently deletes the record and cannot be undone.',
+      acknowledgement: 'I understand this is permanent.',
+      confirmLabel: 'Remove',
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await deleteAlumni(id);
       router.push('/alumni');

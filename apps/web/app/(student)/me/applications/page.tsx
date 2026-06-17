@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card } from '@ellixr/ui';
+import { useConfirm } from '../../../../components/confirm-provider';
 import {
   listMyApplications,
   withdrawApplication,
@@ -15,6 +16,7 @@ const TERMINAL = ['JOINED', 'REJECTED', 'WITHDRAWN'];
  * interview rounds, any offer, and a withdraw action while still in progress.
  */
 export default function MyApplicationsPage() {
+  const confirm = useConfirm();
   const [apps, setApps] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,14 @@ export default function MyApplicationsPage() {
   }, []);
 
   async function withdraw(id: string) {
-    if (!window.confirm('Withdraw this application? This cannot be undone.')) return;
+    const ok = await confirm({
+      title: 'Withdraw this application?',
+      message: 'You will be removed from this job’s pipeline. This cannot be undone.',
+      acknowledgement: 'I understand I can’t re-apply.',
+      confirmLabel: 'Withdraw',
+      destructive: true,
+    });
+    if (!ok) return;
     setBusyId(id);
     setError(null);
     try {

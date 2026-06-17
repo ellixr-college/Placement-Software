@@ -5,6 +5,7 @@ import { Badge, Button, Card } from '@ellixr/ui';
 import { isValidEmail, isValidPhone, toTitleCase } from '@ellixr/shared';
 import { PasswordInput } from '../../../../components/password-input';
 import { CopyButton } from '../../../../components/copy-button';
+import { useConfirm } from '../../../../components/confirm-provider';
 import {
   createCollege,
   listColleges,
@@ -16,6 +17,7 @@ import {
 } from '../../../../lib/colleges';
 
 export default function PlatformCollegesPage() {
+  const confirm = useConfirm();
   const [items, setItems] = useState<College[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -52,12 +54,15 @@ export default function PlatformCollegesPage() {
   }
 
   async function resetPassword(c: College) {
-    if (
-      !confirm(
-        `Reset the super-admin password for ${c.name}?\n\nTheir current password stops working immediately and they'll set a new one on next login.`,
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: `Reset password for ${c.name}?`,
+      message:
+        "The super-admin's current password stops working immediately, and they'll set a new one on next login.",
+      acknowledgement: 'I understand this revokes their current password.',
+      confirmLabel: 'Reset password',
+      destructive: true,
+    });
+    if (!ok) return;
     setBusyId(c.id);
     setError(null);
     setCreated(null);

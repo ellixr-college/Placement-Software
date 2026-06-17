@@ -6,6 +6,7 @@ import { isValidEmail, isValidPhone } from '@ellixr/shared';
 import { useSession } from '../../../../lib/session';
 import { PasswordInput } from '../../../../components/password-input';
 import { CopyButton } from '../../../../components/copy-button';
+import { useConfirm } from '../../../../components/confirm-provider';
 import {
   createUser,
   deactivateUser,
@@ -22,6 +23,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export default function TeamSettingsPage() {
+  const confirm = useConfirm();
   const { user, loading } = useSession();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +47,14 @@ export default function TeamSettingsPage() {
   }, [loading, user]);
 
   async function onDeactivate(m: TeamMember) {
-    if (!confirm(`Deactivate ${m.fullName}? They will be signed out and unable to log in.`)) return;
+    const ok = await confirm({
+      title: `Deactivate ${m.fullName}?`,
+      message: 'They will be signed out immediately and unable to log in until reactivated.',
+      acknowledgement: 'I understand they will lose access right away.',
+      confirmLabel: 'Deactivate',
+      destructive: true,
+    });
+    if (!ok) return;
     await run(m.id, () => deactivateUser(m.id), 'Could not deactivate');
   }
 
