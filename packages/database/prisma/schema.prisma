@@ -224,6 +224,7 @@ model Student {
   resume          Resume?
   applications    Application[]
   trainingRecords TrainingRecord[]
+  internships     Internship[]
 
   @@unique([collegeId, rollNumber])
   @@index([collegeId, status])
@@ -544,4 +545,45 @@ model TrainingRecord {
   @@index([collegeId])
   @@index([studentId])
   @@map("training_records")
+}
+
+// ─────────────────────────── Internships ───────────────────────────
+
+enum InternshipStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+// A student-submitted internship record. Students fill in structured details;
+// the placement cell verifies them. Company is free-text (interns may have worked
+// anywhere, not only campus recruiters), mirroring the Alumni directory pattern.
+model Internship {
+  id              String           @id @default(uuid())
+  collegeId       String           @map("college_id")
+  studentId       String           @map("student_id")
+  companyName     String           @map("company_name")
+  role            String
+  workMode        WorkMode?        @map("work_mode")
+  location        String?
+  isPaid          Boolean          @default(false) @map("is_paid")
+  stipend         Decimal?         @db.Decimal(12, 2)
+  startDate       DateTime?        @map("start_date")
+  endDate         DateTime?        @map("end_date")
+  // Converted into a pre-placement offer (PPO).
+  isPpo           Boolean          @default(false) @map("is_ppo")
+  description     String?
+  certificateUrl  String?          @map("certificate_url")
+  status          InternshipStatus @default(PENDING)
+  verifiedById    String?          @map("verified_by_id")
+  verifiedAt      DateTime?        @map("verified_at")
+  rejectionReason String?          @map("rejection_reason")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([collegeId, status])
+  @@index([studentId])
+  @@map("internships")
 }

@@ -20,6 +20,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AlumniModule } from './modules/alumni/alumni.module';
 import { TrainingModule } from './modules/training/training.module';
+import { InternshipsModule } from './modules/internships/internships.module';
 import { HealthController } from './modules/health/health.controller';
 
 @Module({
@@ -45,6 +46,7 @@ import { HealthController } from './modules/health/health.controller';
     NotificationsModule,
     AlumniModule,
     TrainingModule,
+    InternshipsModule,
   ],
   controllers: [HealthController],
   providers: [
