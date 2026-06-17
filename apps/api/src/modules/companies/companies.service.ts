@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -23,17 +24,74 @@ import {
 export class CompaniesService {
   constructor(@Inject(PRISMA) private readonly prisma: PrismaClient) {}
 
-  async create(collegeId: string, dto: CreateCompanyDto) {
+  async create(collegeId: string, createdById: string, dto: CreateCompanyDto) {
     const dup = await this.prisma.company.findFirst({
       where: { collegeId, name: dto.name },
     });
     if (dup) throw new BadRequestException(`Company already exists: ${dto.name}`);
 
+    const { contactName, contactEmail, contactPhone, contactDesignation, ...companyData } = dto;
+    // A primary POC is created inline only when both a name and email are given
+    // (CompanyContact.email is required).
+    const withPoc = !!(contactName && contactEmail);
+
     const company = await this.prisma.company.create({
-      data: { collegeId, ...dto },
+      data: {
+        collegeId,
+        createdById,
+        ...companyData,
+        ...(withPoc
+          ? {
+              contacts: {
+                create: {
+                  name: contactName!,
+                  email: contactEmail!,
+                  phone: contactPhone,
+                  designation: contactDesignation,
+                  isPrimary: true,
+                },
+              },
+            }
+          : {}),
+      },
       include: { contacts: true },
     });
     return company;
+  }
+
+  // ─────────────── College Head: recruiter tracking ───────────────
+
+  /** Throws unless the user is this college's designated College Head. */
+  async assertCollegeHead(userId: string) {
+    const u = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { isCollegeHead: true },
+    });
+    if (!u?.isCollegeHead) throw new ForbiddenException('College Head only');
+  }
+
+  /** Recruiters (companies) registered per team member — for the College Head. */
+  async recruiterTracking(collegeId: string) {
+    const grouped = await this.prisma.company.groupBy({
+      by: ['createdById'],
+      where: { collegeId, createdById: { not: null } },
+      _count: { _all: true },
+    });
+    const ids = grouped.map((g) => g.createdById).filter((x): x is string => !!x);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, fullName: true, role: true },
+    });
+    const byId = new Map(users.map((u) => [u.id, u]));
+    return grouped
+      .filter((g) => g.createdById)
+      .map((g) => ({
+        userId: g.createdById as string,
+        fullName: byId.get(g.createdById as string)?.fullName ?? 'Unknown',
+        role: byId.get(g.createdById as string)?.role ?? '',
+        recruiters: g._count._all,
+      }))
+      .sort((a, b) => b.recruiters - a.recruiters);
   }
 
   async list(collegeId: string, q: ListCompaniesQuery) {

@@ -13,6 +13,8 @@ export interface SessionUser {
   collegeId: string | null;
   avatarUrl: string | null;
   mustChangePassword?: boolean;
+  /** True if this College Admin is the designated College Head. */
+  isCollegeHead?: boolean;
   college?: { id: string; name: string; slug: string; logoUrl: string | null } | null;
 }
 

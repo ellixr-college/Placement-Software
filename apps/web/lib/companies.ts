@@ -50,8 +50,25 @@ export function createCompany(input: {
   industry?: string;
   description?: string;
   city?: string;
+  // Optional primary POC (recruiter contact) created with the company.
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  contactDesignation?: string;
 }): Promise<Company> {
   return api(`/companies`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export interface RecruiterTrackingRow {
+  userId: string;
+  fullName: string;
+  role: string;
+  recruiters: number;
+}
+
+/** College Head only: recruiters registered per team member. */
+export function getRecruiterTracking(): Promise<RecruiterTrackingRow[]> {
+  return api<RecruiterTrackingRow[]>(`/companies/recruiter-tracking`);
 }
 
 export function getHiringHistory(id: string): Promise<HiringHistoryItem[]> {

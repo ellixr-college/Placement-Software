@@ -37,6 +37,14 @@ export class CompaniesController {
     return { data: items, meta };
   }
 
+  // Static route declared before ':id' so it isn't captured as an id param.
+  @Get('recruiter-tracking')
+  @Roles(UserRole.COLLEGE_ADMIN)
+  async recruiterTracking(@CurrentUser() user: JwtPayload) {
+    await this.companies.assertCollegeHead(user.sub);
+    return { data: await this.companies.recruiterTracking(this.collegeId(user)) };
+  }
+
   @Get(':id')
   async findOne(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return { data: await this.companies.findOne(this.collegeId(user), id) };
@@ -49,7 +57,7 @@ export class CompaniesController {
 
   @Post()
   async create(@CurrentUser() user: JwtPayload, @Body() dto: CreateCompanyDto) {
-    return { data: await this.companies.create(this.collegeId(user), dto) };
+    return { data: await this.companies.create(this.collegeId(user), user.sub, dto) };
   }
 
   @Patch(':id')

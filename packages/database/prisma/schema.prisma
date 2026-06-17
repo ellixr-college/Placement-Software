@@ -67,6 +67,10 @@ model User {
   phone           String?
   avatarUrl       String?   @map("avatar_url")
   isActive           Boolean   @default(true) @map("is_active")
+  // The designated College Head (placement head/HOD): a COLLEGE_ADMIN who can
+  // see all the college's recruiter POCs and the per-teammate recruiter tracking.
+  // Assigned by the Platform Admin (the founding admin is the head by default).
+  isCollegeHead      Boolean   @default(false) @map("is_college_head")
   mustChangePassword Boolean   @default(false) @map("must_change_password")
   emailVerifiedAt    DateTime? @map("email_verified_at")
   lastLoginAt        DateTime? @map("last_login_at")
@@ -275,6 +279,9 @@ model Company {
   logoUrl     String?  @map("logo_url")
   city        String?
   isActive    Boolean  @default(true) @map("is_active")
+  // The officer/admin who registered this recruiter — powers the College Head's
+  // per-teammate recruiter tracking. Nullable for pre-existing rows.
+  createdById String?  @map("created_by_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

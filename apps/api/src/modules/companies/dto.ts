@@ -21,6 +21,12 @@ export class CreateCompanyDto {
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsString() logoUrl?: string;
   @TitleCase() @IsOptional() @IsString() city?: string;
+
+  // Optional primary point of contact (recruiter), created alongside the company.
+  @IsOptional() @IsString() contactName?: string;
+  @EmptyToUndefined() @IsOptional() @IsEmail() contactEmail?: string;
+  @EmptyToUndefined() @IsOptional() @Matches(PHONE_REGEX, { message: PHONE_MESSAGE }) contactPhone?: string;
+  @IsOptional() @IsString() contactDesignation?: string;
 }
 
 export class UpdateCompanyDto {

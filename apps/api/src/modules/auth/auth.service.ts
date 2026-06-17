@@ -136,6 +136,7 @@ export class AuthService {
     collegeId: string | null;
     avatarUrl: string | null;
     mustChangePassword: boolean;
+    isCollegeHead: boolean;
   }) {
     return {
       id: user.id,
@@ -145,6 +146,7 @@ export class AuthService {
       collegeId: user.collegeId,
       avatarUrl: user.avatarUrl,
       mustChangePassword: user.mustChangePassword,
+      isCollegeHead: user.isCollegeHead,
     };
   }
 }

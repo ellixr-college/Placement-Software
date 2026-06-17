@@ -37,6 +37,9 @@ export class CollegesService {
           passwordHash,
           fullName: dto.adminFullName,
           role: UserRole.COLLEGE_ADMIN,
+          // The founding admin is the College Head by default (sees all POCs +
+          // per-teammate recruiter tracking). Platform Admin can reassign later.
+          isCollegeHead: true,
         },
       });
       return c;
