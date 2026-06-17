@@ -46,12 +46,14 @@ export const resumeCertificationSchema = z.object({
 export const resumeDataSchema = z.object({
   fullName: trimmed(120),
   headline: trimmed(160).optional().default(''),
+  dateOfBirth: trimmed(40).optional().default(''),
   email: trimmed(160).optional().default(''),
   phone: trimmed(40).optional().default(''),
   location: trimmed(120).optional().default(''),
   links: z.array(resumeLinkSchema).max(8).optional().default([]),
   summary: trimmed(1500).optional().default(''),
   skills: z.array(trimmed(60)).max(60).optional().default([]),
+  languages: z.array(trimmed(40)).max(20).optional().default([]),
   education: z.array(resumeEducationSchema).max(15).optional().default([]),
   experience: z.array(resumeExperienceSchema).max(20).optional().default([]),
   projects: z.array(resumeProjectSchema).max(20).optional().default([]),
@@ -69,4 +71,26 @@ export type ResumeCertification = z.infer<typeof resumeCertificationSchema>;
 /** An empty resume scaffold, optionally pre-seeded from known student fields. */
 export function emptyResumeData(seed: Partial<ResumeData> = {}): ResumeData {
   return resumeDataSchema.parse({ fullName: '', ...seed });
+}
+
+/** Minimum skills required before a résumé can be published/shared. */
+export const RESUME_MIN_SKILLS = 3;
+
+/**
+ * Whether a résumé has the essentials filled to activate its public link.
+ * Returns the list of what's still missing so the builder can show a checklist.
+ */
+export function resumeReadiness(data: ResumeData): { ready: boolean; missing: string[] } {
+  const missing: string[] = [];
+  if (!data.fullName?.trim()) missing.push('Full name');
+  if (!data.dateOfBirth?.trim()) missing.push('Date of birth');
+  if ((data.skills?.length ?? 0) < RESUME_MIN_SKILLS) {
+    missing.push(`At least ${RESUME_MIN_SKILLS} skills`);
+  }
+  if ((data.languages?.length ?? 0) < 1) missing.push('At least 1 language');
+  if ((data.projects?.length ?? 0) < 1) missing.push('At least 1 project');
+  if ((data.education?.length ?? 0) < 3) {
+    missing.push('Education: 10th, 12th and your degree (3 entries)');
+  }
+  return { ready: missing.length === 0, missing };
 }

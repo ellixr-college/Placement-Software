@@ -5,6 +5,7 @@ import { Button, Card } from '@ellixr/ui';
 import {
   emptyResumeData,
   RESUME_TEMPLATES,
+  resumeReadiness,
   type ResumeData,
   type ResumeEducation,
   type ResumeExperience,
@@ -61,6 +62,7 @@ export default function ResumeEditorPage() {
   if (loading) return <p className="text-subtle">Loading…</p>;
 
   const link = meta ? `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${meta.publicSlug}` : '';
+  const readiness = resumeReadiness(data);
 
   return (
     <div className="space-y-5 pb-4">
@@ -78,6 +80,7 @@ export default function ResumeEditorPage() {
               <input
                 type="checkbox"
                 checked={published}
+                disabled={!readiness.ready}
                 onChange={(e) => {
                   setPublished(e.target.checked);
                   setSaved(false);
@@ -86,27 +89,43 @@ export default function ResumeEditorPage() {
               Published
             </label>
           </div>
-          <div className="flex items-center gap-2 rounded-md bg-app p-2">
-            <code className="flex-1 truncate text-xs text-strong">{link}</code>
-            <button
-              onClick={() => navigator.clipboard?.writeText(link)}
-              className="rounded bg-white px-2 py-1 text-xs font-medium text-primary-600 shadow-sm"
-            >
-              Copy
-            </button>
-            <a
-              href={`/r/${meta.publicSlug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded bg-white px-2 py-1 text-xs font-medium text-primary-600 shadow-sm"
-            >
-              Open
-            </a>
-          </div>
-          {!published && (
-            <p className="text-xs text-subtle">
-              Unpublished — the link returns “not found” until you publish and save.
-            </p>
+
+          {!readiness.ready ? (
+            <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-xs">
+              <p className="font-medium text-strong">
+                Complete these before your link can go live:
+              </p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-4 text-body">
+                {readiness.missing.map((m) => (
+                  <li key={m}>{m}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 rounded-md bg-app p-2">
+                <code className="flex-1 truncate text-xs text-strong">{link}</code>
+                <button
+                  onClick={() => navigator.clipboard?.writeText(link)}
+                  className="rounded bg-white px-2 py-1 text-xs font-medium text-primary-600 shadow-sm"
+                >
+                  Copy
+                </button>
+                <a
+                  href={`/r/${meta.publicSlug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded bg-white px-2 py-1 text-xs font-medium text-primary-600 shadow-sm"
+                >
+                  Open
+                </a>
+              </div>
+              {!published && (
+                <p className="text-xs text-subtle">
+                  Unpublished — the link returns “not found” until you publish and save.
+                </p>
+              )}
+            </>
           )}
         </Card>
       )}
@@ -138,6 +157,7 @@ export default function ResumeEditorPage() {
       <Section title="Basics">
         <Text label="Full name" value={data.fullName} onChange={(v) => patch({ fullName: v })} />
         <Text label="Headline" value={data.headline} onChange={(v) => patch({ headline: v })} placeholder="Final-year CSE · Aspiring SDE" />
+        <Text label="Date of birth" type="date" value={data.dateOfBirth} onChange={(v) => patch({ dateOfBirth: v })} />
         <Text label="Email" value={data.email} onChange={(v) => patch({ email: v })} />
         <Text label="Phone" value={data.phone} onChange={(v) => patch({ phone: v })} />
         <Text label="Location" value={data.location} onChange={(v) => patch({ location: v })} />
@@ -168,6 +188,15 @@ export default function ResumeEditorPage() {
           value={data.skills.join(', ')}
           onChange={(v) => patch({ skills: splitList(v, ',') })}
           placeholder="Comma-separated: React, Node.js, SQL"
+        />
+      </Section>
+
+      {/* Languages */}
+      <Section title="Languages">
+        <Area
+          value={data.languages.join(', ')}
+          onChange={(v) => patch({ languages: splitList(v, ',') })}
+          placeholder="Comma-separated: English, Hindi, Tamil"
         />
       </Section>
 
@@ -352,16 +381,19 @@ function Text({
   value,
   onChange,
   placeholder,
+  type = 'text',
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  type?: string;
 }) {
   return (
     <div className="space-y-1">
       <label className="text-xs font-medium text-subtle">{label}</label>
       <input
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import { emptyResumeData, resumeDataSchema } from '@ellixr/shared';
+import { emptyResumeData, resumeDataSchema, resumeReadiness } from '@ellixr/shared';
 import { Prisma } from '@ellixr/database';
 import type { PrismaClient } from '@ellixr/database';
 import { PRISMA } from '../../common/prisma.module';
@@ -82,12 +82,20 @@ export class ResumesService {
 
   // --- Public, unauthenticated render endpoint ---
 
-  /** Looked up by unguessable slug; only returns a published resume. */
+  /**
+   * Looked up by unguessable slug; only returns a published resume whose
+   * essentials are filled (name, DOB, skills, languages, projects, education).
+   * Incomplete or unpublished résumés 404 — the link stays inactive.
+   */
   async getPublic(slug: string) {
     const resume = await this.prisma.resume.findFirst({
       where: { publicSlug: slug, isPublished: true },
     });
     if (!resume) throw new NotFoundException('Resume not found');
+    const parsed = resumeDataSchema.safeParse(resume.data);
+    if (!parsed.success || !resumeReadiness(parsed.data).ready) {
+      throw new NotFoundException('Resume not found');
+    }
     return { template: resume.template, data: resume.data, updatedAt: resume.updatedAt };
   }
 

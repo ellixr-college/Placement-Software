@@ -419,6 +419,12 @@ function ProfessionalTemplate({ data }: { data: ResumeData }) {
         </ProSection>
       )}
 
+      {has(data.languages) && (
+        <ProSection title="Languages">
+          <p>{data.languages.join('  •  ')}</p>
+        </ProSection>
+      )}
+
       {has(data.certifications) && (
         <ProSection title="Certifications">
           <ul className="list-disc space-y-1 pl-5">
