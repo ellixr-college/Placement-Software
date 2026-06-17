@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Button, Card } from '@ellixr/ui';
+import { EmployabilityCard } from '../../../../components/employability-card';
 import {
   getStudent,
   setStudentActive,
@@ -178,6 +179,8 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
         />
         <Detail label="Profile complete" value={`${student.profileCompletion}%`} />
       </Card>
+
+      <EmployabilityCard studentId={student.id} />
     </div>
   );
 }

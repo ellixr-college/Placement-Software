@@ -151,6 +151,9 @@ export default function StudentHome() {
         <QuickLink href="/me/jobs" title="Jobs" sub="Browse & apply" />
         <QuickLink href="/me/profile" title="Profile" sub="Edit · verify" />
         <QuickLink href="/me/resume" title="Resume" sub="Build · share" />
+        <QuickLink href="/me/training" title="Readiness" sub="Scores · training" />
+        <QuickLink href="/me/applications" title="Applications" sub="Track status" />
+        <QuickLink href="/me/notifications" title="Alerts" sub="Updates" />
       </div>
 
       {/* Next interview hero */}
