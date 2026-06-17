@@ -134,6 +134,27 @@ export default function StudentProfilePage() {
       <Section title="Personal">
         <Text label="Full name" value={form.fullName ?? ''} onChange={(v) => patch({ fullName: v })} />
         <Text label="Phone" value={form.phone ?? ''} onChange={(v) => patch({ phone: v })} />
+        <Text
+          label="Personal email"
+          type="email"
+          value={form.personalEmail ?? ''}
+          onChange={(v) => patch({ personalEmail: v })}
+          placeholder="you@gmail.com"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <Text
+            label="Date of birth"
+            type="date"
+            value={form.dateOfBirth ?? ''}
+            onChange={(v) => patch({ dateOfBirth: v })}
+          />
+          <Select
+            label="Gender"
+            value={form.gender ?? ''}
+            onChange={(v) => patch({ gender: v })}
+            options={GENDERS}
+          />
+        </div>
       </Section>
 
       {/* Academic */}
@@ -173,6 +194,31 @@ export default function StudentProfilePage() {
             onChange={(v) => patch({ totalBacklogs: toNum(v) })}
           />
         </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Text
+            label="10th %"
+            type="number"
+            value={numStr(form.tenthPercentage)}
+            onChange={(v) => patch({ tenthPercentage: toNum(v) })}
+          />
+          <Text
+            label="12th %"
+            type="number"
+            value={numStr(form.twelfthPercentage)}
+            onChange={(v) => patch({ twelfthPercentage: toNum(v) })}
+          />
+        </div>
+      </Section>
+
+      {/* Semester marks */}
+      <Section title="Semester marks">
+        <p className="text-xs text-subtle">
+          Add your SGPA/percentage per semester. These show on your profile and resume.
+        </p>
+        <SemesterEditor
+          rows={form.semesterMarks ?? []}
+          onChange={(rows) => patch({ semesterMarks: rows })}
+        />
       </Section>
 
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -206,6 +252,12 @@ function toForm(s: Student): UpdateOwnProfileInput {
     cgpa: s.cgpa ?? undefined,
     activeBacklogs: s.activeBacklogs,
     totalBacklogs: s.totalBacklogs,
+    dateOfBirth: s.dateOfBirth ? s.dateOfBirth.slice(0, 10) : '',
+    gender: s.gender ?? '',
+    personalEmail: s.personalEmail ?? '',
+    tenthPercentage: s.tenthPercentage ?? undefined,
+    twelfthPercentage: s.twelfthPercentage ?? undefined,
+    semesterMarks: s.semesterMarks ?? [],
   };
 }
 
@@ -222,6 +274,16 @@ function clean(form: UpdateOwnProfileInput): UpdateOwnProfileInput {
   if (form.cgpa != null) out.cgpa = form.cgpa;
   if (form.activeBacklogs != null) out.activeBacklogs = form.activeBacklogs;
   if (form.totalBacklogs != null) out.totalBacklogs = form.totalBacklogs;
+  if (form.dateOfBirth?.trim()) out.dateOfBirth = form.dateOfBirth.trim();
+  if (form.gender?.trim()) out.gender = form.gender.trim();
+  if (form.personalEmail?.trim()) out.personalEmail = form.personalEmail.trim();
+  if (form.tenthPercentage != null) out.tenthPercentage = form.tenthPercentage;
+  if (form.twelfthPercentage != null) out.twelfthPercentage = form.twelfthPercentage;
+  if (form.semesterMarks) {
+    // Keep only rows with both a label and a score.
+    const rows = form.semesterMarks.filter((m) => m.label.trim() && m.score.trim());
+    out.semesterMarks = rows;
+  }
   return out;
 }
 
@@ -250,6 +312,92 @@ function StatusBadge({ status }: { status: string }) {
     >
       {status}
     </span>
+  );
+}
+
+const GENDERS = ['MALE', 'FEMALE', 'OTHER'];
+
+function Select({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+}) {
+  return (
+    <div className="space-y-1">
+      <label className="text-xs font-medium text-subtle">{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
+      >
+        <option value="">Select…</option>
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o.charAt(0) + o.slice(1).toLowerCase()}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function SemesterEditor({
+  rows,
+  onChange,
+}: {
+  rows: { label: string; score: string }[];
+  onChange: (rows: { label: string; score: string }[]) => void;
+}) {
+  function update(i: number, patch: Partial<{ label: string; score: string }>) {
+    onChange(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  }
+  function add() {
+    onChange([...rows, { label: `Semester ${rows.length + 1}`, score: '' }]);
+  }
+  function remove(i: number) {
+    onChange(rows.filter((_, idx) => idx !== i));
+  }
+  return (
+    <div className="space-y-2">
+      {rows.map((r, i) => (
+        <div key={i} className="flex items-end gap-2">
+          <div className="flex-1 space-y-1">
+            <label className="text-xs font-medium text-subtle">Label</label>
+            <input
+              value={r.label}
+              onChange={(e) => update(i, { label: e.target.value })}
+              placeholder="Semester 1"
+              className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
+            />
+          </div>
+          <div className="w-24 space-y-1">
+            <label className="text-xs font-medium text-subtle">Score</label>
+            <input
+              value={r.score}
+              onChange={(e) => update(i, { score: e.target.value })}
+              placeholder="8.4"
+              className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => remove(i)}
+            className="mb-2 text-xs text-danger hover:underline"
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+      <Button type="button" size="sm" variant="outline" onClick={add}>
+        Add semester
+      </Button>
+    </div>
   );
 }
 

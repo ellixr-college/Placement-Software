@@ -169,6 +169,20 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
         <Detail label="Total backlogs" value={String(student.totalBacklogs)} />
         <Detail label="Enrollment no." value={student.enrollmentNumber ?? '—'} />
         <Detail label="Phone" value={student.user.phone ?? '—'} />
+        <Detail label="Personal email" value={student.personalEmail ?? '—'} />
+        <Detail
+          label="Date of birth"
+          value={student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : '—'}
+        />
+        <Detail label="Gender" value={student.gender ?? '—'} />
+        <Detail
+          label="10th %"
+          value={student.tenthPercentage != null ? String(student.tenthPercentage) : '—'}
+        />
+        <Detail
+          label="12th %"
+          value={student.twelfthPercentage != null ? String(student.twelfthPercentage) : '—'}
+        />
         <Detail
           label="Last login"
           value={
