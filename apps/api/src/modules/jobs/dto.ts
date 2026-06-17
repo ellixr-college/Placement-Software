@@ -27,7 +27,7 @@ export class CreateJobDto {
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) ctcMax?: number;
 
   @IsArray() @ArrayNotEmpty() @IsString({ each: true }) eligibleCourses!: string[];
-  @IsArray() @ArrayNotEmpty() @IsString({ each: true }) eligibleBranches!: string[];
+  @IsArray() @IsString({ each: true }) eligibleBranches!: string[];
 
   @IsArray() @ArrayNotEmpty() @Type(() => Number) @IsInt({ each: true })
   graduationYears!: number[];
@@ -81,7 +81,7 @@ export class CreatePlatformJobDto {
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) ctcMax?: number;
 
   @IsArray() @ArrayNotEmpty() @IsString({ each: true }) eligibleCourses!: string[];
-  @IsArray() @ArrayNotEmpty() @IsString({ each: true }) eligibleBranches!: string[];
+  @IsArray() @IsString({ each: true }) eligibleBranches!: string[];
 
   @IsArray() @ArrayNotEmpty() @Type(() => Number) @IsInt({ each: true })
   graduationYears!: number[];

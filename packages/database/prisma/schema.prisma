@@ -32,6 +32,24 @@ enum SubscriptionStatus {
   CANCELLED
 }
 
+// A course offered by a college (e.g. "B.Tech"), with its branches/specialisations
+// (e.g. ["CSE","ECE","Mechanical"]). Managed by the Platform Admin. Student
+// course/branch and job eligibleCourses/eligibleBranches reference these names.
+model CollegeCourse {
+  id        String   @id @default(uuid())
+  collegeId String   @map("college_id")
+  name      String
+  branches  String[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  college College @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+
+  @@unique([collegeId, name])
+  @@index([collegeId])
+  @@map("college_courses")
+}
+
 model College {
   id                 String             @id @default(uuid())
   name               String
@@ -53,6 +71,7 @@ model College {
 
   users    User[]
   students Student[]
+  courses  CollegeCourse[]
 
   @@map("colleges")
 }

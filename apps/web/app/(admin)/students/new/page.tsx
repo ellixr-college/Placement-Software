@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, Card } from '@ellixr/ui';
 import { createStudent, type CreateStudentInput } from '../../../../lib/students';
+import { listMyCourses, type CollegeCourse } from '../../../../lib/courses';
 import { CopyButton } from '../../../../components/copy-button';
 
 const EMPTY = {
@@ -30,7 +31,15 @@ export default function NewStudentPage() {
     null,
   );
 
+  const [courses, setCourses] = useState<CollegeCourse[]>([]);
+  useEffect(() => {
+    listMyCourses().then(setCourses).catch(() => {});
+  }, []);
+
   const set = (k: keyof typeof EMPTY) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
+  // Reset branch whenever the course changes.
+  const setCourse = (v: string) => setForm((f) => ({ ...f, course: v, branch: '' }));
+  const branchesFor = courses.find((c) => c.name === form.course)?.branches ?? [];
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -122,8 +131,16 @@ export default function NewStudentPage() {
             value={form.enrollmentNumber}
             onChange={set('enrollmentNumber')}
           />
-          <Field label="Course" required value={form.course} onChange={set('course')} placeholder="B.Tech" />
-          <Field label="Branch" required value={form.branch} onChange={set('branch')} placeholder="CSE" />
+          {courses.length > 0 ? (
+            <SelectField label="Course" required value={form.course} onChange={setCourse} options={courses.map((c) => c.name)} placeholder="Select a course…" />
+          ) : (
+            <Field label="Course" required value={form.course} onChange={setCourse} placeholder="B.Tech" />
+          )}
+          {branchesFor.length > 0 ? (
+            <SelectField label="Branch" required value={form.branch} onChange={set('branch')} options={branchesFor} placeholder="Select a branch…" />
+          ) : (
+            <Field label="Branch" value={form.branch} onChange={set('branch')} placeholder={form.course ? 'No branches for this course' : 'CSE'} />
+          )}
           <Field
             label="Graduation year"
             type="number"
@@ -190,6 +207,44 @@ function Field({
         placeholder={placeholder}
         className="h-11 w-full rounded-md border border-border bg-white px-4 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
       />
+    </div>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+  required,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  required?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <label className="text-sm font-medium text-strong">
+        {label}
+        {required && <span className="text-danger"> *</span>}
+      </label>
+      <select
+        required={required}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-11 w-full rounded-md border border-border bg-white px-4 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+      >
+        <option value="">{placeholder ?? 'Select…'}</option>
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

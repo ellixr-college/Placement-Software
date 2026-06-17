@@ -71,6 +71,29 @@ export class NotificationsService {
     }
   }
 
+  /** Fan a notification out to an explicit list of users (e.g. eligible students). */
+  async notifyMany(
+    userIds: string[],
+    collegeId: string,
+    params: Omit<NotifyParams, 'userId' | 'collegeId'>,
+  ): Promise<void> {
+    if (userIds.length === 0) return;
+    try {
+      await this.prisma.notification.createMany({
+        data: userIds.map((userId) => ({
+          userId,
+          collegeId,
+          type: params.type,
+          title: params.title,
+          body: params.body,
+          link: params.link,
+        })),
+      });
+    } catch (err) {
+      this.logger.error(`Failed to notify ${userIds.length} users`, err as Error);
+    }
+  }
+
   // ─────────────── Recipient-facing reads (own only) ───────────────
 
   async list(userId: string, opts: { unreadOnly?: boolean; page?: number; limit?: number }) {

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { isValidEmail, isValidPhone, toTitleCase } from '@ellixr/shared';
 import { PasswordInput } from '../../../../components/password-input';
 import { CopyButton } from '../../../../components/copy-button';
+import { CoursesPanel } from '../../../../components/courses-panel';
 import { useConfirm } from '../../../../components/confirm-provider';
 import {
   createCollege,
@@ -26,6 +27,7 @@ export default function PlatformCollegesPage() {
   const [created, setCreated] = useState<CreateCollegeResult | null>(null);
   const [reset, setReset] = useState<ResetAdminPasswordResult | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [coursesFor, setCoursesFor] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -208,7 +210,8 @@ export default function PlatformCollegesPage() {
               </tr>
             ) : (
               items.map((c) => (
-                <tr key={c.id} className="border-b border-border last:border-0 hover:bg-app/60">
+                <Fragment key={c.id}>
+                <tr className="border-b border-border last:border-0 hover:bg-app/60">
                   <td className="px-4 py-3">
                     <p className="font-medium text-strong">{c.name}</p>
                     <p className="text-xs text-subtle">
@@ -235,6 +238,12 @@ export default function PlatformCollegesPage() {
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-3">
                       <button
+                        onClick={() => setCoursesFor((id) => (id === c.id ? null : c.id))}
+                        className="text-xs font-medium text-primary-600 hover:underline"
+                      >
+                        {coursesFor === c.id ? 'Hide courses' : 'Courses'}
+                      </button>
+                      <button
                         onClick={() => resetPassword(c)}
                         disabled={busyId === c.id}
                         className="text-xs font-medium text-primary-600 hover:underline disabled:opacity-50"
@@ -250,6 +259,14 @@ export default function PlatformCollegesPage() {
                     </div>
                   </td>
                 </tr>
+                {coursesFor === c.id && (
+                  <tr className="border-b border-border">
+                    <td colSpan={5} className="px-4 py-3">
+                      <CoursesPanel collegeId={c.id} />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))
             )}
           </tbody>
@@ -281,6 +298,19 @@ function NewCollegeForm({ onCreated }: { onCreated: (result: CreateCollegeResult
   const [slugTouched, setSlugTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Local course catalog defined during onboarding.
+  const [courses, setCourses] = useState<{ name: string; branches: string[] }[]>([]);
+  const [courseName, setCourseName] = useState('');
+  const [courseBranches, setCourseBranches] = useState('');
+
+  function addCourse() {
+    const name = courseName.trim();
+    if (!name || courses.some((c) => c.name.toLowerCase() === name.toLowerCase())) return;
+    const branches = [...new Set(courseBranches.split(',').map((b) => b.trim()).filter(Boolean))];
+    setCourses((cs) => [...cs, { name, branches }]);
+    setCourseName('');
+    setCourseBranches('');
+  }
 
   function setField(k: keyof typeof form, v: string) {
     setForm((f) => {
@@ -306,6 +336,7 @@ function NewCollegeForm({ onCreated }: { onCreated: (result: CreateCollegeResult
         adminFullName: form.adminFullName.trim(),
         adminEmail: form.adminEmail.trim(),
         adminPassword: form.adminPassword.trim() || undefined,
+        courses: courses.length ? courses : undefined,
       });
       onCreated(result);
     } catch (err) {
@@ -410,6 +441,56 @@ function NewCollegeForm({ onCreated }: { onCreated: (result: CreateCollegeResult
           Set a password (min 8 characters) to share with the admin directly, or leave it blank and
           we'll generate a one-time temp password for you.
         </p>
+      </div>
+
+      <div>
+        <h2 className="text-sm font-semibold text-strong">Courses offered</h2>
+        <p className="text-xs text-subtle">
+          The courses + branches this college runs. Students and jobs pick from these. You can edit
+          them later from the Courses action.
+        </p>
+        {courses.length > 0 && (
+          <div className="mt-3 space-y-1">
+            {courses.map((co, i) => (
+              <div key={co.name} className="flex items-center gap-2 rounded-md bg-app px-3 py-1.5 text-sm">
+                <span className="font-medium text-strong">{co.name}</span>
+                <span className="flex-1 text-xs text-subtle">
+                  {co.branches.length ? co.branches.join(' · ') : 'no branches'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCourses((cs) => cs.filter((_, j) => j !== i))}
+                  className="text-xs font-medium text-danger hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="mt-3 flex flex-wrap items-end gap-2">
+          <Field label="Course">
+            <input
+              className={`${inputCls} w-40`}
+              value={courseName}
+              onChange={(e) => setCourseName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCourse())}
+              placeholder="B.Tech"
+            />
+          </Field>
+          <Field label="Branches (comma-separated)">
+            <input
+              className={`${inputCls} w-72`}
+              value={courseBranches}
+              onChange={(e) => setCourseBranches(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCourse())}
+              placeholder="CSE, ECE, Mechanical (blank if none)"
+            />
+          </Field>
+          <Button type="button" variant="outline" size="sm" onClick={addCourse} disabled={!courseName.trim()}>
+            Add course
+          </Button>
+        </div>
       </div>
 
       {!passwordOk && (

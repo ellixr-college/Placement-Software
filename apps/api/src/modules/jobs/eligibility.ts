@@ -36,7 +36,10 @@ export function checkEligibility(
   if (student.verificationStatus !== 'VERIFIED') reasons.push('Profile not verified');
   if (student.status === 'PLACED') reasons.push('Already placed');
   if (!job.eligibleCourses.includes(student.course)) reasons.push('Course not eligible');
-  if (!job.eligibleBranches.includes(student.branch)) reasons.push('Branch not eligible');
+  // Empty eligibleBranches = branch is not a filter (e.g. courses with no branches).
+  if (job.eligibleBranches.length > 0 && !job.eligibleBranches.includes(student.branch)) {
+    reasons.push('Branch not eligible');
+  }
   if (!job.graduationYears.includes(student.graduationYear)) {
     reasons.push('Graduation year not eligible');
   }

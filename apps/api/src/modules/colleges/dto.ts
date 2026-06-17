@@ -1,8 +1,22 @@
-import { IsEmail, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsEmail,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
 import { PHONE_REGEX } from '@ellixr/shared';
 import { EmptyToUndefined, TitleCase } from '../../common/transforms';
 
 const PHONE_MESSAGE = 'Enter a valid 10-digit mobile number';
+
+export class CourseInputDto {
+  @IsString() @MinLength(1) name!: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) branches?: string[];
+}
 
 export class CreateCollegeDto {
   @IsString()
@@ -44,6 +58,13 @@ export class CreateCollegeDto {
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   adminPassword?: string;
+
+  // Optional initial course catalog (courses + their branches).
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CourseInputDto)
+  courses?: CourseInputDto[];
 }
 
 export class ResetAdminPasswordDto {

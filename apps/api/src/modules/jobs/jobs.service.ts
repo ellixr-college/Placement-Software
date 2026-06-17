@@ -15,6 +15,7 @@ import {
   UpdateJobDto,
   UpdatePlatformJobDto,
 } from './dto';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   checkEligibility,
   type EligibilityJob,
@@ -23,7 +24,10 @@ import {
 
 @Injectable()
 export class JobsService {
-  constructor(@Inject(PRISMA) private readonly prisma: PrismaClient) {}
+  constructor(
+    @Inject(PRISMA) private readonly prisma: PrismaClient,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   // ─────────────── Placement Officer: job lifecycle ───────────────
 
@@ -127,8 +131,21 @@ export class JobsService {
       include: { company: true, _count: { select: { applications: true } } },
     });
 
-    // Compute the eligible set as a preview/count. Phase 4 wires the notification send.
+    // Notify every eligible student that a job they can apply to is now live.
     const eligible = await this.eligibleStudents(collegeId, id);
+    if (eligible.length > 0) {
+      const recs = await this.prisma.student.findMany({
+        where: { id: { in: eligible.map((e) => e.id) } },
+        select: { userId: true },
+      });
+      const companyName = updated.company?.name ?? updated.companyName ?? null;
+      await this.notifications.notifyMany(recs.map((r) => r.userId), collegeId, {
+        type: 'GENERAL',
+        title: 'New job you can apply to',
+        body: companyName ? `${updated.title} · ${companyName}` : updated.title,
+        link: '/me/jobs',
+      });
+    }
     return { job: this.publicJob(updated), eligibleCount: eligible.length };
   }
 

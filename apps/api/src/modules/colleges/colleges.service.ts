@@ -42,6 +42,15 @@ export class CollegesService {
           isCollegeHead: true,
         },
       });
+      // Optional initial course catalog.
+      const courses = (dto.courses ?? [])
+        .map((co) => ({
+          collegeId: c.id,
+          name: co.name.trim(),
+          branches: [...new Set((co.branches ?? []).map((b) => b.trim()).filter(Boolean))],
+        }))
+        .filter((co) => co.name);
+      if (courses.length) await tx.collegeCourse.createMany({ data: courses });
       return c;
     });
 
