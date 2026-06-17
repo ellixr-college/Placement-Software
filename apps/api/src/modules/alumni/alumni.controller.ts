@@ -11,9 +11,14 @@ import {
 } from '@nestjs/common';
 import { UserRole } from '@ellixr/shared';
 import type { JwtPayload } from '@ellixr/shared';
-import { CurrentUser, Roles } from '../../common/decorators';
+import { CurrentUser, Public, Roles } from '../../common/decorators';
 import { AlumniService } from './alumni.service';
-import { CreateAlumniDto, ListAlumniQuery, UpdateAlumniDto } from './dto';
+import {
+  CreateAlumniDto,
+  ListAlumniQuery,
+  SelfRegisterAlumniDto,
+  UpdateAlumniDto,
+} from './dto';
 
 @Controller('alumni')
 @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER)
@@ -46,6 +51,11 @@ export class AlumniController {
     return { data: await this.alumni.create(this.collegeId(user), dto) };
   }
 
+  @Post(':id/approve')
+  async approve(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return { data: await this.alumni.approve(this.collegeId(user), id) };
+  }
+
   @Patch(':id')
   async update(
     @CurrentUser() user: JwtPayload,
@@ -58,5 +68,23 @@ export class AlumniController {
   @Delete(':id')
   async remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return { data: await this.alumni.remove(this.collegeId(user), id) };
+  }
+}
+
+/** Public alumni self-registration portal (no auth). Identified by college slug. */
+@Controller('public/alumni')
+export class PublicAlumniController {
+  constructor(private readonly alumni: AlumniService) {}
+
+  @Public()
+  @Get(':slug')
+  async college(@Param('slug') slug: string) {
+    return { data: await this.alumni.publicCollege(slug) };
+  }
+
+  @Public()
+  @Post(':slug/register')
+  async register(@Param('slug') slug: string, @Body() dto: SelfRegisterAlumniDto) {
+    return { data: await this.alumni.selfRegister(slug, dto) };
   }
 }

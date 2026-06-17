@@ -13,7 +13,7 @@ import { UserRole, isAdminRole } from '@ellixr/shared';
  * Real authorization is enforced server-side by the API (verified JWT). A
  * production hardening step is to move auth behind a same-origin BFF proxy.
  */
-const PUBLIC_PATHS = ['/login', '/forgot-password', '/reset-password'];
+const PUBLIC_PATHS = ['/login', '/forgot-password', '/reset-password', '/alumni-register'];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

@@ -160,6 +160,11 @@ model Alumni {
   isHiring           Boolean  @default(false) @map("is_hiring")
   tags               String[]
   notes              String?
+  // Self-registration: alumni who signed up via the public portal land here
+  // unapproved (isApproved=false) for the placement cell to review. Officer-
+  // created records default to approved.
+  selfRegistered     Boolean  @default(false) @map("self_registered")
+  isApproved         Boolean  @default(true) @map("is_approved")
   isActive           Boolean  @default(true) @map("is_active")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")

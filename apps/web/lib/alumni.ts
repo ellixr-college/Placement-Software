@@ -18,6 +18,8 @@ export interface Alumni {
   isHiring: boolean;
   tags: string[];
   notes: string | null;
+  selfRegistered: boolean;
+  isApproved: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -58,8 +60,23 @@ export interface AlumniFilters {
   tag?: string;
   isMentor?: boolean;
   isHiring?: boolean;
+  pending?: boolean;
   page?: number;
   limit?: number;
+}
+
+// Public self-registration (no curation flags).
+export interface SelfRegisterInput {
+  fullName: string;
+  email: string;
+  graduationYear: number;
+  branch: string;
+  phone?: string;
+  course?: string;
+  currentCompany?: string;
+  currentDesignation?: string;
+  currentLocation?: string;
+  linkedinUrl?: string;
 }
 
 export interface ListMeta {
@@ -92,3 +109,17 @@ export const updateAlumni = (id: string, input: Partial<AlumniInput> & { isActiv
 
 export const deleteAlumni = (id: string) =>
   api<{ success: boolean }>(`/alumni/${id}`, { method: 'DELETE' });
+
+export const approveAlumni = (id: string) =>
+  api<Alumni>(`/alumni/${id}/approve`, { method: 'POST' });
+
+// ─── Public self-registration portal (no auth) ───
+export const getPublicCollege = (slug: string) =>
+  api<{ name: string; slug: string }>(`/public/alumni/${slug}`, { auth: false });
+
+export const selfRegisterAlumni = (slug: string, input: SelfRegisterInput) =>
+  api<{ success: boolean }>(`/public/alumni/${slug}/register`, {
+    method: 'POST',
+    auth: false,
+    body: JSON.stringify(input),
+  });

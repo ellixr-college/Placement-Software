@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Button, Card, SectionCard, StatTile } from '@ellixr/ui';
 import { isValidEmail, isValidPhone, toTitleCase } from '@ellixr/shared';
+import { useSession } from '../../../lib/session';
+import { CopyButton } from '../../../components/copy-button';
 import {
+  approveAlumni,
   createAlumni,
   getAlumniStats,
   listAlumni,
@@ -14,6 +17,7 @@ import {
 } from '../../../lib/alumni';
 
 export default function AlumniPage() {
+  const { user } = useSession();
   const [items, setItems] = useState<Alumni[]>([]);
   const [stats, setStats] = useState<AlumniStats | null>(null);
   const [filters, setFilters] = useState<AlumniFilters>({});
@@ -66,6 +70,20 @@ export default function AlumniPage() {
 
   const hasFilters = Object.keys(filters).some((k) => k !== 'page' && k !== 'limit');
 
+  async function approve(a: Alumni) {
+    try {
+      await approveAlumni(a.id);
+      load();
+      loadStats();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not approve');
+    }
+  }
+
+  const slug = user?.college?.slug;
+  const registerUrl =
+    slug && typeof window !== 'undefined' ? `${window.location.origin}/alumni-register/${slug}` : null;
+
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
@@ -85,6 +103,17 @@ export default function AlumniPage() {
           <StatTile gradient="violet" value={stats.mentors} label="Mentors" />
           <StatTile gradient="sunset" value={stats.hiring} label="Hiring now" />
         </div>
+      )}
+
+      {/* Self-registration link to share with graduating batches */}
+      {registerUrl && (
+        <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <div>
+            <p className="text-sm font-medium text-strong">Alumni self-registration link</p>
+            <p className="text-xs text-subtle">{registerUrl}</p>
+          </div>
+          <CopyButton value={registerUrl} />
+        </Card>
       )}
 
       {showForm && (
@@ -120,6 +149,9 @@ export default function AlumniPage() {
           </Chip>
           <Chip active={filters.isHiring === true} onClick={() => toggle('isHiring', true)}>
             Hiring
+          </Chip>
+          <Chip active={filters.pending === true} onClick={() => toggle('pending', true)}>
+            Pending approval
           </Chip>
           {hasFilters && (
             <button
@@ -215,7 +247,18 @@ export default function AlumniPage() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap items-center gap-1">
+                      {!a.isApproved && (
+                        <>
+                          <Badge tint="cream">Pending</Badge>
+                          <button
+                            onClick={() => approve(a)}
+                            className="rounded-pill bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700"
+                          >
+                            Approve
+                          </button>
+                        </>
+                      )}
                       {a.isMentor && <Badge tint="lavender">Mentor</Badge>}
                       {a.isHiring && <Badge tint="mint">Hiring</Badge>}
                     </div>

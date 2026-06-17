@@ -2,7 +2,13 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 import { PRISMA } from '../../common/prisma.module';
 import { Prisma } from '@ellixr/database';
 import type { PrismaClient } from '@ellixr/database';
-import { CreateAlumniDto, ListAlumniQuery, UpdateAlumniDto } from './dto';
+import {
+  CreateAlumniDto,
+  ListAlumniQuery,
+  SelfRegisterAlumniDto,
+  UpdateAlumniDto,
+} from './dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /**
  * Alumni directory — a CRM-style record set the placement cell curates per
@@ -12,13 +18,61 @@ import { CreateAlumniDto, ListAlumniQuery, UpdateAlumniDto } from './dto';
  */
 @Injectable()
 export class AlumniService {
-  constructor(@Inject(PRISMA) private readonly prisma: PrismaClient) {}
+  constructor(
+    @Inject(PRISMA) private readonly prisma: PrismaClient,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async create(collegeId: string, dto: CreateAlumniDto) {
     await this.assertEmailFree(collegeId, dto.email);
     return this.prisma.alumni.create({
       data: { collegeId, ...dto, tags: dto.tags ?? [] },
     });
+  }
+
+  // ─────────────── Public self-registration ───────────────
+
+  /** Public lookup so the registration page can show the college name. */
+  async publicCollege(slug: string) {
+    const college = await this.prisma.college.findFirst({
+      where: { slug, isActive: true },
+      select: { name: true, slug: true },
+    });
+    if (!college) throw new NotFoundException('College not found');
+    return college;
+  }
+
+  /** Public, unauthenticated. Creates an unapproved record for officer review. */
+  async selfRegister(slug: string, dto: SelfRegisterAlumniDto) {
+    const college = await this.prisma.college.findFirst({
+      where: { slug, isActive: true },
+      select: { id: true },
+    });
+    if (!college) throw new NotFoundException('College not found');
+    await this.assertEmailFree(college.id, dto.email);
+    await this.prisma.alumni.create({
+      data: {
+        collegeId: college.id,
+        ...dto,
+        tags: [],
+        selfRegistered: true,
+        isApproved: false,
+      },
+    });
+    await this.notifications.notifyOfficers(college.id, {
+      type: 'GENERAL',
+      title: 'New alumni self-registration',
+      body: `${dto.fullName.trim()} (${dto.graduationYear}) is awaiting approval.`,
+      link: '/alumni?pending=1',
+    });
+    // Don't leak the created row to an anonymous caller.
+    return { success: true };
+  }
+
+  /** Officer approves a self-registered alumnus into the directory. */
+  async approve(collegeId: string, id: string) {
+    await this.findOne(collegeId, id);
+    return this.prisma.alumni.update({ where: { id }, data: { isApproved: true } });
   }
 
   async list(collegeId: string, q: ListAlumniQuery) {
@@ -34,6 +88,7 @@ export class AlumniService {
       ...(q.tag ? { tags: { has: q.tag } } : {}),
       ...(q.isMentor !== undefined ? { isMentor: q.isMentor } : {}),
       ...(q.isHiring !== undefined ? { isHiring: q.isHiring } : {}),
+      ...(q.pending ? { isApproved: false } : {}),
       ...(q.search
         ? {
             OR: [
