@@ -13,6 +13,8 @@ import {
   type ResumeCertification,
 } from '@ellixr/shared';
 import { getMyResume, saveMyResume, type MyResume } from '../../../../lib/resume';
+import { ChipInput } from '../../../../components/chip-input';
+import { COMMON_LANGUAGES, COMMON_SKILLS } from '../../../../lib/skill-suggestions';
 
 export default function ResumeEditorPage() {
   const [meta, setMeta] = useState<MyResume | null>(null);
@@ -184,19 +186,21 @@ export default function ResumeEditorPage() {
 
       {/* Skills */}
       <Section title="Skills">
-        <Area
-          value={data.skills.join(', ')}
-          onChange={(v) => patch({ skills: splitList(v, ',') })}
-          placeholder="Comma-separated: React, Node.js, SQL"
+        <ChipInput
+          values={data.skills}
+          onChange={(skills) => patch({ skills })}
+          suggestions={COMMON_SKILLS}
+          placeholder="Type a skill and press Enter (e.g. Marketing)"
         />
       </Section>
 
       {/* Languages */}
       <Section title="Languages">
-        <Area
-          value={data.languages.join(', ')}
-          onChange={(v) => patch({ languages: splitList(v, ',') })}
-          placeholder="Comma-separated: English, Hindi, Tamil"
+        <ChipInput
+          values={data.languages}
+          onChange={(languages) => patch({ languages })}
+          suggestions={COMMON_LANGUAGES}
+          placeholder="Type a language and press Enter (e.g. English)"
         />
       </Section>
 
