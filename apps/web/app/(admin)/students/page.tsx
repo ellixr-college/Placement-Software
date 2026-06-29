@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Badge, Button, Card } from '@ellixr/ui';
@@ -40,7 +40,6 @@ function StudentsList() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
 
@@ -74,15 +73,12 @@ function StudentsList() {
   }
 
   async function toggleActive(s: Student) {
-    setBusyId(s.id);
     setError(null);
     try {
       await setStudentActive(s.id, !s.isActive);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Update failed');
-    } finally {
-      setBusyId(null);
     }
   }
 
@@ -99,6 +95,24 @@ function StudentsList() {
     setSelected((prev) =>
       prev.size === items.length ? new Set() : new Set(items.map((s) => s.id)),
     );
+  }
+
+  async function removeOne(s: Student) {
+    const ok = await confirm({
+      title: `Delete ${s.user.fullName}?`,
+      message: 'This permanently removes the student and their login. This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+      acknowledgement: 'I understand this is permanent.',
+    });
+    if (!ok) return;
+    setError(null);
+    try {
+      await deleteStudents([s.id]);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed');
+    }
   }
 
   async function deleteSelected() {
@@ -276,20 +290,12 @@ function StudentsList() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-3">
-                      <button
-                        onClick={() => toggleActive(s)}
-                        disabled={busyId === s.id}
-                        className="text-xs font-medium text-primary-600 hover:underline disabled:opacity-50"
-                      >
-                        {s.isActive ? 'Disable' : 'Enable'}
-                      </button>
-                      <Link
-                        href={`/students/${s.id}`}
-                        className="text-xs font-medium text-subtle hover:underline"
-                      >
-                        Edit
-                      </Link>
+                    <div className="flex justify-end">
+                      <RowMenu
+                        student={s}
+                        onToggle={() => toggleActive(s)}
+                        onDelete={() => removeOne(s)}
+                      />
                     </div>
                   </td>
                 </tr>
@@ -327,5 +333,102 @@ function StudentsList() {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Per-row "⋮" actions menu. The dropdown is fixed-positioned (computed from the
+ * button) so it isn't clipped by the table card's `overflow-hidden`.
+ */
+function RowMenu({
+  student,
+  onToggle,
+  onDelete,
+}: {
+  student: Student;
+  onToggle: () => void;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e: MouseEvent) {
+      const t = e.target as Node;
+      if (btnRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+      setOpen(false);
+    }
+    function close() {
+      setOpen(false);
+    }
+    document.addEventListener('mousedown', onDoc);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [open]);
+
+  function toggle() {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 4, left: r.right - 160 });
+    setOpen((o) => !o);
+  }
+
+  const item = 'block w-full px-3 py-2 text-left text-xs hover:bg-app';
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={toggle}
+        aria-label="Row actions"
+        aria-haspopup="menu"
+        className="rounded-md p-1.5 text-subtle transition hover:bg-app hover:text-strong"
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+          <circle cx="12" cy="5" r="1.6" />
+          <circle cx="12" cy="12" r="1.6" />
+          <circle cx="12" cy="19" r="1.6" />
+        </svg>
+      </button>
+      {open && (
+        <div
+          ref={menuRef}
+          role="menu"
+          style={{ position: 'fixed', top: pos.top, left: pos.left }}
+          className="z-50 w-40 overflow-hidden rounded-md border border-border bg-white py-1 shadow-card"
+        >
+          <Link href={`/students/${student.id}`} className={`${item} text-body`} role="menuitem">
+            Edit
+          </Link>
+          <button
+            onClick={() => {
+              setOpen(false);
+              onToggle();
+            }}
+            className={`${item} text-body`}
+            role="menuitem"
+          >
+            {student.isActive ? 'Disable login' : 'Enable login'}
+          </button>
+          <button
+            onClick={() => {
+              setOpen(false);
+              onDelete();
+            }}
+            className={`${item} text-danger`}
+            role="menuitem"
+          >
+            Delete
+          </button>
+        </div>
+      )}
+    </>
   );
 }
