@@ -23,6 +23,7 @@ export interface Student {
   course: string;
   branch: string;
   graduationYear: number;
+  currentYear: number | null;
   cgpa: number | null;
   activeBacklogs: number;
   totalBacklogs: number;
@@ -65,11 +66,20 @@ export interface CreateStudentInput extends ExtendedProfileFields {
   course: string;
   branch: string;
   graduationYear: number;
+  currentYear?: number;
   enrollmentNumber?: string;
   phone?: string;
   cgpa?: number;
   activeBacklogs?: number;
   totalBacklogs?: number;
+}
+
+// Batch defaults shared by every row in a CSV import.
+export interface ImportDefaults {
+  course?: string;
+  branch?: string;
+  graduationYear?: number;
+  currentYear?: number;
 }
 
 export interface ImportResult {
@@ -110,8 +120,23 @@ export function createStudent(
   return api(`/students`, { method: 'POST', body: JSON.stringify(input) });
 }
 
-export function importStudents(csv: string): Promise<ImportResult> {
-  return api(`/students/import`, { method: 'POST', body: JSON.stringify({ csv }) });
+export function importStudents(csv: string, defaults: ImportDefaults = {}): Promise<ImportResult> {
+  return api(`/students/import`, {
+    method: 'POST',
+    body: JSON.stringify({ csv, ...defaults }),
+  });
+}
+
+export function updateStudent(id: string, input: Partial<CreateStudentInput>): Promise<Student> {
+  return api<Student>(`/students/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function deleteStudent(id: string): Promise<{ success: boolean }> {
+  return api(`/students/${id}`, { method: 'DELETE' });
+}
+
+export function deleteStudents(ids: string[]): Promise<{ deleted: number }> {
+  return api(`/students/bulk-delete`, { method: 'POST', body: JSON.stringify({ ids }) });
 }
 
 export function setStudentActive(

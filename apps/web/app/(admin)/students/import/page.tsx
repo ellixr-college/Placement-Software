@@ -1,20 +1,34 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
-import { importStudents, type ImportResult } from '../../../../lib/students';
+import { importStudents, type ImportDefaults, type ImportResult } from '../../../../lib/students';
+import { listMyCourses, type CollegeCourse } from '../../../../lib/courses';
 
-const TEMPLATE =
-  'rollNumber,fullName,email,course,branch,graduationYear,cgpa,activeBacklogs,phone\n' +
-  '21CS001,Asha Rao,asha@college.edu,B.Tech,CSE,2027,8.4,0,9876543210';
+// The nominal roll only lists reg no / name / email per row — course, branch,
+// passout year and current year are set once on the form for the whole batch.
+const TEMPLATE = 'regNo,name,email\nP03ZW24M015001,Nishank G,nishankg_001@sfscollege.in';
+
+const CURRENT_YEAR = new Date().getFullYear();
 
 export default function ImportStudentsPage() {
   const [csv, setCsv] = useState('');
+  const [course, setCourse] = useState('');
+  const [branch, setBranch] = useState('');
+  const [graduationYear, setGraduationYear] = useState('');
+  const [currentYear, setCurrentYear] = useState('');
+  const [courses, setCourses] = useState<CollegeCourse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    listMyCourses().then(setCourses).catch(() => {});
+  }, []);
+
+  const branchesFor = courses.find((c) => c.name === course)?.branches ?? [];
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -29,9 +43,23 @@ export default function ImportStudentsPage() {
       setError('Paste CSV content or choose a file first.');
       return;
     }
+    if (!course.trim()) {
+      setError('Pick the course this batch belongs to.');
+      return;
+    }
+    if (!graduationYear.trim()) {
+      setError('Enter the passout (graduation) year for this batch.');
+      return;
+    }
     setLoading(true);
     try {
-      setResult(await importStudents(csv));
+      const defaults: ImportDefaults = {
+        course: course.trim(),
+        branch: branch.trim() || undefined,
+        graduationYear: Number(graduationYear),
+        currentYear: currentYear ? Number(currentYear) : undefined,
+      };
+      setResult(await importStudents(csv, defaults));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Import failed');
     } finally {
@@ -39,19 +67,8 @@ export default function ImportStudentsPage() {
     }
   }
 
-  function downloadCredentials() {
-    if (!result) return;
-    const rows = ['rollNumber,fullName,email,tempPassword'].concat(
-      result.created.map((c) => `${c.rollNumber},${c.fullName},${c.email},${c.tempPassword}`),
-    );
-    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'student-credentials.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+  const inputCls =
+    'h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400';
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -62,13 +79,82 @@ export default function ImportStudentsPage() {
         </Link>
       </div>
 
-      <Card className="space-y-4 p-6">
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-strong">CSV format</p>
+      <Card className="space-y-5 p-6">
+        {/* Batch settings */}
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm font-medium text-strong">Batch details</p>
+            <p className="text-xs text-subtle">
+              Applied to every student in this import (e.g. one nominal roll = MBA, II year, 2026).
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-subtle">Course *</span>
+              {courses.length > 0 ? (
+                <select
+                  className={inputCls}
+                  value={course}
+                  onChange={(e) => {
+                    setCourse(e.target.value);
+                    setBranch('');
+                  }}
+                >
+                  <option value="">Select a course…</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input className={inputCls} value={course} onChange={(e) => setCourse(e.target.value)} placeholder="MBA" />
+              )}
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-subtle">Branch (optional)</span>
+              {branchesFor.length > 0 ? (
+                <select className={inputCls} value={branch} onChange={(e) => setBranch(e.target.value)}>
+                  <option value="">All / none</option>
+                  {branchesFor.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input className={inputCls} value={branch} onChange={(e) => setBranch(e.target.value)} placeholder="e.g. Finance" />
+              )}
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-subtle">Passout year *</span>
+              <input
+                type="number"
+                className={inputCls}
+                value={graduationYear}
+                onChange={(e) => setGraduationYear(e.target.value)}
+                placeholder={String(CURRENT_YEAR + 1)}
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-subtle">Current year of study (optional)</span>
+              <select className={inputCls} value={currentYear} onChange={(e) => setCurrentYear(e.target.value)}>
+                <option value="">Not tracked</option>
+                <option value="1">1st year</option>
+                <option value="2">2nd year</option>
+                <option value="3">3rd year</option>
+                <option value="4">4th year</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        {/* CSV */}
+        <div className="space-y-1 border-t border-border pt-4">
+          <p className="text-sm font-medium text-strong">CSV rows</p>
           <p className="text-xs text-subtle">
-            First row must be the header. Required columns: rollNumber, fullName, email, course,
-            branch, graduationYear. Optional: cgpa, activeBacklogs, totalBacklogs, enrollmentNumber,
-            phone.
+            First row is the header. Required columns: <b>regNo, name, email</b>. Everyone is created
+            with the password <b>password123</b> — students can change it later.
           </p>
           <pre className="overflow-x-auto rounded-md bg-app p-3 text-xs text-strong">{TEMPLATE}</pre>
         </div>
@@ -107,38 +193,11 @@ export default function ImportStudentsPage() {
             )}
           </div>
 
-          {result.created.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-strong">Temporary passwords</p>
-                <Button variant="ghost" size="sm" onClick={downloadCredentials}>
-                  Download CSV
-                </Button>
-              </div>
-              <p className="text-xs text-subtle">
-                Shown once. Students set their own password on first login.
-              </p>
-              <div className="max-h-60 overflow-y-auto rounded-md bg-app p-3">
-                <table className="w-full text-left text-xs">
-                  <thead className="text-subtle">
-                    <tr>
-                      <th className="py-1 pr-4 font-medium">Roll No.</th>
-                      <th className="py-1 pr-4 font-medium">Email</th>
-                      <th className="py-1 font-medium">Temp password</th>
-                    </tr>
-                  </thead>
-                  <tbody className="font-mono text-strong">
-                    {result.created.map((c) => (
-                      <tr key={c.rollNumber}>
-                        <td className="py-1 pr-4">{c.rollNumber}</td>
-                        <td className="py-1 pr-4">{c.email}</td>
-                        <td className="py-1">{c.tempPassword}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          {result.createdCount > 0 && (
+            <p className="rounded-md bg-app px-3 py-2 text-sm text-strong">
+              All {result.createdCount} students can sign in with their email and the password{' '}
+              <span className="font-mono font-semibold">password123</span>.
+            </p>
           )}
 
           {result.errors.length > 0 && (

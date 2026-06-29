@@ -15,6 +15,7 @@ const EMPTY = {
   course: '',
   branch: '',
   graduationYear: '',
+  currentYear: '',
   enrollmentNumber: '',
   phone: '',
   cgpa: '',
@@ -60,6 +61,7 @@ export default function NewStudentPage() {
         course: form.course.trim(),
         branch: form.branch.trim(),
         graduationYear: Number(form.graduationYear),
+        currentYear: form.currentYear === '' ? undefined : Number(form.currentYear),
         enrollmentNumber: form.enrollmentNumber.trim() || undefined,
         phone: form.phone.trim() || undefined,
         cgpa: form.cgpa === '' ? undefined : Number(form.cgpa),
@@ -91,8 +93,8 @@ export default function NewStudentPage() {
         <h1 className="text-2xl font-semibold text-strong">Student registered</h1>
         <Card className="space-y-4 p-6">
           <p className="text-sm text-strong">
-            <span className="font-semibold">{created.fullName}</span> can now sign in. Share these
-            credentials — they&apos;ll be asked to set a new password on first login.
+            <span className="font-semibold">{created.fullName}</span> can now sign in with the email
+            and password below. They can change the password later from their profile.
           </p>
           <dl className="space-y-2 rounded-md bg-app p-4 text-sm">
             <div className="flex items-center justify-between gap-4">
@@ -103,7 +105,7 @@ export default function NewStudentPage() {
               </dd>
             </div>
             <div className="flex items-center justify-between gap-4">
-              <dt className="text-subtle">Temporary password</dt>
+              <dt className="text-subtle">Password</dt>
               <dd className="flex items-center gap-2 font-mono text-strong">
                 {created.tempPassword}
                 <CopyButton value={created.tempPassword} className="px-2 py-1" />
@@ -111,7 +113,7 @@ export default function NewStudentPage() {
             </div>
           </dl>
           <p className="text-xs text-subtle">
-            This password is shown once. Email delivery is wired up in a later phase.
+            Every student is created with the password <b>password123</b> for now.
           </p>
           <div className="flex gap-2">
             <Button onClick={() => setCreated(null)}>Add another</Button>
@@ -154,12 +156,19 @@ export default function NewStudentPage() {
             <Field label="Branch" value={form.branch} onChange={set('branch')} placeholder={form.course ? 'No branches for this course' : 'CSE'} />
           )}
           <Field
-            label="Graduation year"
+            label="Passout year"
             type="number"
             required
             value={form.graduationYear}
             onChange={set('graduationYear')}
             placeholder="2027"
+          />
+          <SelectField
+            label="Current year of study"
+            value={form.currentYear}
+            onChange={set('currentYear')}
+            options={['1', '2', '3', '4']}
+            placeholder="Not tracked"
           />
           <Field label="Phone" value={form.phone} onChange={set('phone')} />
           <Field label="CGPA" type="number" value={form.cgpa} onChange={set('cgpa')} placeholder="8.2" />

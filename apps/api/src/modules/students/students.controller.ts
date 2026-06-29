@@ -1,10 +1,11 @@
-import { BadRequestException, Body, Controller, Get, Ip, Param, Patch, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Ip, Param, Patch, Post, Query } from '@nestjs/common';
 import { UserRole } from '@ellixr/shared';
 import type { JwtPayload } from '@ellixr/shared';
 import { CurrentUser, Roles } from '../../common/decorators';
 import { AuditService } from '../../common/audit.module';
 import { StudentsService } from './students.service';
 import {
+  BulkDeleteStudentsDto,
   CreateStudentDto,
   ImportStudentsDto,
   ListStudentsQuery,
@@ -50,7 +51,7 @@ export class StudentsController {
   @Post('import')
   @Roles(UserRole.PLACEMENT_OFFICER, UserRole.COLLEGE_ADMIN)
   async importCsv(@CurrentUser() user: JwtPayload, @Body() dto: ImportStudentsDto) {
-    return { data: await this.students.importCsv(this.collegeId(user), dto.csv) };
+    return { data: await this.students.importCsv(this.collegeId(user), dto) };
   }
 
   @Patch(':id')
@@ -61,6 +62,36 @@ export class StudentsController {
     @Body() dto: UpdateStudentDto,
   ) {
     return { data: await this.students.update(this.collegeId(user), id, dto) };
+  }
+
+  @Post('bulk-delete')
+  @Roles(UserRole.PLACEMENT_OFFICER, UserRole.COLLEGE_ADMIN)
+  async removeMany(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: BulkDeleteStudentsDto,
+    @Ip() ip: string,
+  ) {
+    const result = await this.students.removeMany(this.collegeId(user), dto.ids);
+    await this.audit.record(user, {
+      action: 'STUDENT_BULK_DELETE',
+      targetType: 'student',
+      metadata: { count: result.deleted },
+      ip,
+    });
+    return { data: result };
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.PLACEMENT_OFFICER, UserRole.COLLEGE_ADMIN)
+  async remove(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Ip() ip: string) {
+    const result = await this.students.remove(this.collegeId(user), id);
+    await this.audit.record(user, {
+      action: 'STUDENT_DELETE',
+      targetType: 'student',
+      targetId: id,
+      ip,
+    });
+    return { data: result };
   }
 
   @Patch(':id/status')

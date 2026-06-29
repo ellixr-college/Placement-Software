@@ -198,6 +198,8 @@ model Student {
   course             String
   branch             String
   graduationYear     Int                @map("graduation_year")
+  // Current year of study (1, 2, …) — e.g. MBA II YEAR = 2. Null = not tracked.
+  currentYear        Int?               @map("current_year")
   cgpa               Decimal?           @db.Decimal(4, 2)
   activeBacklogs     Int                @default(0) @map("active_backlogs")
   totalBacklogs      Int                @default(0) @map("total_backlogs")

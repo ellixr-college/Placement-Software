@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayNotEmpty,
   IsArray,
   IsBoolean,
   IsDateString,
@@ -54,6 +55,8 @@ export class CreateStudentDto {
   @Max(CURRENT_YEAR + 10)
   graduationYear!: number;
 
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10) currentYear?: number;
+
   @IsOptional()
   @IsString()
   enrollmentNumber?: string;
@@ -100,6 +103,9 @@ export class UpdateStudentDto {
 
   @IsOptional() @Type(() => Number) @IsInt() @Min(1990) @Max(CURRENT_YEAR + 10)
   graduationYear?: number;
+
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10) currentYear?: number;
+  @IsOptional() @IsString() @MinLength(1) rollNumber?: string;
 
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(10) cgpa?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) activeBacklogs?: number;
@@ -149,11 +155,22 @@ export class ImportStudentsDto {
   @IsString()
   @MinLength(1)
   csv!: string;
+
+  // Batch defaults applied to every imported row (the nominal roll lists only
+  // reg no / name / email per row; course/branch/passout/year are shared).
+  @IsOptional() @IsString() course?: string;
+  @IsOptional() @IsString() branch?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1990) @Max(CURRENT_YEAR + 10) graduationYear?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10) currentYear?: number;
 }
 
 export class SetStudentStatusDto {
   @IsBoolean()
   isActive!: boolean;
+}
+
+export class BulkDeleteStudentsDto {
+  @IsArray() @ArrayNotEmpty() @IsString({ each: true }) ids!: string[];
 }
 
 export class ListStudentsQuery {

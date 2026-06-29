@@ -6,18 +6,24 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import bcrypt from 'bcrypt';
-import { randomBytes } from 'crypto';
+import { randomUUID } from 'crypto';
 import { PRISMA } from '../../common/prisma.module';
 import { Prisma } from '@ellixr/database';
 import type { PrismaClient } from '@ellixr/database';
 import { NotificationsService } from '../notifications/notifications.service';
 import {
   CreateStudentDto,
+  ImportStudentsDto,
   ListStudentsQuery,
   UpdateOwnProfileDto,
   UpdateStudentDto,
   VerifyStudentDto,
 } from './dto';
+
+// Every student is created with this shared default password so officers can
+// hand it out in bulk (students change it later from their profile). Demo/V1
+// convenience — a per-college policy can replace this when email is wired.
+const DEFAULT_STUDENT_PASSWORD = 'password123';
 
 /**
  * Placement Officer student registry. All methods are tenant-scoped:
@@ -37,7 +43,7 @@ export class StudentsService {
   async create(collegeId: string, dto: CreateStudentDto) {
     await this.assertUnique(collegeId, dto.email, dto.rollNumber);
 
-    const tempPassword = randomBytes(12).toString('base64url');
+    const tempPassword = DEFAULT_STUDENT_PASSWORD;
     const passwordHash = await bcrypt.hash(tempPassword, 12);
 
     const student = await this.prisma.$transaction(async (tx) => {
@@ -49,7 +55,7 @@ export class StudentsService {
           role: 'STUDENT',
           phone: dto.phone,
           passwordHash,
-          mustChangePassword: true,
+          mustChangePassword: false,
         },
       });
       return tx.student.create({
@@ -61,6 +67,7 @@ export class StudentsService {
           course: dto.course,
           branch: dto.branch,
           graduationYear: dto.graduationYear,
+          currentYear: dto.currentYear ?? null,
           cgpa: dto.cgpa != null ? new Prisma.Decimal(dto.cgpa) : null,
           activeBacklogs: dto.activeBacklogs ?? 0,
           totalBacklogs: dto.totalBacklogs ?? 0,
@@ -72,42 +79,100 @@ export class StudentsService {
       });
     });
 
-    // Phase 4: email a welcome / set-password link instead of returning the temp password.
+    // Every student shares DEFAULT_STUDENT_PASSWORD; surfaced to the officer once.
     return { student: this.publicStudent(student), tempPassword };
   }
 
   /**
-   * Bulk-register students from CSV text. Each row is created independently;
-   * the result reports created students (with temp passwords) and per-row errors
-   * so a partial import surfaces exactly which rows failed and why.
+   * Bulk-register students from CSV text. To stay well under the platform's
+   * request timeout (the old per-row create hashed bcrypt 55× and made dozens of
+   * cloud round trips → 502s), this:
+   *   1. validates every row up front (collecting per-row errors),
+   *   2. pre-loads existing emails/roll numbers in two queries,
+   *   3. hashes the shared default password ONCE, and
+   *   4. inserts all users + students with two `createMany` calls.
    */
-  async importCsv(collegeId: string, csv: string) {
-    const rows = parseCsv(csv);
+  async importCsv(collegeId: string, dto: ImportStudentsDto) {
+    const rows = parseCsv(dto.csv);
     if (rows.length === 0) throw new BadRequestException('CSV has no data rows');
 
-    const created: Array<{
-      rollNumber: string;
-      fullName: string;
-      email: string;
-      tempPassword: string;
-    }> = [];
     const errors: Array<{ row: number; message: string }> = [];
-
+    const parsed: Array<{ rowNum: number; dto: CreateStudentDto }> = [];
     for (let i = 0; i < rows.length; i++) {
-      const raw = rows[i];
-      const rowNum = i + 2; // header is row 1
       try {
-        const dto = this.rowToDto(raw);
-        const { student, tempPassword } = await this.create(collegeId, dto);
-        created.push({
-          rollNumber: student.rollNumber,
-          fullName: student.user.fullName,
-          email: student.user.email,
-          tempPassword,
-        });
+        parsed.push({ rowNum: i + 2, dto: this.rowToDto(rows[i], dto) });
       } catch (err) {
-        errors.push({ row: rowNum, message: errorMessage(err) });
+        errors.push({ row: i + 2, message: errorMessage(err) });
       }
+    }
+
+    // Pre-load clashes in two queries instead of two per row.
+    const emails = parsed.map((p) => p.dto.email);
+    const rolls = parsed.map((p) => p.dto.rollNumber);
+    const [emailRows, rollRows] = await Promise.all([
+      this.prisma.user.findMany({ where: { email: { in: emails } }, select: { email: true } }),
+      this.prisma.student.findMany({
+        where: { collegeId, rollNumber: { in: rolls } },
+        select: { rollNumber: true },
+      }),
+    ]);
+    const takenEmails = new Set(emailRows.map((r) => r.email.toLowerCase()));
+    const takenRolls = new Set(rollRows.map((r) => r.rollNumber));
+    const seenEmails = new Set<string>();
+    const seenRolls = new Set<string>();
+
+    const passwordHash = await bcrypt.hash(DEFAULT_STUDENT_PASSWORD, 12);
+    const userData: Prisma.UserCreateManyInput[] = [];
+    const studentData: Prisma.StudentCreateManyInput[] = [];
+    const created: Array<{ rollNumber: string; fullName: string; email: string; tempPassword: string }> = [];
+
+    for (const { rowNum, dto: d } of parsed) {
+      const emailKey = d.email.toLowerCase();
+      if (takenEmails.has(emailKey) || seenEmails.has(emailKey)) {
+        errors.push({ row: rowNum, message: `Email already in use: ${d.email}` });
+        continue;
+      }
+      if (takenRolls.has(d.rollNumber) || seenRolls.has(d.rollNumber)) {
+        errors.push({ row: rowNum, message: `Roll number already exists: ${d.rollNumber}` });
+        continue;
+      }
+      seenEmails.add(emailKey);
+      seenRolls.add(d.rollNumber);
+
+      const userId = randomUUID();
+      userData.push({
+        id: userId,
+        collegeId,
+        email: d.email,
+        fullName: d.fullName,
+        role: 'STUDENT',
+        phone: d.phone,
+        passwordHash,
+        mustChangePassword: false,
+      });
+      studentData.push({
+        collegeId,
+        userId,
+        rollNumber: d.rollNumber,
+        enrollmentNumber: d.enrollmentNumber,
+        course: d.course,
+        branch: d.branch,
+        graduationYear: d.graduationYear,
+        currentYear: d.currentYear ?? null,
+        cgpa: d.cgpa != null ? new Prisma.Decimal(d.cgpa) : null,
+        activeBacklogs: d.activeBacklogs ?? 0,
+        totalBacklogs: d.totalBacklogs ?? 0,
+        gender: d.gender,
+        personalEmail: d.personalEmail,
+      });
+      created.push({ rollNumber: d.rollNumber, fullName: d.fullName, email: d.email, tempPassword: DEFAULT_STUDENT_PASSWORD });
+    }
+
+    if (userData.length > 0) {
+      await this.prisma.$transaction([
+        this.prisma.user.createMany({ data: userData }),
+        this.prisma.student.createMany({ data: studentData }),
+      ]);
     }
 
     return { createdCount: created.length, errorCount: errors.length, created, errors };
@@ -356,12 +421,19 @@ export class StudentsService {
     if (rollTaken) throw new BadRequestException(`Roll number already exists: ${rollNumber}`);
   }
 
-  private rowToDto(row: Record<string, string>): CreateStudentDto {
+  // Maps one CSV row to a CreateStudentDto. The per-row CSV only carries the
+  // identity columns (reg no / name / email); course, branch, passout year and
+  // current year come from the batch defaults set on the import form. A row may
+  // still override any of those by including the column.
+  private rowToDto(row: Record<string, string>, defaults: ImportStudentsDto): CreateStudentDto {
     const get = (k: string) => (row[k] ?? '').trim();
-    const required = (k: string, label: string): string => {
-      const v = get(k);
-      if (v === '') throw new BadRequestException(`${label} is required`);
-      return v;
+    // Accept friendly aliases: "regno"/"registrationnumber" → rollNumber, "name" → fullName.
+    const first = (...keys: string[]) => {
+      for (const k of keys) {
+        const v = get(k);
+        if (v !== '') return v;
+      }
+      return '';
     };
     const num = (k: string, label: string): number | undefined => {
       const v = get(k);
@@ -371,26 +443,58 @@ export class StudentsService {
       return n;
     };
 
-    const email = required('email', 'email');
+    const email = first('email', 'mailid', 'mail');
+    if (email === '') throw new BadRequestException('email is required');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new BadRequestException(`Invalid email: ${email}`);
     }
-    const gradYear = num('graduationyear', 'graduationYear');
-    if (gradYear == null) throw new BadRequestException('graduationYear is required');
+    const fullName = first('fullname', 'name');
+    if (fullName === '') throw new BadRequestException('name is required');
+    const rollNumber = first('rollnumber', 'regno', 'registrationnumber', 'regno.');
+    if (rollNumber === '') throw new BadRequestException('reg no is required');
+
+    const course = first('course') || (defaults.course ?? '').trim();
+    if (course === '') throw new BadRequestException('course is required (set it on the form)');
+    const branch = first('branch') || (defaults.branch ?? '').trim() || course;
+    const gradYear = num('graduationyear', 'graduationYear') ?? defaults.graduationYear;
+    if (gradYear == null) throw new BadRequestException('passout year is required (set it on the form)');
+    const currentYear = num('currentyear', 'currentYear') ?? defaults.currentYear;
 
     return {
-      fullName: required('fullname', 'fullName'),
+      fullName,
       email,
-      rollNumber: required('rollnumber', 'rollNumber'),
-      course: required('course', 'course'),
-      branch: required('branch', 'branch'),
+      rollNumber,
+      course,
+      branch,
       graduationYear: gradYear,
+      currentYear,
       enrollmentNumber: get('enrollmentnumber') || undefined,
       phone: get('phone') || undefined,
       cgpa: num('cgpa', 'cgpa'),
       activeBacklogs: num('activebacklogs', 'activeBacklogs'),
       totalBacklogs: num('totalbacklogs', 'totalBacklogs'),
     };
+  }
+
+  /** Permanently delete a student and the linked login account (cascades). */
+  async remove(collegeId: string, id: string) {
+    const student = await this.prisma.student.findFirst({ where: { id, collegeId } });
+    if (!student) throw new NotFoundException('Student not found');
+    // Deleting the User cascades to Student, Resume, applications, etc.
+    await this.prisma.user.delete({ where: { id: student.userId } });
+    return { success: true };
+  }
+
+  /** Bulk delete — only students in the caller's college are touched. */
+  async removeMany(collegeId: string, ids: string[]) {
+    const students = await this.prisma.student.findMany({
+      where: { id: { in: ids }, collegeId },
+      select: { userId: true },
+    });
+    const userIds = students.map((s) => s.userId);
+    if (userIds.length === 0) return { deleted: 0 };
+    await this.prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    return { deleted: userIds.length };
   }
 
   // Builds the prisma write data for the extended profile fields that need
@@ -422,6 +526,7 @@ export class StudentsService {
     course: string;
     branch: string;
     graduationYear: number;
+    currentYear: number | null;
     cgpa: Prisma.Decimal | null;
     activeBacklogs: number;
     totalBacklogs: number;
@@ -454,6 +559,7 @@ export class StudentsService {
       course: s.course,
       branch: s.branch,
       graduationYear: s.graduationYear,
+      currentYear: s.currentYear,
       cgpa: s.cgpa != null ? Number(s.cgpa) : null,
       activeBacklogs: s.activeBacklogs,
       totalBacklogs: s.totalBacklogs,

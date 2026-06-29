@@ -2,23 +2,30 @@
 
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { EmployabilityCard } from '../../../../components/employability-card';
+import { useConfirm } from '../../../../components/confirm-provider';
 import {
+  deleteStudent,
   getStudent,
   setStudentActive,
+  updateStudent,
   verifyStudent,
   type Student,
 } from '../../../../lib/students';
 
 export default function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
+  const confirm = useConfirm();
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [showReject, setShowReject] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,6 +50,27 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Update failed');
     } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove() {
+    if (!student) return;
+    const ok = await confirm({
+      title: `Delete ${student.user.fullName}?`,
+      message: 'This permanently removes the student and their login. This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+      acknowledgement: 'I understand this is permanent.',
+    });
+    if (!ok) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await deleteStudent(student.id);
+      router.push('/students');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed');
       setBusy(false);
     }
   }
@@ -72,9 +100,14 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
         <Link href="/students" className="text-sm text-primary-600 hover:underline">
           ← Students
         </Link>
-        <Button variant={student.isActive ? 'outline' : 'primary'} onClick={toggleActive} disabled={busy}>
-          {busy ? 'Saving…' : student.isActive ? 'Disable login' : 'Enable login'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant={student.isActive ? 'outline' : 'primary'} onClick={toggleActive} disabled={busy}>
+            {busy ? 'Saving…' : student.isActive ? 'Disable login' : 'Enable login'}
+          </Button>
+          <Button variant="danger" onClick={remove} disabled={busy}>
+            Delete
+          </Button>
+        </div>
       </div>
 
       <header className="flex items-start justify-between">
@@ -160,38 +193,53 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
         )}
       </Card>
 
-      <Card className="grid grid-cols-2 gap-4 p-6 sm:grid-cols-3">
-        <Detail label="Course" value={student.course} />
-        <Detail label="Branch" value={student.branch} />
-        <Detail label="Graduation year" value={String(student.graduationYear)} />
-        <Detail label="CGPA" value={student.cgpa != null ? String(student.cgpa) : '—'} />
-        <Detail label="Active backlogs" value={String(student.activeBacklogs)} />
-        <Detail label="Total backlogs" value={String(student.totalBacklogs)} />
-        <Detail label="Enrollment no." value={student.enrollmentNumber ?? '—'} />
-        <Detail label="Phone" value={student.user.phone ?? '—'} />
-        <Detail label="Personal email" value={student.personalEmail ?? '—'} />
-        <Detail
-          label="Date of birth"
-          value={student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : '—'}
-        />
-        <Detail label="Gender" value={student.gender ?? '—'} />
-        <Detail
-          label="10th %"
-          value={student.tenthPercentage != null ? String(student.tenthPercentage) : '—'}
-        />
-        <Detail
-          label="12th %"
-          value={student.twelfthPercentage != null ? String(student.twelfthPercentage) : '—'}
-        />
-        <Detail
-          label="Last login"
-          value={
-            student.user.lastLoginAt
-              ? new Date(student.user.lastLoginAt).toLocaleString()
-              : 'Never'
-          }
-        />
-        <Detail label="Profile complete" value={`${student.profileCompletion}%`} />
+      <Card className="space-y-4 p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-strong">Details</h2>
+          {!editing && (
+            <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+              Edit
+            </Button>
+          )}
+        </div>
+
+        {editing ? (
+          <EditStudentForm
+            student={student}
+            onCancel={() => setEditing(false)}
+            onSaved={(s) => {
+              setStudent(s);
+              setEditing(false);
+            }}
+          />
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <Detail label="Name" value={student.user.fullName} />
+            <Detail label="Reg no." value={student.rollNumber} />
+            <Detail label="Course" value={student.course || '—'} />
+            <Detail label="Branch" value={student.branch || '—'} />
+            <Detail label="Passout year" value={String(student.graduationYear)} />
+            <Detail label="Current year" value={student.currentYear ? `Year ${student.currentYear}` : '—'} />
+            <Detail label="CGPA" value={student.cgpa != null ? String(student.cgpa) : '—'} />
+            <Detail label="Active backlogs" value={String(student.activeBacklogs)} />
+            <Detail label="Total backlogs" value={String(student.totalBacklogs)} />
+            <Detail label="Enrollment no." value={student.enrollmentNumber ?? '—'} />
+            <Detail label="Phone" value={student.user.phone ?? '—'} />
+            <Detail label="Personal email" value={student.personalEmail ?? '—'} />
+            <Detail
+              label="Date of birth"
+              value={student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : '—'}
+            />
+            <Detail label="Gender" value={student.gender ?? '—'} />
+            <Detail label="10th %" value={student.tenthPercentage != null ? String(student.tenthPercentage) : '—'} />
+            <Detail label="12th %" value={student.twelfthPercentage != null ? String(student.twelfthPercentage) : '—'} />
+            <Detail
+              label="Last login"
+              value={student.user.lastLoginAt ? new Date(student.user.lastLoginAt).toLocaleString() : 'Never'}
+            />
+            <Detail label="Profile complete" value={`${student.profileCompletion}%`} />
+          </div>
+        )}
       </Card>
 
       <EmployabilityCard studentId={student.id} />
@@ -215,6 +263,122 @@ function VerificationBadge({ status }: { status: string }) {
     >
       {status}
     </span>
+  );
+}
+
+const editInputCls =
+  'h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400';
+
+function EditStudentForm({
+  student,
+  onCancel,
+  onSaved,
+}: {
+  student: Student;
+  onCancel: () => void;
+  onSaved: (s: Student) => void;
+}) {
+  const [form, setForm] = useState({
+    fullName: student.user.fullName,
+    phone: student.user.phone ?? '',
+    rollNumber: student.rollNumber,
+    course: student.course,
+    branch: student.branch,
+    graduationYear: String(student.graduationYear),
+    currentYear: student.currentYear != null ? String(student.currentYear) : '',
+    cgpa: student.cgpa != null ? String(student.cgpa) : '',
+    enrollmentNumber: student.enrollmentNumber ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      const updated = await updateStudent(student.id, {
+        fullName: form.fullName.trim(),
+        phone: form.phone.trim() || undefined,
+        rollNumber: form.rollNumber.trim(),
+        course: form.course.trim(),
+        branch: form.branch.trim(),
+        graduationYear: Number(form.graduationYear),
+        currentYear: form.currentYear === '' ? undefined : Number(form.currentYear),
+        cgpa: form.cgpa === '' ? undefined : Number(form.cgpa),
+        enrollmentNumber: form.enrollmentNumber.trim() || undefined,
+      });
+      onSaved(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <EditField label="Name" value={form.fullName} onChange={set('fullName')} />
+        <EditField label="Reg no." value={form.rollNumber} onChange={set('rollNumber')} />
+        <EditField label="Course" value={form.course} onChange={set('course')} />
+        <EditField label="Branch" value={form.branch} onChange={set('branch')} />
+        <EditField label="Passout year" type="number" value={form.graduationYear} onChange={set('graduationYear')} />
+        <label className="space-y-1">
+          <span className="text-xs font-medium text-subtle">Current year of study</span>
+          <select
+            className={editInputCls}
+            value={form.currentYear}
+            onChange={(e) => setForm((f) => ({ ...f, currentYear: e.target.value }))}
+          >
+            <option value="">Not tracked</option>
+            <option value="1">1st year</option>
+            <option value="2">2nd year</option>
+            <option value="3">3rd year</option>
+            <option value="4">4th year</option>
+          </select>
+        </label>
+        <EditField label="Phone" value={form.phone} onChange={set('phone')} />
+        <EditField label="CGPA" type="number" value={form.cgpa} onChange={set('cgpa')} />
+        <EditField label="Enrollment no." value={form.enrollmentNumber} onChange={set('enrollmentNumber')} />
+      </div>
+      {error && <p className="text-sm text-danger">{error}</p>}
+      <div className="flex gap-2">
+        <Button onClick={save} loading={saving}>
+          {saving ? 'Saving…' : 'Save changes'}
+        </Button>
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function EditField({
+  label,
+  value,
+  onChange,
+  type = 'text',
+}: {
+  label: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  type?: string;
+}) {
+  return (
+    <label className="space-y-1">
+      <span className="text-xs font-medium text-subtle">{label}</span>
+      <input
+        type={type}
+        step={type === 'number' ? 'any' : undefined}
+        value={value}
+        onChange={onChange}
+        className={editInputCls}
+      />
+    </label>
   );
 }
 
