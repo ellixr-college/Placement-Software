@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button, Card } from '@ellixr/ui';
 import { importStudents, type ImportDefaults, type ImportResult } from '../../../../lib/students';
 import { listMyCourses, type CollegeCourse } from '../../../../lib/courses';
@@ -13,6 +14,7 @@ const TEMPLATE = 'regNo,name,email\nP03ZW24M015001,Nishank G,nishankg_001@sfscol
 const CURRENT_YEAR = new Date().getFullYear();
 
 export default function ImportStudentsPage() {
+  const router = useRouter();
   const [csv, setCsv] = useState('');
   const [course, setCourse] = useState('');
   const [branch, setBranch] = useState('');
@@ -59,7 +61,14 @@ export default function ImportStudentsPage() {
         graduationYear: Number(graduationYear),
         currentYear: currentYear ? Number(currentYear) : undefined,
       };
-      setResult(await importStudents(csv, defaults));
+      const res = await importStudents(csv, defaults);
+      // Clean import → go to the list and show a confirmation there. If any rows
+      // failed, stay here so the officer can see and fix the errors.
+      if (res.errorCount === 0 && res.createdCount > 0) {
+        router.push(`/students?imported=${res.createdCount}`);
+        return;
+      }
+      setResult(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Import failed');
     } finally {

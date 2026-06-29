@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { useConfirm } from '../../../components/confirm-provider';
 import {
@@ -20,7 +21,19 @@ const STATUS_TINT: Record<string, 'lavender' | 'mint' | 'cream' | 'primary'> = {
 };
 
 export default function StudentsPage() {
+  return (
+    <Suspense fallback={<p className="text-subtle">Loading…</p>}>
+      <StudentsList />
+    </Suspense>
+  );
+}
+
+function StudentsList() {
   const confirm = useConfirm();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const importedCount = searchParams.get('imported');
+  const [showImported, setShowImported] = useState(false);
   const [items, setItems] = useState<Student[]>([]);
   const [meta, setMeta] = useState<ListMeta | undefined>();
   const [search, setSearch] = useState('');
@@ -49,6 +62,16 @@ export default function StudentsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Show the "N students added" modal once after an import redirect.
+  useEffect(() => {
+    if (importedCount) setShowImported(true);
+  }, [importedCount]);
+
+  function dismissImported() {
+    setShowImported(false);
+    router.replace('/students');
+  }
 
   async function toggleActive(s: Student) {
     setBusyId(s.id);
@@ -104,6 +127,32 @@ export default function StudentsPage() {
 
   return (
     <div className="space-y-6">
+      {showImported && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <Card className="w-full max-w-sm space-y-4 p-6 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success/15 text-2xl text-success">
+              ✓
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-strong">
+                {importedCount} student{importedCount === '1' ? '' : 's'} added
+              </h2>
+              <p className="mt-1 text-sm text-subtle">
+                They can sign in with their email and the password{' '}
+                <span className="font-mono">password123</span>.
+              </p>
+            </div>
+            <Button className="w-full" onClick={dismissImported}>
+              Done
+            </Button>
+          </Card>
+        </div>
+      )}
+
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-strong">Students</h1>
@@ -167,7 +216,6 @@ export default function StudentsPage() {
               </th>
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Reg No.</th>
-              <th className="px-4 py-3 font-medium">Course</th>
               <th className="px-4 py-3 font-medium">Branch</th>
               <th className="px-4 py-3 font-medium">Passout</th>
               <th className="px-4 py-3 font-medium">Status</th>
@@ -178,13 +226,13 @@ export default function StudentsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-subtle">
+                <td colSpan={8} className="px-4 py-8 text-center text-subtle">
                   Loading…
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-subtle">
+                <td colSpan={8} className="px-4 py-8 text-center text-subtle">
                   No students yet. Add one or import a CSV to activate student logins.
                 </td>
               </tr>
@@ -212,7 +260,6 @@ export default function StudentsPage() {
                     <p className="text-xs text-subtle">{s.user.email}</p>
                   </td>
                   <td className="px-4 py-3 text-strong">{s.rollNumber}</td>
-                  <td className="px-4 py-3">{s.course || '—'}</td>
                   <td className="px-4 py-3">{s.branch || '—'}</td>
                   <td className="px-4 py-3">
                     {s.graduationYear}
