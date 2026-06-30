@@ -16,7 +16,9 @@ export class AuthController {
   ) {}
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  // Per-email brute-force cap (the throttler keys login by email, not IP, so a
+  // whole college on one NAT IP isn't limited to a handful of logins per minute).
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('login')
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const { accessToken, refreshToken, user } = await this.auth.login(dto.email, dto.password);

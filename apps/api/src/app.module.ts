@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from './common/prisma.module';
 import { AuditModule } from './common/audit.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { IdentityThrottlerGuard } from './common/guards/identity-throttler.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -58,9 +59,10 @@ import { HealthController } from './modules/health/health.controller';
   ],
   controllers: [HealthController],
   providers: [
-    // Order matters: throttler → auth (sets req.user) → roles.
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Order matters: auth first (sets req.user) so the throttler can rate-limit
+    // per identity (per-user / per-email) instead of per shared campus IP; roles last.
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: IdentityThrottlerGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
