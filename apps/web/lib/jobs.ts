@@ -50,6 +50,8 @@ export interface Job {
   // student feed annotations
   applied?: boolean;
   myStage?: string | null;
+  eligible?: boolean;
+  eligibilityReasons?: string[];
 }
 
 export interface CreateJobInput {

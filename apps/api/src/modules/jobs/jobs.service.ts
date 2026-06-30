@@ -358,19 +358,25 @@ export class JobsService {
     });
 
     const me = toEligibilityStudent(student);
-    const eligibleJobs = jobs.filter((j) => checkEligibility(me, toEligibilityJob(j)).eligible);
 
     const myApps = await this.prisma.application.findMany({
-      where: { studentId: student.id, jobId: { in: eligibleJobs.map((j) => j.id) } },
+      where: { studentId: student.id, jobId: { in: jobs.map((j) => j.id) } },
       select: { jobId: true, stage: true },
     });
     const appliedMap = new Map(myApps.map((a) => [a.jobId, a.stage]));
 
-    return eligibleJobs.map((j) => ({
-      ...this.publicJob(j),
-      applied: appliedMap.has(j.id),
-      myStage: appliedMap.get(j.id) ?? null,
-    }));
+    // Show every published job; annotate eligibility. Apply is still gated
+    // server-side (see apply()) — students can browse but only apply if eligible.
+    return jobs.map((j) => {
+      const { eligible, reasons } = checkEligibility(me, toEligibilityJob(j));
+      return {
+        ...this.publicJob(j),
+        eligible,
+        eligibilityReasons: reasons,
+        applied: appliedMap.has(j.id),
+        myStage: appliedMap.get(j.id) ?? null,
+      };
+    });
   }
 
   async studentJobDetail(userId: string, jobId: string) {
@@ -381,14 +387,22 @@ export class JobsService {
     });
     if (!job || job.status !== 'PUBLISHED') throw new NotFoundException('Job not found');
 
-    const { eligible } = checkEligibility(toEligibilityStudent(student), toEligibilityJob(job));
-    if (!eligible) throw new NotFoundException('Job not found'); // don't leak ineligible jobs
+    const { eligible, reasons } = checkEligibility(
+      toEligibilityStudent(student),
+      toEligibilityJob(job),
+    );
 
     const app = await this.prisma.application.findUnique({
       where: { jobId_studentId: { jobId, studentId: student.id } },
       select: { stage: true },
     });
-    return { ...this.publicJob(job), applied: !!app, myStage: app?.stage ?? null };
+    return {
+      ...this.publicJob(job),
+      eligible,
+      eligibilityReasons: reasons,
+      applied: !!app,
+      myStage: app?.stage ?? null,
+    };
   }
 
   async apply(userId: string, jobId: string, formResponses?: Record<string, string>) {

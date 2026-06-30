@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card } from '@ellixr/ui';
-import { applyToJob, getJobFeed, type ApplicationField, type Job } from '../../../../lib/jobs';
+import { applyToJob, formatCtc, getJobFeed, type ApplicationField, type Job } from '../../../../lib/jobs';
 
 /**
  * Student job feed (mobile). Shows only PUBLISHED jobs the authenticated student
@@ -55,8 +55,8 @@ export default function StudentJobsPage() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-xl font-semibold text-strong">Jobs for you</h1>
-        <p className="text-sm text-subtle">{jobs.length} opening(s) you're eligible for</p>
+        <h1 className="text-xl font-semibold text-strong">Jobs</h1>
+        <p className="text-sm text-subtle">{jobs.length} opening{jobs.length === 1 ? '' : 's'} at your college</p>
       </header>
 
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -74,14 +74,11 @@ export default function StudentJobsPage() {
         <p className="text-subtle">Loading…</p>
       ) : jobs.length === 0 ? (
         <Card className="p-6 text-center text-sm text-subtle">
-          No openings match your profile right now. Make sure your profile is verified.
+          No jobs posted at your college yet. Check back soon.
         </Card>
       ) : (
         jobs.map((j) => {
-          const ctc =
-            j.ctcMin != null || j.ctcMax != null
-              ? `₹${((j.ctcMin ?? j.ctcMax)! / 100000).toFixed(1)}–${((j.ctcMax ?? j.ctcMin)! / 100000).toFixed(1)} LPA`
-              : null;
+          const notEligible = j.eligible === false;
           return (
             <Card key={j.id} className="space-y-3 p-4">
               <div className="flex items-start justify-between">
@@ -92,10 +89,21 @@ export default function StudentJobsPage() {
                 {j.applied && <Badge tint="mint">{j.myStage ?? 'Applied'}</Badge>}
               </div>
               {j.description && <p className="line-clamp-3 text-sm text-body">{j.description}</p>}
+
+              {notEligible && !j.applied && (
+                <div className="rounded-md border border-cream/60 bg-tint-cream/40 px-3 py-2 text-xs text-tint-cream-fg">
+                  <span className="font-medium">You can&apos;t apply to this one yet.</span>{' '}
+                  {(j.eligibilityReasons ?? []).filter((r) => r !== 'Profile not verified').join(' · ') ||
+                    'You don&apos;t meet the criteria.'}
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-strong">{ctc ?? ''}</span>
+                <span className="text-sm font-medium text-strong">{formatCtc(j.ctcMin, j.ctcMax)}</span>
                 {j.applied ? (
                   <Button size="sm" variant="ghost" disabled>Applied</Button>
+                ) : notEligible ? (
+                  <Button size="sm" variant="ghost" disabled>Not eligible</Button>
                 ) : (
                   <Button size="sm" disabled={applyingId === j.id} onClick={() => onApplyClick(j)}>
                     {applyingId === j.id ? 'Applying…' : 'Apply'}
