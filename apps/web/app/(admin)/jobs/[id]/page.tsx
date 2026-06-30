@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Badge, Button, Card } from '@ellixr/ui';
 import {
   closeJob,
+  formatCtc,
   getEligibleStudents,
   getJob,
   publishJob,
@@ -74,10 +75,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   if (loading) return <p className="text-subtle">Loading…</p>;
   if (!job) return <p className="text-danger">{error ?? 'Job not found'}</p>;
 
-  const ctc =
-    job.ctcMin != null || job.ctcMax != null
-      ? `₹${((job.ctcMin ?? job.ctcMax)! / 100000).toFixed(1)}–${((job.ctcMax ?? job.ctcMin)! / 100000).toFixed(1)} LPA`
-      : '—';
+  const ctc = formatCtc(job.ctcMin, job.ctcMax);
 
   const workModeLabel = job.workMode
     ? job.workMode === 'ONSITE'
@@ -103,6 +101,11 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       <div className="flex items-center justify-between">
         <Link href="/jobs" className="text-sm text-primary-600 hover:underline">← Jobs</Link>
         <div className="flex gap-2">
+          {!isPlatform && job.status !== 'CLOSED' && (
+            <Link href={`/jobs/${id}/edit`}>
+              <Button variant="outline">Edit</Button>
+            </Link>
+          )}
           {!isPlatform && job.status === 'DRAFT' && <Button onClick={onPublish} disabled={busy}>Publish</Button>}
           {!isPlatform && job.status !== 'CLOSED' && <Button variant="outline" onClick={onClose} disabled={busy}>Close</Button>}
           {job.status !== 'DRAFT' && (

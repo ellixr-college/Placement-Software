@@ -9,6 +9,7 @@ import {
   createProgram,
   deleteProgram,
   listPrograms,
+  updateProgram,
   type ProgramInput,
   type TrainingCategory,
   type TrainingProgram,
@@ -19,7 +20,7 @@ export default function TrainingPage() {
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<TrainingProgram | 'new' | null>(null);
 
   async function load() {
     setLoading(true);
@@ -63,15 +64,16 @@ export default function TrainingPage() {
             and readiness per student from their profile.
           </p>
         </div>
-        <Button onClick={() => setShowForm((s) => !s)}>
-          {showForm ? 'Cancel' : 'New program'}
+        <Button onClick={() => setEditing((e) => (e === null ? 'new' : null))}>
+          {editing !== null ? 'Cancel' : 'New program'}
         </Button>
       </header>
 
-      {showForm && (
-        <NewProgramForm
-          onCreated={() => {
-            setShowForm(false);
+      {editing !== null && (
+        <ProgramForm
+          program={editing === 'new' ? null : editing}
+          onSaved={() => {
+            setEditing(null);
             load();
           }}
         />
@@ -116,12 +118,20 @@ export default function TrainingPage() {
                   <td className="px-4 py-3 text-subtle">{fmtRange(p.startDate, p.endDate)}</td>
                   <td className="px-4 py-3">{p._count?.records ?? 0}</td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => remove(p)}
-                      className="text-xs text-danger hover:underline"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex justify-end gap-3">
+                      <button
+                        onClick={() => setEditing(p)}
+                        className="text-xs font-medium text-primary-600 hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => remove(p)}
+                        className="text-xs text-danger hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -153,13 +163,19 @@ function fmtRange(start: string | null, end: string | null): string {
 const inputCls =
   'h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400';
 
-function NewProgramForm({ onCreated }: { onCreated: () => void }) {
+function ProgramForm({
+  program,
+  onSaved,
+}: {
+  program: TrainingProgram | null;
+  onSaved: () => void;
+}) {
   const [form, setForm] = useState({
-    name: '',
-    category: 'OTHER' as TrainingCategory,
-    description: '',
-    startDate: '',
-    endDate: '',
+    name: program?.name ?? '',
+    category: (program?.category ?? 'OTHER') as TrainingCategory,
+    description: program?.description ?? '',
+    startDate: program?.startDate ? program.startDate.slice(0, 10) : '',
+    endDate: program?.endDate ? program.endDate.slice(0, 10) : '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -175,10 +191,11 @@ function NewProgramForm({ onCreated }: { onCreated: () => void }) {
         startDate: form.startDate || undefined,
         endDate: form.endDate || undefined,
       };
-      await createProgram(input);
-      onCreated();
+      if (program) await updateProgram(program.id, input);
+      else await createProgram(input);
+      onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create program');
+      setError(err instanceof Error ? err.message : 'Could not save program');
     } finally {
       setSaving(false);
     }
@@ -240,7 +257,7 @@ function NewProgramForm({ onCreated }: { onCreated: () => void }) {
       </label>
       {error && <p className="text-sm text-danger">{error}</p>}
       <Button onClick={submit} loading={saving} disabled={!form.name.trim()}>
-        {saving ? 'Creating…' : 'Create program'}
+        {saving ? 'Saving…' : program ? 'Save changes' : 'Create program'}
       </Button>
     </Card>
   );

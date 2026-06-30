@@ -76,6 +76,18 @@ export interface CreateJobInput {
   applicationDeadline?: string;
 }
 
+/** CTC range as "₹X–Y LPA". Treats null/0 as undisclosed (avoids "₹0.0–0.0 LPA"). */
+export function formatCtc(min: number | null | undefined, max: number | null | undefined): string {
+  const lo = min && min > 0 ? min : null;
+  const hi = max && max > 0 ? max : null;
+  if (lo == null && hi == null) return 'Not disclosed';
+  const lpa = (n: number) => (n / 100000).toFixed(2).replace(/\.?0+$/, '');
+  if (lo != null && hi != null) {
+    return lo === hi ? `₹${lpa(lo)} LPA` : `₹${lpa(lo)}–${lpa(hi)} LPA`;
+  }
+  return `₹${lpa((lo ?? hi)!)} LPA`;
+}
+
 export interface EligibleStudent {
   id: string;
   rollNumber: string;
@@ -97,6 +109,10 @@ export function getJob(id: string): Promise<Job> {
 
 export function createJob(input: CreateJobInput): Promise<Job> {
   return api(`/jobs`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function updateJob(id: string, input: Partial<CreateJobInput>): Promise<Job> {
+  return api(`/jobs/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
 }
 
 export function publishJob(id: string): Promise<{ job: Job; eligibleCount: number }> {
