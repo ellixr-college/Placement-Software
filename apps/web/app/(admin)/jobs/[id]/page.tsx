@@ -133,7 +133,9 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       )}
 
       {error && <p className="text-sm text-danger">{error}</p>}
-      {job.description && <p className="text-sm text-body">{job.description}</p>}
+      {job.description && (
+        <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">{job.description}</p>
+      )}
 
       <Card className="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3">
         <Detail label="CTC" value={ctc} />
