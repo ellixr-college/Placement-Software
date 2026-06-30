@@ -14,7 +14,10 @@ import {
 } from '@ellixr/shared';
 import { getMyResume, saveMyResume, type MyResume } from '../../../../lib/resume';
 import { ChipInput } from '../../../../components/chip-input';
+import { ResumeView } from '../../../../components/resume/templates';
 import { COMMON_LANGUAGES, COMMON_SKILLS } from '../../../../lib/skill-suggestions';
+
+const LINK_PRESETS = ['LinkedIn', 'GitHub', 'Portfolio', 'Dribbble', 'Behance', 'Twitter/X'];
 
 export default function ResumeEditorPage() {
   const [meta, setMeta] = useState<MyResume | null>(null);
@@ -25,6 +28,7 @@ export default function ResumeEditorPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<'edit' | 'view'>('edit');
 
   useEffect(() => {
     (async () => {
@@ -51,9 +55,24 @@ export default function ResumeEditorPage() {
     setSaving(true);
     setError(null);
     try {
-      const r = await saveMyResume({ template, isPublished: published, data });
+      // Trim/drop empty multiline entries only at save time — doing it on every
+      // keystroke is what previously ate spaces as you typed.
+      const cleaned: ResumeData = {
+        ...data,
+        achievements: data.achievements.map((s) => s.trim()).filter(Boolean),
+        experience: data.experience.map((e) => ({
+          ...e,
+          bullets: e.bullets.map((b) => b.trim()).filter(Boolean),
+        })),
+        links: data.links.filter((l) => l.label.trim() || l.url.trim()),
+      };
+      const r = await saveMyResume({ template, isPublished: published, data: cleaned });
       setMeta(r);
+      setData(cleaned);
       setSaved(true);
+      // Show the finished resume (read-only) after a successful save.
+      setMode('view');
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save');
     } finally {
@@ -66,11 +85,65 @@ export default function ResumeEditorPage() {
   const link = meta ? `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${meta.publicSlug}` : '';
   const readiness = resumeReadiness(data);
 
+  // ── View mode: read-only preview after save (Edit returns to the form) ──
+  if (mode === 'view') {
+    return (
+      <div className="space-y-5 pb-4">
+        <header className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-strong">My resume</h1>
+            <p className="text-sm text-success">Saved ✓</p>
+          </div>
+          <Button onClick={() => setMode('edit')}>Edit</Button>
+        </header>
+
+        {meta && resumeReadiness(data).ready && (
+          <Card className="flex items-center justify-between gap-2 p-4">
+            <code className="flex-1 truncate text-xs text-strong">{link}</code>
+            <button
+              onClick={() => navigator.clipboard?.writeText(link)}
+              className="rounded bg-app px-2 py-1 text-xs font-medium text-primary-600"
+            >
+              Copy
+            </button>
+            <a
+              href={`/r/${meta.publicSlug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded bg-app px-2 py-1 text-xs font-medium text-primary-600"
+            >
+              Open
+            </a>
+          </Card>
+        )}
+
+        <Card className="overflow-hidden p-0">
+          <div className="origin-top scale-[0.92] sm:scale-100">
+            <ResumeView template={template} data={data} />
+          </div>
+        </Card>
+
+        <div className="sticky bottom-24 z-10 flex justify-center">
+          <Button onClick={() => setMode('edit')} className="px-8">
+            Edit resume
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5 pb-4">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-strong">My resume</h1>
-        <p className="text-sm text-subtle">Fill in your details, pick a template, and share the link.</p>
+      <header className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold text-strong">My resume</h1>
+          <p className="text-sm text-subtle">Fill in your details, pick a template, and share the link.</p>
+        </div>
+        {meta && readiness.ready && (
+          <Button variant="outline" onClick={() => setMode('view')}>
+            Preview
+          </Button>
+        )}
       </header>
 
       {/* Public link */}
@@ -165,12 +238,28 @@ export default function ResumeEditorPage() {
         <Text label="Location" value={data.location} onChange={(v) => patch({ location: v })} />
       </Section>
 
-      {/* Links */}
+      {/* Links — LinkedIn, GitHub, portfolio, etc. (add as many as you like) */}
       <ArraySection
         title="Links"
         items={data.links}
         onAdd={() => patch({ links: [...data.links, { label: '', url: '' }] })}
         onRemove={(i) => patch({ links: data.links.filter((_, x) => x !== i) })}
+        extra={
+          <div className="flex flex-wrap gap-1.5">
+            {LINK_PRESETS.filter(
+              (p) => !data.links.some((l) => l.label.toLowerCase() === p.toLowerCase()),
+            ).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => patch({ links: [...data.links, { label: p, url: '' }] })}
+                className="rounded-pill border border-border bg-white px-2.5 py-1 text-xs text-body transition hover:border-primary-400 hover:text-primary-600"
+              >
+                + {p}
+              </button>
+            ))}
+          </div>
+        }
         render={(l, i) => (
           <>
             <Text label="Label" value={l.label} onChange={(v) => patch({ links: replace(data.links, i, { ...l, label: v }) })} placeholder="GitHub" />
@@ -227,7 +316,7 @@ export default function ResumeEditorPage() {
               <Area
                 label="Highlights (one per line)"
                 value={e.bullets.join('\n')}
-                onChange={(v) => set({ bullets: splitList(v, '\n') })}
+                onChange={(v) => set({ bullets: v.split('\n') })}
               />
             </>
           );
@@ -272,7 +361,7 @@ export default function ResumeEditorPage() {
                 <Text label="Start year" value={ed.startYear} onChange={(v) => set({ startYear: v })} />
                 <Text label="End year" value={ed.endYear} onChange={(v) => set({ endYear: v })} />
               </div>
-              <Text label="Score" value={ed.score} onChange={(v) => set({ score: v })} placeholder="CGPA 8.4" />
+              <Text label="Score" value={ed.score} onChange={(v) => set({ score: v })} placeholder="e.g. 85% or CGPA 8.4" />
             </>
           );
         }}
@@ -301,7 +390,7 @@ export default function ResumeEditorPage() {
       <Section title="Achievements">
         <Area
           value={data.achievements.join('\n')}
-          onChange={(v) => patch({ achievements: splitList(v, '\n') })}
+          onChange={(v) => patch({ achievements: v.split('\n') })}
           placeholder="One per line"
         />
       </Section>
@@ -352,12 +441,14 @@ function ArraySection<T>({
   onAdd,
   onRemove,
   render,
+  extra,
 }: {
   title: string;
   items: T[];
   onAdd: () => void;
   onRemove: (i: number) => void;
   render: (item: T, i: number) => React.ReactNode;
+  extra?: React.ReactNode;
 }) {
   return (
     <Card className="space-y-3 p-4">
@@ -367,6 +458,7 @@ function ArraySection<T>({
           + Add
         </button>
       </div>
+      {extra}
       {items.length === 0 && <p className="text-xs text-subtle">None added yet.</p>}
       {items.map((item, i) => (
         <div key={i} className="space-y-2 rounded-md border border-border p-3">

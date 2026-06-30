@@ -6,6 +6,7 @@ import { Badge, Card } from '@ellixr/ui';
 import { getOwnStudent, type Student } from '../../../lib/students';
 import { listMyApplications, type Application } from '../../../lib/applications';
 import { NotificationBell } from '../../../components/notification-bell';
+import { useSession } from '../../../lib/session';
 
 const TERMINAL = ['JOINED', 'REJECTED', 'WITHDRAWN'];
 const PLACING = ['OFFER_RELEASED', 'OFFER_ACCEPTED', 'JOINED'];
@@ -65,6 +66,7 @@ const fmtDateTime = (d: Date) =>
   });
 
 export default function StudentHome() {
+  const { signOut } = useSession();
   const [student, setStudent] = useState<Student | null>(null);
   const [apps, setApps] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,10 +104,22 @@ export default function StudentHome() {
           <p className="text-sm text-subtle">Welcome back</p>
           <h1 className="text-2xl font-semibold text-strong">Hi, {firstName}</h1>
         </div>
-        <NotificationBell
-          href="/me/notifications"
-          className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-card"
-        />
+        <div className="flex items-center gap-2">
+          <NotificationBell
+            href="/me/notifications"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-card"
+          />
+          <button
+            onClick={signOut}
+            aria-label="Sign out"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-subtle shadow-card transition hover:text-danger"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+              <path d="M15 12H3m0 0 4-4m-4 4 4 4" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
       </header>
 
       {/* Stat strip */}

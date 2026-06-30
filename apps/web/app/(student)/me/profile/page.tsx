@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button, Card } from '@ellixr/ui';
+import { useSession } from '../../../../lib/session';
 import {
   getOwnStudent,
   updateOwnProfile,
@@ -16,6 +17,7 @@ import {
  * read-only — it is the officer-assigned identity.
  */
 export default function StudentProfilePage() {
+  const { signOut } = useSession();
   const [student, setStudent] = useState<Student | null>(null);
   const [form, setForm] = useState<UpdateOwnProfileInput>({});
   const [loading, setLoading] = useState(true);
@@ -236,6 +238,11 @@ export default function StudentProfilePage() {
         </Button>
         {saved && <span className="pr-2 text-sm text-success">Saved ✓</span>}
       </div>
+
+      {/* Account */}
+      <Button variant="outline" className="w-full" onClick={signOut}>
+        Sign out
+      </Button>
     </div>
   );
 }
