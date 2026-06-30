@@ -147,21 +147,23 @@ export class JobsService {
       include: { company: true, _count: { select: { applications: true } } },
     });
 
-    // Notify every eligible student that a job they can apply to is now live.
-    const eligible = await this.eligibleStudents(collegeId, id);
-    if (eligible.length > 0) {
-      const recs = await this.prisma.student.findMany({
-        where: { id: { in: eligible.map((e) => e.id) } },
-        select: { userId: true },
-      });
+    // Alert EVERY active student at the college that a new job is live (eligibility
+    // is enforced at apply time, so non-eligible students see it but can't apply).
+    const recs = await this.prisma.student.findMany({
+      where: { collegeId, isActive: true },
+      select: { userId: true },
+    });
+    if (recs.length > 0) {
       const companyName = updated.company?.name ?? updated.companyName ?? null;
       await this.notifications.notifyMany(recs.map((r) => r.userId), collegeId, {
         type: 'GENERAL',
-        title: 'New job you can apply to',
+        title: 'New job posted',
         body: companyName ? `${updated.title} · ${companyName}` : updated.title,
         link: '/me/jobs',
       });
     }
+    // The officer still sees how many can actually apply.
+    const eligible = await this.eligibleStudents(collegeId, id);
     return { job: this.publicJob(updated), eligibleCount: eligible.length };
   }
 
