@@ -81,3 +81,8 @@ Build/start (already in the blueprint):
 - **Cold starts:** Render free sleeps after ~15 min idle. To keep it warm, add a free cron at **cron-job.org** hitting `https://<api>/api/v1/health` every 10 min (fits within Render's ~750 free instance-hours/month).
 - **DB Request Units:** the notification bell polls **hourly**, **pauses while the tab is hidden**, and **goes quiet 8pm–6am**, so idle tabs barely touch the DB. The other big RU spenders are **schema pushes** and `prisma db push --force-reset` (full wipe) — avoid running those against the cloud cluster casually; use a local cluster for dev.
 - **HTTPS** is on by default on both Vercel and Render — required by `COOKIE_SECURE=true`.
+
+## Rate limiting & scaling out
+
+- Rate limits are **per identity, not per IP** (user → login email → refresh cookie → IP), because a college NATs hundreds of students through a single public IP. Tune via env: `THROTTLE_LIMIT` (default 600/min per identity) and `THROTTLE_TTL` (default 60000ms). Login is capped separately at 10/min **per email**.
+- ⚠️ **Multi-instance caveat:** `@nestjs/throttler` counts **in memory**, so the limits above are per-server-instance. This is fine on Render free (one instance). **If you ever run more than one API instance** (horizontal scaling / autoscaling), each instance counts independently — the effective limit multiplies and brute-force protection weakens. Before scaling out, move the throttler to a **shared Redis store** (e.g. `@nest-lab/throttler-storage-redis`) in `ThrottlerModule`. Not needed until then.
