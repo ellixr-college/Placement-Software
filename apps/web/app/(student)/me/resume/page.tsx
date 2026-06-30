@@ -9,6 +9,7 @@ import {
   type ResumeData,
   type ResumeEducation,
   type ResumeExperience,
+  type ResumeInternship,
   type ResumeProject,
   type ResumeCertification,
 } from '@ellixr/shared';
@@ -61,6 +62,10 @@ export default function ResumeEditorPage() {
         ...data,
         achievements: data.achievements.map((s) => s.trim()).filter(Boolean),
         experience: data.experience.map((e) => ({
+          ...e,
+          bullets: e.bullets.map((b) => b.trim()).filter(Boolean),
+        })),
+        internships: data.internships.map((e) => ({
           ...e,
           bullets: e.bullets.map((b) => b.trim()).filter(Boolean),
         })),
@@ -323,6 +328,34 @@ export default function ResumeEditorPage() {
         }}
       />
 
+      {/* Internships */}
+      <ArraySection
+        title="Internships"
+        items={data.internships}
+        onAdd={() => patch({ internships: [...data.internships, blankInternship()] })}
+        onRemove={(i) => patch({ internships: data.internships.filter((_, x) => x !== i) })}
+        render={(e, i) => {
+          const set = (p: Partial<ResumeInternship>) =>
+            patch({ internships: replace(data.internships, i, { ...e, ...p }) });
+          return (
+            <>
+              <Text label="Role" value={e.role} onChange={(v) => set({ role: v })} placeholder="Marketing Intern" />
+              <Text label="Company" value={e.company} onChange={(v) => set({ company: v })} />
+              <Text label="Location" value={e.location} onChange={(v) => set({ location: v })} />
+              <div className="grid grid-cols-2 gap-2">
+                <Text label="Start" value={e.startDate} onChange={(v) => set({ startDate: v })} placeholder="Jun 2025" />
+                <Text label="End" value={e.endDate} onChange={(v) => set({ endDate: v })} placeholder="Aug 2025" />
+              </div>
+              <Area
+                label="Highlights (one per line)"
+                value={e.bullets.join('\n')}
+                onChange={(v) => set({ bullets: v.split('\n') })}
+              />
+            </>
+          );
+        }}
+      />
+
       {/* Projects */}
       <ArraySection
         title="Projects"
@@ -419,6 +452,9 @@ function splitList(v: string, sep: string): string[] {
     .filter(Boolean);
 }
 const blankExperience = (): ResumeExperience => ({
+  company: '', role: '', location: '', startDate: '', endDate: '', bullets: [],
+});
+const blankInternship = (): ResumeInternship => ({
   company: '', role: '', location: '', startDate: '', endDate: '', bullets: [],
 });
 const blankProject = (): ResumeProject => ({ name: '', description: '', link: '', tech: [] });

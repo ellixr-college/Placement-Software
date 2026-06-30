@@ -71,6 +71,16 @@ function ClassicTemplate({ data }: { data: ResumeData }) {
         </Section>
       )}
 
+      {has(data.internships) && (
+        <Section title="Internships">
+          <div className="space-y-3">
+            {data.internships.map((e, i) => (
+              <ExperienceBlock key={i} e={e} />
+            ))}
+          </div>
+        </Section>
+      )}
+
       {has(data.projects) && (
         <Section title="Projects">
           <div className="space-y-3">
@@ -266,6 +276,16 @@ function ModernTemplate({ data }: { data: ResumeData }) {
           </ModernSection>
         )}
 
+        {has(data.internships) && (
+          <ModernSection title="Internships">
+            <div className="space-y-4">
+              {data.internships.map((e, i) => (
+                <ExperienceBlock key={i} e={e} />
+              ))}
+            </div>
+          </ModernSection>
+        )}
+
         {has(data.projects) && (
           <ModernSection title="Projects">
             <div className="space-y-4">
@@ -379,6 +399,28 @@ function ProfessionalTemplate({ data }: { data: ResumeData }) {
         <ProSection title="Work Experience">
           <div className="space-y-3">
             {data.experience.map((e, i) => (
+              <div key={i}>
+                <p className="text-xs text-neutral-500">
+                  {[e.company, dateRange(e.startDate, e.endDate)].filter(Boolean).join(' | ')}
+                </p>
+                <p className="font-bold text-neutral-900">{e.role || e.company}</p>
+                {has(e.bullets) && (
+                  <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                    {e.bullets.map((b, j) => (
+                      <li key={j}>{b}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </ProSection>
+      )}
+
+      {has(data.internships) && (
+        <ProSection title="Internships">
+          <div className="space-y-3">
+            {data.internships.map((e, i) => (
               <div key={i}>
                 <p className="text-xs text-neutral-500">
                   {[e.company, dateRange(e.startDate, e.endDate)].filter(Boolean).join(' | ')}

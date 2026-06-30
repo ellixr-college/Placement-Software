@@ -29,6 +29,15 @@ export const resumeExperienceSchema = z.object({
   bullets: z.array(trimmed(400)).max(12).optional().default([]),
 });
 
+export const resumeInternshipSchema = z.object({
+  company: trimmed(160),
+  role: trimmed(120).optional().default(''),
+  location: trimmed(120).optional().default(''),
+  startDate: trimmed(40).optional().default(''),
+  endDate: trimmed(40).optional().default(''),
+  bullets: z.array(trimmed(400)).max(12).optional().default([]),
+});
+
 export const resumeProjectSchema = z.object({
   name: trimmed(160),
   description: trimmed(600).optional().default(''),
@@ -56,6 +65,7 @@ export const resumeDataSchema = z.object({
   languages: z.array(trimmed(40)).max(20).optional().default([]),
   education: z.array(resumeEducationSchema).max(15).optional().default([]),
   experience: z.array(resumeExperienceSchema).max(20).optional().default([]),
+  internships: z.array(resumeInternshipSchema).max(20).optional().default([]),
   projects: z.array(resumeProjectSchema).max(20).optional().default([]),
   certifications: z.array(resumeCertificationSchema).max(20).optional().default([]),
   achievements: z.array(trimmed(300)).max(20).optional().default([]),
@@ -65,6 +75,7 @@ export type ResumeData = z.infer<typeof resumeDataSchema>;
 export type ResumeLink = z.infer<typeof resumeLinkSchema>;
 export type ResumeEducation = z.infer<typeof resumeEducationSchema>;
 export type ResumeExperience = z.infer<typeof resumeExperienceSchema>;
+export type ResumeInternship = z.infer<typeof resumeInternshipSchema>;
 export type ResumeProject = z.infer<typeof resumeProjectSchema>;
 export type ResumeCertification = z.infer<typeof resumeCertificationSchema>;
 
