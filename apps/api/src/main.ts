@@ -11,6 +11,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: false });
   const config = app.get(ConfigService);
 
+  // Behind Render's proxy: trust X-Forwarded-For so req.ip is the real client.
+  // Without this the rate limiter sees one upstream IP for everyone and throttles
+  // a whole class of students sharing the same login burst.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   app.use(helmet());
   app.use(cookieParser());
   app.setGlobalPrefix('api/v1');

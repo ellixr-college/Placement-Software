@@ -27,7 +27,15 @@ import { HealthController } from './modules/health/health.controller';
   imports: [
     // Reads the single root .env (../../.env) first, then any local apps/api/.env override.
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ['../../.env', '.env'] }),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    // Per-IP rate limit. Env-tunable so we can loosen it for a classroom/demo
+    // where many students hit login at once. Requires `trust proxy` (see main.ts)
+    // so the limiter keys on each client's real IP, not the upstream proxy's.
+    ThrottlerModule.forRoot([
+      {
+        ttl: Number(process.env.THROTTLE_TTL) || 60_000,
+        limit: Number(process.env.THROTTLE_LIMIT) || 600,
+      },
+    ]),
     // The global JwtAuthGuard (APP_GUARD) is resolved in AppModule context,
     // so JwtService must be available here too.
     JwtModule.register({}),
