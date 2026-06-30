@@ -73,6 +73,11 @@ export class StudentsService {
           totalBacklogs: dto.totalBacklogs ?? 0,
           gender: dto.gender,
           personalEmail: dto.personalEmail,
+          // Officer-registered students come from official college rolls — trust
+          // them so they immediately see eligible jobs (no separate verify step).
+          status: 'VERIFIED',
+          verificationStatus: 'VERIFIED',
+          verifiedAt: new Date(),
           ...this.extendedData(dto),
         },
         include: { user: true },
@@ -164,6 +169,10 @@ export class StudentsService {
         totalBacklogs: d.totalBacklogs ?? 0,
         gender: d.gender,
         personalEmail: d.personalEmail,
+        // Imported from official rolls → trusted/verified so jobs reach them.
+        status: 'VERIFIED',
+        verificationStatus: 'VERIFIED',
+        verifiedAt: new Date(),
       });
       created.push({ rollNumber: d.rollNumber, fullName: d.fullName, email: d.email, tempPassword: DEFAULT_STUDENT_PASSWORD });
     }
