@@ -343,8 +343,9 @@ export class StudentsService {
   }
 
   // Students edit their own academic/profile fields (never rollNumber, which is
-  // the officer-assigned identity). Editing a VERIFIED profile resets it to
-  // PENDING so the officer re-checks the changed data.
+  // the officer-assigned identity). Students are admin-created and trusted (there
+  // is no self-signup), so editing does NOT drop them out of VERIFIED — otherwise
+  // every profile edit would silently hide all eligible jobs from them.
   async updateOwnProfile(userId: string, dto: UpdateOwnProfileDto) {
     const student = await this.ownStudent(userId);
     const { fullName, phone, cgpa, dateOfBirth, tenthPercentage, twelfthPercentage, semesterMarks, ...academic } = dto;
@@ -365,9 +366,6 @@ export class StudentsService {
           ...academic,
           ...(cgpa !== undefined ? { cgpa: cgpa != null ? new Prisma.Decimal(cgpa) : null } : {}),
           ...this.extendedData({ dateOfBirth, tenthPercentage, twelfthPercentage, semesterMarks }),
-          ...(student.verificationStatus === 'VERIFIED'
-            ? { verificationStatus: 'PENDING', status: 'REGISTERED', verifiedAt: null }
-            : {}),
         },
         include: { user: true },
       });
