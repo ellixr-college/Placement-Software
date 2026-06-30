@@ -114,14 +114,27 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         </div>
       </div>
 
-      <header className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-strong">{job.title}</h1>
-          <p className="text-sm text-subtle">{job.companyName ?? job.company?.name} · {job.jobType.replace('_', ' ')}{job.workMode ? ` · ${workModeLabel}` : ''}{job.location ? ` · ${job.location}` : ''}</p>
+      <header className="flex items-start gap-4">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-2xl font-bold text-primary-700">
+          {(job.companyName ?? job.company?.name ?? '·').trim().charAt(0).toUpperCase()}
         </div>
-        <div className="flex items-center gap-2">
-          {isPlatform && <Badge tint="lavender">Platform</Badge>}
-          <Badge tint={STATUS_TINT[job.status] ?? 'primary'}>{job.status}</Badge>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <h1 className="text-2xl font-semibold text-strong">{job.title}</h1>
+            <div className="flex shrink-0 items-center gap-2">
+              {isPlatform && <Badge tint="lavender">Platform</Badge>}
+              <Badge tint={STATUS_TINT[job.status] ?? 'primary'}>{job.status}</Badge>
+            </div>
+          </div>
+          <p className="text-sm font-medium text-body">{job.companyName ?? job.company?.name}</p>
+          <p className="mt-0.5 text-xs text-subtle">
+            {[job.jobType.replace(/_/g, ' '), job.workMode ? workModeLabel : null, job.location]
+              .filter(Boolean)
+              .join(' · ')}
+            {job.publishedAt
+              ? ` · Posted ${new Date(job.publishedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
+              : ''}
+          </p>
         </div>
       </header>
 
@@ -134,7 +147,10 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
       {error && <p className="text-sm text-danger">{error}</p>}
       {job.description && (
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">{job.description}</p>
+        <Card className="space-y-2 p-5">
+          <h2 className="text-sm font-semibold text-strong">About the job</h2>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">{job.description}</p>
+        </Card>
       )}
 
       <Card className="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3">

@@ -3,13 +3,34 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Button, Card } from '@ellixr/ui';
-import { listJobs, type Job } from '../../../lib/jobs';
+import { formatCtc, listJobs, type Job } from '../../../lib/jobs';
 
 const STATUS_TINT: Record<string, 'lavender' | 'mint' | 'cream' | 'primary'> = {
   DRAFT: 'cream',
   PUBLISHED: 'mint',
   CLOSED: 'lavender',
 };
+
+const workModeLabel = (m: string | null) =>
+  !m ? null : m === 'ONSITE' ? 'On-site' : m.charAt(0) + m.slice(1).toLowerCase();
+
+function postedAgo(iso: string | null): string {
+  if (!iso) return '';
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 30) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
+
+/** Company monogram tile (LinkedIn-style logo placeholder). */
+function CompanyLogo({ name }: { name: string }) {
+  return (
+    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-primary-50 text-lg font-bold text-primary-700">
+      {name.trim().charAt(0).toUpperCase() || '·'}
+    </div>
+  );
+}
 
 export default function JobsPage() {
   const [items, setItems] = useState<Job[]>([]);
@@ -57,41 +78,44 @@ export default function JobsPage() {
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
-      <Card className="overflow-hidden p-0">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-border bg-app text-xs uppercase text-subtle">
-            <tr>
-              <th className="px-4 py-3 font-medium">Title</th>
-              <th className="px-4 py-3 font-medium">Company</th>
-              <th className="px-4 py-3 font-medium">Type</th>
-              <th className="px-4 py-3 font-medium">Applicants</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-subtle">Loading…</td></tr>
-            ) : items.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-subtle">No jobs yet.</td></tr>
-            ) : (
-              items.map((j) => (
-                <tr key={j.id} className="border-b border-border last:border-0 hover:bg-app/60">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Link href={`/jobs/${j.id}`} className="font-medium text-strong hover:underline">{j.title}</Link>
-                      {j.isPlatform && <Badge tint="lavender">Platform</Badge>}
+      {loading ? (
+        <p className="text-subtle">Loading…</p>
+      ) : items.length === 0 ? (
+        <Card className="p-8 text-center text-sm text-subtle">No jobs yet. Post one to get started.</Card>
+      ) : (
+        <div className="space-y-3">
+          {items.map((j) => {
+            const company = j.companyName ?? j.company?.name ?? 'Company';
+            const meta = [workModeLabel(j.workMode), j.location].filter(Boolean).join(' · ');
+            return (
+              <Link key={j.id} href={`/jobs/${j.id}`} className="block">
+                <Card className="flex gap-4 p-4 transition hover:shadow-nav">
+                  <CompanyLogo name={company} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-strong">{j.title}</p>
+                        <p className="truncate text-sm text-body">{company}</p>
+                        {meta && <p className="truncate text-xs text-subtle">{meta}</p>}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {j.isPlatform && <Badge tint="lavender">Platform</Badge>}
+                        <Badge tint={STATUS_TINT[j.status] ?? 'primary'}>{j.status}</Badge>
+                      </div>
                     </div>
-                  </td>
-                  <td className="px-4 py-3">{j.companyName ?? j.company?.name ?? '—'}</td>
-                  <td className="px-4 py-3">{j.jobType.replace('_', ' ')}</td>
-                  <td className="px-4 py-3">{j.applicationCount ?? 0}</td>
-                  <td className="px-4 py-3"><Badge tint={STATUS_TINT[j.status] ?? 'primary'}>{j.status}</Badge></td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </Card>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-subtle">
+                      <span className="font-medium text-body">{j.jobType.replace(/_/g, ' ')}</span>
+                      <span>{formatCtc(j.ctcMin, j.ctcMax)}</span>
+                      <span>{j.applicationCount ?? 0} applicant{(j.applicationCount ?? 0) === 1 ? '' : 's'}</span>
+                      {j.publishedAt && <span>· {postedAgo(j.publishedAt)}</span>}
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
