@@ -207,20 +207,22 @@ export class StudentsService {
         : {}),
     };
 
-    const [total, students] = await this.prisma.$transaction([
+    const [total, students, resumesComplete] = await this.prisma.$transaction([
       this.prisma.student.count({ where }),
       this.prisma.student.findMany({
         where,
-        include: { user: true },
+        include: { user: true, resume: { select: { isComplete: true } } },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
+      // College-wide completed-resume count (not just this page).
+      this.prisma.resume.count({ where: { collegeId, isComplete: true } }),
     ]);
 
     return {
       items: students.map((s) => this.publicStudent(s)),
-      meta: { total, page, limit, pages: Math.ceil(total / limit) },
+      meta: { total, page, limit, pages: Math.ceil(total / limit), resumesComplete },
     };
   }
 
@@ -558,6 +560,7 @@ export class StudentsService {
       isActive: boolean;
       lastLoginAt: Date | null;
     };
+    resume?: { isComplete: boolean } | null;
   }) {
     return {
       id: s.id,
@@ -583,6 +586,7 @@ export class StudentsService {
       profileCompletion: s.profileCompletion,
       isActive: s.isActive,
       createdAt: s.createdAt,
+      resumeComplete: s.resume?.isComplete ?? false,
       user: {
         id: s.user.id,
         email: s.user.email,

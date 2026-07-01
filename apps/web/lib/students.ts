@@ -38,6 +38,7 @@ export interface Student {
   verifiedAt: string | null;
   rejectionReason: string | null;
   profileCompletion: number;
+  resumeComplete: boolean;
   isActive: boolean;
   createdAt: string;
   user: StudentUser;
@@ -48,6 +49,7 @@ export interface ListMeta {
   page: number;
   limit: number;
   pages: number;
+  resumesComplete?: number;
 }
 
 export interface ExtendedProfileFields {

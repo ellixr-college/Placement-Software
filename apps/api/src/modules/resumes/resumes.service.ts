@@ -49,6 +49,7 @@ export class ResumesService {
         template: 'professional',
         data: seed as unknown as Prisma.InputJsonValue,
         isPublished: true,
+        isComplete: resumeReadiness(seed).ready,
       },
     });
     return this.publicShape(created);
@@ -71,6 +72,8 @@ export class ResumesService {
         );
       }
       data.data = parsed.data as unknown as Prisma.InputJsonValue;
+      // Recompute completion whenever the content changes.
+      data.isComplete = resumeReadiness(parsed.data).ready;
     }
 
     const updated = await this.prisma.resume.update({

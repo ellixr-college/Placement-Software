@@ -171,7 +171,13 @@ function StudentsList() {
         <div>
           <h1 className="text-2xl font-semibold text-strong">Students</h1>
           <p className="text-sm text-subtle">
-            {meta ? `${meta.total} registered` : 'Manage your student registry'}
+            {meta
+              ? `${meta.total} registered${
+                  meta.resumesComplete != null
+                    ? ` · ${meta.resumesComplete} resume${meta.resumesComplete === 1 ? '' : 's'} complete`
+                    : ''
+                }`
+              : 'Manage your student registry'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -233,6 +239,7 @@ function StudentsList() {
               <th className="px-4 py-3 font-medium">Branch</th>
               <th className="px-4 py-3 font-medium">Passout</th>
               <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Resume</th>
               <th className="px-4 py-3 font-medium">Login</th>
               <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
@@ -240,13 +247,13 @@ function StudentsList() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-subtle">
+                <td colSpan={9} className="px-4 py-8 text-center text-subtle">
                   Loading…
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-subtle">
+                <td colSpan={9} className="px-4 py-8 text-center text-subtle">
                   No students yet. Add one or import a CSV to activate student logins.
                 </td>
               </tr>
@@ -281,6 +288,13 @@ function StudentsList() {
                   </td>
                   <td className="px-4 py-3">
                     <Badge tint={STATUS_TINT[s.status] ?? 'primary'}>{s.status}</Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    {s.resumeComplete ? (
+                      <Badge tint="mint">Complete</Badge>
+                    ) : (
+                      <Badge tint="cream">Incomplete</Badge>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {s.isActive ? (

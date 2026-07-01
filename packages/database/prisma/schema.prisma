@@ -250,6 +250,9 @@ model Resume {
   template    String   @default("classic")
   data        Json
   isPublished Boolean  @default(true) @map("is_published")
+  // Whether the resume has the essentials filled in (resumeReadiness). Recomputed
+  // on every save so the officer's list can show/count completion cheaply.
+  isComplete  Boolean  @default(false) @map("is_complete")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
