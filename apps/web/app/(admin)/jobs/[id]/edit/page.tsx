@@ -1,10 +1,11 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
 import { getJob, updateJob, type CreateJobInput, type Job } from '../../../../../lib/jobs';
+import { listMyCourses, type CollegeCourse } from '../../../../../lib/courses';
 
 const JOB_TYPES = ['FULL_TIME', 'INTERNSHIP', 'INTERNSHIP_PPO'];
 const WORK_MODES = ['ONSITE', 'HYBRID', 'REMOTE'];
@@ -27,8 +28,6 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
     experienceMax: '',
     ctcMin: '',
     ctcMax: '',
-    eligibleCourses: '',
-    eligibleBranches: '',
     graduationYears: '',
     minCgpa: '',
     minTenthPercentage: '',
@@ -38,11 +37,20 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
     applicationDeadline: '',
   });
   const [pickedGenders, setPickedGenders] = useState<string[]>([]);
+  // Eligibility courses/branches — catalog chip selection + free-text fallback.
+  const [courses, setCourses] = useState<CollegeCourse[]>([]);
+  const [pickedCourses, setPickedCourses] = useState<string[]>([]);
+  const [pickedBranches, setPickedBranches] = useState<string[]>([]);
+  const [coursesText, setCoursesText] = useState('');
+  const [branchesText, setBranchesText] = useState('');
 
   useEffect(() => {
     (async () => {
       try {
-        const j = await getJob(id);
+        const [j] = await Promise.all([
+          getJob(id),
+          listMyCourses().then(setCourses).catch(() => {}),
+        ]);
         setJob(j);
         setForm({
           title: j.title,
@@ -54,8 +62,6 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
           experienceMax: numStr(j.experienceMax),
           ctcMin: numStr(j.ctcMin),
           ctcMax: numStr(j.ctcMax),
-          eligibleCourses: j.eligibleCourses.join(', '),
-          eligibleBranches: j.eligibleBranches.join(', '),
           graduationYears: j.graduationYears.join(', '),
           minCgpa: numStr(j.minCgpa),
           minTenthPercentage: numStr(j.minTenthPercentage),
@@ -65,6 +71,10 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
           applicationDeadline: j.applicationDeadline ? toLocalInput(j.applicationDeadline) : '',
         });
         setPickedGenders(j.eligibleGenders ?? []);
+        setPickedCourses(j.eligibleCourses);
+        setPickedBranches(j.eligibleBranches);
+        setCoursesText(j.eligibleCourses.join(', '));
+        setBranchesText(j.eligibleBranches.join(', '));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load job');
       } finally {
@@ -81,6 +91,29 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
   const toggleGender = (g: string) =>
     setPickedGenders((gs) => (gs.includes(g) ? gs.filter((x) => x !== g) : [...gs, g]));
 
+  const hasCatalog = courses.length > 0;
+  const availableBranches = useMemo(() => {
+    const set = new Set<string>();
+    for (const name of pickedCourses) {
+      courses.find((c) => c.name === name)?.branches.forEach((b) => set.add(b));
+    }
+    return [...set];
+  }, [pickedCourses, courses]);
+
+  function toggleCourse(name: string) {
+    setPickedCourses((cs) => {
+      const next = cs.includes(name) ? cs.filter((x) => x !== name) : [...cs, name];
+      const allowed = new Set(next.flatMap((n) => courses.find((c) => c.name === n)?.branches ?? []));
+      setPickedBranches((bs) => bs.filter((b) => allowed.has(b)));
+      return next;
+    });
+  }
+  const toggleBranch = (b: string) =>
+    setPickedBranches((bs) => (bs.includes(b) ? bs.filter((x) => x !== b) : [...bs, b]));
+
+  const eligibleCourses = hasCatalog ? pickedCourses : splitList(coursesText);
+  const eligibleBranches = hasCatalog ? pickedBranches : splitList(branchesText);
+
   async function submit() {
     setSaving(true);
     setError(null);
@@ -95,8 +128,8 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
         experienceMax: num(form.experienceMax),
         ctcMin: num(form.ctcMin),
         ctcMax: num(form.ctcMax),
-        eligibleCourses: splitList(form.eligibleCourses),
-        eligibleBranches: splitList(form.eligibleBranches),
+        eligibleCourses,
+        eligibleBranches,
         graduationYears: numList(form.graduationYears),
         minCgpa: num(form.minCgpa),
         minTenthPercentage: num(form.minTenthPercentage),
@@ -131,8 +164,7 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
     );
   }
 
-  const valid =
-    form.title.trim() && splitList(form.eligibleCourses).length && numList(form.graduationYears).length;
+  const valid = form.title.trim() && eligibleCourses.length && numList(form.graduationYears).length;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -192,12 +224,27 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
         <div className="border-t border-border pt-4">
           <p className="mb-3 text-sm font-semibold text-strong">Who can apply</p>
           <div className="space-y-3">
-            <Field label="Eligible courses * (comma-separated)">
-              <input className={inputCls} value={form.eligibleCourses} onChange={set('eligibleCourses')} />
-            </Field>
-            <Field label="Eligible branches (comma-separated, optional)">
-              <input className={inputCls} value={form.eligibleBranches} onChange={set('eligibleBranches')} />
-            </Field>
+            {hasCatalog ? (
+              <>
+                <Field label="Eligible courses *">
+                  <ChipPicker options={courses.map((c) => c.name)} selected={pickedCourses} onToggle={toggleCourse} />
+                </Field>
+                {availableBranches.length > 0 && (
+                  <Field label="Eligible branches (leave empty = all branches of the selected courses)">
+                    <ChipPicker options={availableBranches} selected={pickedBranches} onToggle={toggleBranch} />
+                  </Field>
+                )}
+              </>
+            ) : (
+              <>
+                <Field label="Eligible courses * (comma-separated)">
+                  <input className={inputCls} value={coursesText} onChange={(e) => setCoursesText(e.target.value)} placeholder="B.Tech, M.Tech" />
+                </Field>
+                <Field label="Eligible branches (comma-separated, optional)">
+                  <input className={inputCls} value={branchesText} onChange={(e) => setBranchesText(e.target.value)} placeholder="CSE, ECE" />
+                </Field>
+              </>
+            )}
             <Field label="Graduation years * (comma-separated)">
               <input className={inputCls} value={form.graduationYears} onChange={set('graduationYears')} />
             </Field>
@@ -273,6 +320,37 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="text-xs font-medium text-subtle">{label}</span>
       {children}
     </label>
+  );
+}
+
+function ChipPicker({
+  options,
+  selected,
+  onToggle,
+}: {
+  options: string[];
+  selected: string[];
+  onToggle: (v: string) => void;
+}) {
+  if (options.length === 0) return <p className="text-xs text-subtle">None available.</p>;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((o) => {
+        const on = selected.includes(o);
+        return (
+          <button
+            key={o}
+            type="button"
+            onClick={() => onToggle(o)}
+            className={`rounded-pill px-3 py-1.5 text-sm font-medium ${
+              on ? 'bg-primary-600 text-white' : 'bg-white text-body ring-1 ring-border hover:bg-primary-50'
+            }`}
+          >
+            {o}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
