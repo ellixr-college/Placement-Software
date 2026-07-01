@@ -39,6 +39,7 @@ export interface Student {
   rejectionReason: string | null;
   profileCompletion: number;
   resumeComplete: boolean;
+  resumeMissing?: string[];
   isActive: boolean;
   createdAt: string;
   user: StudentUser;

@@ -293,7 +293,7 @@ function StudentsList() {
                     {s.resumeComplete ? (
                       <Badge tint="mint">Complete</Badge>
                     ) : (
-                      <Badge tint="cream">Incomplete</Badge>
+                      <ResumeIncomplete missing={s.resumeMissing ?? []} />
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -347,6 +347,47 @@ function StudentsList() {
         </div>
       )}
     </div>
+  );
+}
+
+/** "Incomplete" resume badge with a hover tooltip listing what's still missing.
+ * The tooltip is fixed-positioned so the table card's overflow doesn't clip it. */
+function ResumeIncomplete({ missing }: { missing: string[] }) {
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  function show() {
+    const r = ref.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 6, left: r.left });
+  }
+
+  return (
+    <span
+      ref={ref}
+      className="inline-block"
+      onMouseEnter={show}
+      onMouseLeave={() => setPos(null)}
+    >
+      <Badge tint="cream" className="cursor-help">
+        Incomplete
+      </Badge>
+      {pos && missing.length > 0 && (
+        <div
+          style={{ position: 'fixed', top: pos.top, left: pos.left }}
+          className="z-50 w-56 rounded-md border border-border bg-white p-3 text-left shadow-card"
+        >
+          <p className="mb-1 text-xs font-semibold text-strong">Still needed</p>
+          <ul className="space-y-0.5">
+            {missing.map((m) => (
+              <li key={m} className="flex items-start gap-1.5 text-xs text-body">
+                <span className="text-danger">•</span>
+                {m}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </span>
   );
 }
 

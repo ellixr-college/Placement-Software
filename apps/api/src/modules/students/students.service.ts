@@ -10,6 +10,7 @@ import { randomUUID } from 'crypto';
 import { PRISMA } from '../../common/prisma.module';
 import { Prisma } from '@ellixr/database';
 import type { PrismaClient } from '@ellixr/database';
+import { resumeDataSchema, resumeReadiness } from '@ellixr/shared';
 import { NotificationsService } from '../notifications/notifications.service';
 import {
   CreateStudentDto,
@@ -211,7 +212,9 @@ export class StudentsService {
       this.prisma.student.count({ where }),
       this.prisma.student.findMany({
         where,
-        include: { user: true, resume: { select: { isComplete: true } } },
+        // `data` is only for computing the missing-items tooltip for THIS page's
+        // rows (≤ limit), so it's cheap. The college-wide count uses isComplete.
+        include: { user: true, resume: { select: { isComplete: true, data: true } } },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
@@ -221,9 +224,21 @@ export class StudentsService {
     ]);
 
     return {
-      items: students.map((s) => this.publicStudent(s)),
+      items: students.map((s) => ({
+        ...this.publicStudent(s),
+        resumeMissing: this.resumeMissing(s.resume),
+      })),
       meta: { total, page, limit, pages: Math.ceil(total / limit), resumesComplete },
     };
+  }
+
+  // What's still missing before a resume is "complete" — drives the officer's
+  // hover tooltip. Returns [] when complete, a "not started" marker when absent.
+  private resumeMissing(resume: { isComplete: boolean; data: Prisma.JsonValue } | null): string[] {
+    if (!resume) return ['Resume not started'];
+    if (resume.isComplete) return [];
+    const parsed = resumeDataSchema.safeParse(resume.data);
+    return parsed.success ? resumeReadiness(parsed.data).missing : ['Resume not started'];
   }
 
   async findOne(collegeId: string, id: string) {
