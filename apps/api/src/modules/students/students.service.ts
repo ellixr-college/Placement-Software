@@ -224,21 +224,26 @@ export class StudentsService {
     ]);
 
     return {
-      items: students.map((s) => ({
-        ...this.publicStudent(s),
-        resumeMissing: this.resumeMissing(s.resume),
-      })),
+      items: students.map((s) => {
+        // Compute completion from the LIVE resume data (not the persisted flag,
+        // which can be stale for resumes saved before the flag existed).
+        const { complete, missing } = this.resumeStatus(s.resume);
+        return { ...this.publicStudent(s), resumeComplete: complete, resumeMissing: missing };
+      }),
       meta: { total, page, limit, pages: Math.ceil(total / limit), resumesComplete },
     };
   }
 
-  // What's still missing before a resume is "complete" — drives the officer's
-  // hover tooltip. Returns [] when complete, a "not started" marker when absent.
-  private resumeMissing(resume: { isComplete: boolean; data: Prisma.JsonValue } | null): string[] {
-    if (!resume) return ['Resume not started'];
-    if (resume.isComplete) return [];
+  // Fresh completion + missing-items checklist for the officer's list/tooltip.
+  private resumeStatus(resume: { data: Prisma.JsonValue } | null): {
+    complete: boolean;
+    missing: string[];
+  } {
+    if (!resume) return { complete: false, missing: ['Resume not started'] };
     const parsed = resumeDataSchema.safeParse(resume.data);
-    return parsed.success ? resumeReadiness(parsed.data).missing : ['Resume not started'];
+    if (!parsed.success) return { complete: false, missing: ['Resume not started'] };
+    const r = resumeReadiness(parsed.data);
+    return { complete: r.ready, missing: r.missing };
   }
 
   async findOne(collegeId: string, id: string) {
