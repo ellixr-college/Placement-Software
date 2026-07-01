@@ -293,7 +293,9 @@ function StudentsList() {
                     {s.resumeComplete ? (
                       <Badge tint="mint">Complete</Badge>
                     ) : (
-                      <ResumeIncomplete missing={s.resumeMissing ?? []} />
+                      <ResumeIncomplete
+                        missing={s.resumeMissing?.length ? s.resumeMissing : ['Resume not started']}
+                      />
                     )}
                   </td>
                   <td className="px-4 py-3">
