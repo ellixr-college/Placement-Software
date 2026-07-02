@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Button, Card } from '@ellixr/ui';
+import { PdfModal } from '../../../../components/pdf-modal';
 import {
   closeJob,
   formatCtc,
@@ -25,6 +26,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [eligible, setEligible] = useState<EligibleStudent[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [showPdf, setShowPdf] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
@@ -157,10 +159,13 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               <p className="text-xs text-subtle">{job.pdfName ?? 'Attached PDF'}</p>
             </div>
           </div>
-          <a href={job.pdfUrl} target="_blank" rel="noreferrer">
-            <Button variant="outline" size="sm">View PDF</Button>
-          </a>
+          <Button variant="outline" size="sm" onClick={() => setShowPdf(true)}>
+            View PDF
+          </Button>
         </Card>
+      )}
+      {showPdf && job.pdfUrl && (
+        <PdfModal url={job.pdfUrl} name={job.pdfName} onClose={() => setShowPdf(false)} />
       )}
       {job.description && (
         <Card className="space-y-2 p-5">

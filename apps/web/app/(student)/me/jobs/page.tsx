@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { applyToJob, formatCtc, getJobFeed, type ApplicationField, type Job } from '../../../../lib/jobs';
+import { PdfModal } from '../../../../components/pdf-modal';
 
 /**
  * Student job feed (mobile). Shows only PUBLISHED jobs the authenticated student
@@ -14,6 +15,7 @@ export default function StudentJobsPage() {
   const [error, setError] = useState<string | null>(null);
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [formJob, setFormJob] = useState<Job | null>(null);
+  const [pdfView, setPdfView] = useState<{ url: string; name?: string | null } | null>(null);
 
   async function load() {
     try {
@@ -61,6 +63,10 @@ export default function StudentJobsPage() {
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
+      {pdfView && (
+        <PdfModal url={pdfView.url} name={pdfView.name} onClose={() => setPdfView(null)} />
+      )}
+
       {formJob && (
         <ApplyModal
           job={formJob}
@@ -90,14 +96,12 @@ export default function StudentJobsPage() {
               </div>
               {j.description && <p className="line-clamp-3 text-sm text-body">{j.description}</p>}
               {j.pdfUrl && (
-                <a
-                  href={j.pdfUrl}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  onClick={() => setPdfView({ url: j.pdfUrl!, name: j.pdfName })}
                   className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:underline"
                 >
                   📄 View job description (PDF)
-                </a>
+                </button>
               )}
 
               {notEligible && !j.applied && (
