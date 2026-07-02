@@ -495,6 +495,8 @@ export class JobsService {
     maxTotalBacklogs: number | null;
     graduationYears: number[];
     applicationFormFields?: Prisma.JsonValue;
+    pdfUrl?: string | null;
+    pdfName?: string | null;
     status: string;
     applicationDeadline: Date | null;
     publishedAt: Date | null;
@@ -531,6 +533,8 @@ export class JobsService {
       maxTotalBacklogs: j.maxTotalBacklogs,
       graduationYears: j.graduationYears,
       applicationFormFields: (j.applicationFormFields as ApplicationField[] | null) ?? [],
+      pdfUrl: j.pdfUrl ?? null,
+      pdfName: j.pdfName ?? null,
       status: j.status,
       applicationDeadline: j.applicationDeadline,
       publishedAt: j.publishedAt,

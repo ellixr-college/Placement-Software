@@ -146,6 +146,22 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       )}
 
       {error && <p className="text-sm text-danger">{error}</p>}
+      {job.pdfUrl && (
+        <Card className="flex items-center justify-between gap-3 p-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-danger/10 text-xs font-bold text-danger">
+              PDF
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-strong">Job description</p>
+              <p className="text-xs text-subtle">{job.pdfName ?? 'Attached PDF'}</p>
+            </div>
+          </div>
+          <a href={job.pdfUrl} target="_blank" rel="noreferrer">
+            <Button variant="outline" size="sm">View PDF</Button>
+          </a>
+        </Card>
+      )}
       {job.description && (
         <Card className="space-y-2 p-5">
           <h2 className="text-sm font-semibold text-strong">About the job</h2>

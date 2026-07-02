@@ -61,6 +61,9 @@ export class CreateJobDto {
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ApplicationFieldDto)
   applicationFormFields?: ApplicationFieldDto[];
 
+  @IsOptional() @IsString() pdfUrl?: string;
+  @IsOptional() @IsString() pdfName?: string;
+
   @IsOptional() @IsDateString() applicationDeadline?: string;
 }
 
@@ -90,6 +93,9 @@ export class UpdateJobDto {
 
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ApplicationFieldDto)
   applicationFormFields?: ApplicationFieldDto[];
+
+  @IsOptional() @IsString() pdfUrl?: string;
+  @IsOptional() @IsString() pdfName?: string;
 
   @IsOptional() @IsDateString() applicationDeadline?: string;
 }
@@ -127,6 +133,9 @@ export class CreatePlatformJobDto {
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ApplicationFieldDto)
   applicationFormFields?: ApplicationFieldDto[];
 
+  @IsOptional() @IsString() pdfUrl?: string;
+  @IsOptional() @IsString() pdfName?: string;
+
   @IsOptional() @IsDateString() applicationDeadline?: string;
 }
 
@@ -159,6 +168,9 @@ export class UpdatePlatformJobDto {
 
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ApplicationFieldDto)
   applicationFormFields?: ApplicationFieldDto[];
+
+  @IsOptional() @IsString() pdfUrl?: string;
+  @IsOptional() @IsString() pdfName?: string;
 
   @IsOptional() @IsDateString() applicationDeadline?: string;
 }

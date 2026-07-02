@@ -89,6 +89,16 @@ export default function StudentJobsPage() {
                 {j.applied && <Badge tint="mint">{j.myStage ?? 'Applied'}</Badge>}
               </div>
               {j.description && <p className="line-clamp-3 text-sm text-body">{j.description}</p>}
+              {j.pdfUrl && (
+                <a
+                  href={j.pdfUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:underline"
+                >
+                  📄 View job description (PDF)
+                </a>
+              )}
 
               {notEligible && !j.applied && (
                 <div className="rounded-md border border-cream/60 bg-tint-cream/40 px-3 py-2 text-xs text-tint-cream-fg">

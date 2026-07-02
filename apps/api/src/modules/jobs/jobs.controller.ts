@@ -7,13 +7,25 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { put } from '@vercel/blob';
 import { UserRole } from '@ellixr/shared';
 import type { JwtPayload } from '@ellixr/shared';
 import { CurrentUser, Roles } from '../../common/decorators';
 import { JobsService } from './jobs.service';
 import { ApplicationsService } from './applications.service';
 import { ApplyDto, CreateJobDto, ListJobsQuery, UpdateJobDto } from './dto';
+
+// Minimal shape of a multer upload (avoids depending on @types/multer).
+interface UploadedPdf {
+  buffer: Buffer;
+  mimetype: string;
+  originalname: string;
+  size: number;
+}
 
 // No class-level @Roles: this controller mixes officer management routes and
 // student feed/apply routes, each guarded with method-level @Roles.
@@ -27,6 +39,26 @@ export class JobsController {
   private collegeId(user: JwtPayload): string {
     if (!user.collegeId) throw new BadRequestException('No college context');
     return user.collegeId;
+  }
+
+  // Upload a Job Description PDF to Vercel Blob; returns its public URL to attach
+  // to a job (used by the "quick post" flow). Officer/admin only.
+  @Post('upload-pdf')
+  @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  async uploadPdf(@CurrentUser() user: JwtPayload, @UploadedFile() file?: UploadedPdf) {
+    this.collegeId(user);
+    if (!file) throw new BadRequestException('No file uploaded');
+    if (file.mimetype !== 'application/pdf') throw new BadRequestException('Only PDF files are allowed');
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!token) throw new BadRequestException('File storage is not configured (BLOB_READ_WRITE_TOKEN)');
+    const safe = file.originalname.replace(/[^\w.\-]+/g, '_').slice(-80) || 'job.pdf';
+    const blob = await put(`job-pdfs/${user.collegeId}/${Date.now()}-${safe}`, file.buffer, {
+      access: 'public',
+      token,
+      contentType: 'application/pdf',
+    });
+    return { data: { url: blob.url, name: file.originalname } };
   }
 
   // GET /jobs — officer management list OR student eligible feed, by role.

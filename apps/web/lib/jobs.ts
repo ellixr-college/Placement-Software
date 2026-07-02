@@ -1,6 +1,27 @@
 'use client';
 
-import { api, apiList } from './api';
+import { api, apiList, API_URL, getAccessToken, tryRefresh } from './api';
+
+/** Upload a Job Description PDF (multipart) → returns its public URL + name. */
+export async function uploadJobPdf(file: File): Promise<{ url: string; name: string }> {
+  const send = () => {
+    const form = new FormData();
+    form.append('file', file);
+    const token = getAccessToken();
+    // No Content-Type header — the browser sets the multipart boundary itself.
+    return fetch(`${API_URL}/jobs/upload-pdf`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+  };
+  let res = await send();
+  if (res.status === 401 && (await tryRefresh())) res = await send();
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body?.error?.message ?? 'Upload failed');
+  return body.data as { url: string; name: string };
+}
 
 export type ApplicationFieldType = 'text' | 'textarea' | 'select' | 'number';
 
@@ -33,6 +54,8 @@ export interface Job {
   maxTotalBacklogs: number | null;
   graduationYears: number[];
   applicationFormFields?: ApplicationField[];
+  pdfUrl?: string | null;
+  pdfName?: string | null;
   status: string;
   applicationDeadline: string | null;
   publishedAt: string | null;
@@ -75,6 +98,8 @@ export interface CreateJobInput {
   maxActiveBacklogs?: number;
   maxTotalBacklogs?: number;
   applicationFormFields?: ApplicationField[];
+  pdfUrl?: string;
+  pdfName?: string;
   applicationDeadline?: string;
 }
 

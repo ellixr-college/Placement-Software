@@ -59,7 +59,10 @@ export default function JobsPage() {
           <h1 className="text-2xl font-semibold text-strong">Jobs</h1>
           <p className="text-sm text-subtle">{items.length} postings</p>
         </div>
-        <Link href="/jobs/new"><Button>Post a job</Button></Link>
+        <div className="flex gap-2">
+          <Link href="/jobs/new"><Button variant="ghost">Full form</Button></Link>
+          <Link href="/jobs/quick"><Button>Quick post</Button></Link>
+        </div>
       </header>
 
       <div className="flex gap-2">

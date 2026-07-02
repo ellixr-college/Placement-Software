@@ -378,6 +378,10 @@ model Job {
   maxActiveBacklogs   Int?      @map("max_active_backlogs")
   maxTotalBacklogs    Int?      @map("max_total_backlogs")
   graduationYears     Int[]     @map("graduation_years")
+  // Optional uploaded Job Description PDF (Vercel Blob URL) for "quick post" jobs —
+  // the officer uploads the company's JD instead of typing a description.
+  pdfUrl              String?    @map("pdf_url")
+  pdfName            String?    @map("pdf_name")
   // Optional custom application questions: [{ id, label, type, options?, required }].
   // Students answer these at apply time; answers stored on Application.formResponses.
   applicationFormFields Json?   @map("application_form_fields")
