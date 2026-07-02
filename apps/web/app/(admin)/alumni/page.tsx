@@ -364,6 +364,7 @@ function NewAlumniForm({ onCreated }: { onCreated: () => void }) {
     graduationYear: String(new Date().getFullYear()),
     branch: '',
     phone: '',
+    registerNumber: '',
     course: '',
     currentCompany: '',
     currentDesignation: '',
@@ -392,6 +393,7 @@ function NewAlumniForm({ onCreated }: { onCreated: () => void }) {
         graduationYear: Number(form.graduationYear),
         branch: form.branch.trim(),
         phone: form.phone.trim() || undefined,
+        registerNumber: form.registerNumber.trim() || undefined,
         course: form.course || undefined,
         currentCompany: form.currentCompany || undefined,
         currentDesignation: form.currentDesignation || undefined,
@@ -445,6 +447,9 @@ function NewAlumniForm({ onCreated }: { onCreated: () => void }) {
         </Field>
         <Field label="Course">
           <input className={inputCls} value={form.course} onChange={set('course')} />
+        </Field>
+        <Field label="Register number">
+          <input className={inputCls} value={form.registerNumber} onChange={set('registerNumber')} />
         </Field>
         <Field label="Phone">
           <input className={inputCls} value={form.phone} onChange={set('phone')} placeholder="10-digit mobile" />

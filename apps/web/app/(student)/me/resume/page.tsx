@@ -388,7 +388,7 @@ export default function ResumeEditorPage() {
           return (
             <>
               <Text label="Institution" value={ed.institution} onChange={(v) => set({ institution: v })} />
-              <Text label="Degree" value={ed.degree} onChange={(v) => set({ degree: v })} />
+              <Text label="Qualification" value={ed.degree} onChange={(v) => set({ degree: v })} placeholder="10th / 12th / B.Com" />
               <Text label="Field" value={ed.field} onChange={(v) => set({ field: v })} />
               <div className="grid grid-cols-2 gap-2">
                 <Text label="Start year" value={ed.startYear} onChange={(v) => set({ startYear: v })} />

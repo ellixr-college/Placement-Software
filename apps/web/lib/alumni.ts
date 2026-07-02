@@ -7,6 +7,7 @@ export interface Alumni {
   fullName: string;
   email: string;
   phone: string | null;
+  registerNumber: string | null;
   graduationYear: number;
   course: string | null;
   branch: string;
@@ -31,6 +32,7 @@ export interface AlumniInput {
   graduationYear: number;
   branch: string;
   phone?: string;
+  registerNumber?: string;
   course?: string;
   currentCompany?: string;
   currentDesignation?: string;
@@ -72,6 +74,7 @@ export interface SelfRegisterInput {
   graduationYear: number;
   branch: string;
   phone?: string;
+  registerNumber?: string;
   course?: string;
   currentCompany?: string;
   currentDesignation?: string;

@@ -37,9 +37,10 @@ export default function AlumniRegisterPage({ params }: { params: Promise<{ slug:
       <Card className="space-y-3 p-6 text-center">
         <h1 className="text-lg font-semibold text-strong">Thanks for registering! 🎉</h1>
         <p className="text-sm text-body">
-          Your details have been submitted to {collegeName}&apos;s placement cell. They&apos;ll
+          Your details have been received. The {collegeName ? `${collegeName} ` : ''}Alumni Cell will
           review and add you to the alumni network shortly.
         </p>
+        <p className="text-xs text-subtle">— {collegeName ? `${collegeName} ` : ''}Alumni Cell</p>
       </Card>
     );
   }
@@ -71,6 +72,7 @@ function RegisterForm({
     phone: '',
     graduationYear: String(new Date().getFullYear()),
     branch: '',
+    registerNumber: '',
     course: '',
     currentCompany: '',
     currentDesignation: '',
@@ -103,6 +105,7 @@ function RegisterForm({
         graduationYear: Number(form.graduationYear),
         branch: form.branch.trim(),
         phone: form.phone.trim() || undefined,
+        registerNumber: form.registerNumber.trim() || undefined,
         course: form.course.trim() || undefined,
         currentCompany: form.currentCompany.trim() || undefined,
         currentDesignation: form.currentDesignation.trim() || undefined,
@@ -154,6 +157,9 @@ function RegisterForm({
       <div className="grid grid-cols-2 gap-3">
         <Field label="Course">
           <input className={inputCls} value={form.course} onChange={set('course')} placeholder="B.Tech" />
+        </Field>
+        <Field label="Register number">
+          <input className={inputCls} value={form.registerNumber} onChange={set('registerNumber')} />
         </Field>
         <Field label="Phone">
           <input className={inputCls} value={form.phone} onChange={set('phone')} placeholder="10-digit mobile" />

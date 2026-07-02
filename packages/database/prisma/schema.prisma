@@ -149,6 +149,7 @@ model Alumni {
   fullName           String   @map("full_name")
   email              String
   phone              String?
+  registerNumber     String?  @map("register_number")
   graduationYear     Int      @map("graduation_year")
   course             String?
   branch             String
