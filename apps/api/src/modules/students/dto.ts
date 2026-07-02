@@ -173,6 +173,10 @@ export class BulkDeleteStudentsDto {
   @IsArray() @ArrayNotEmpty() @IsString({ each: true }) ids!: string[];
 }
 
+export class GraduateBatchDto {
+  @Type(() => Number) @IsInt() @Min(1950) @Max(2100) graduationYear!: number;
+}
+
 export class ListStudentsQuery {
   @IsOptional() @IsString() search?: string;
   @IsOptional() @IsString() branch?: string;

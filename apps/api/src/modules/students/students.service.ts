@@ -188,6 +188,63 @@ export class StudentsService {
     return { createdCount: created.length, errorCount: errors.length, created, errors };
   }
 
+  /**
+   * Graduate a whole batch: copy each student of `graduationYear` into the Alumni
+   * directory (dedup by email) and disable their student logins (record kept).
+   * The new incoming batch is then just a normal CSV import.
+   */
+  async graduateBatch(collegeId: string, graduationYear: number) {
+    const students = await this.prisma.student.findMany({
+      where: { collegeId, graduationYear },
+      include: { user: { select: { fullName: true, email: true } } },
+    });
+    if (students.length === 0) {
+      throw new BadRequestException(`No students found in the ${graduationYear} batch`);
+    }
+
+    // Skip anyone already in the alumni directory (unique per college+email).
+    const existing = await this.prisma.alumni.findMany({
+      where: { collegeId, email: { in: students.map((s) => s.user.email) } },
+      select: { email: true },
+    });
+    const taken = new Set(existing.map((a) => a.email.toLowerCase()));
+
+    const alumniData = students
+      .filter((s) => !taken.has(s.user.email.toLowerCase()))
+      .map((s) => ({
+        collegeId,
+        fullName: s.user.fullName,
+        email: s.user.email,
+        registerNumber: s.rollNumber,
+        graduationYear: s.graduationYear,
+        course: s.course,
+        branch: s.branch,
+        tags: [],
+        selfRegistered: false,
+        isApproved: true,
+      }));
+
+    const [alumniResult] = await this.prisma.$transaction([
+      this.prisma.alumni.createMany({ data: alumniData, skipDuplicates: true }),
+      // Disable logins + deactivate the student rows (history retained).
+      this.prisma.user.updateMany({
+        where: { id: { in: students.map((s) => s.userId) } },
+        data: { isActive: false },
+      }),
+      this.prisma.student.updateMany({
+        where: { id: { in: students.map((s) => s.id) } },
+        data: { isActive: false },
+      }),
+    ]);
+
+    return {
+      graduationYear,
+      studentsGraduated: students.length,
+      alumniCreated: alumniResult.count,
+      alreadyAlumni: students.length - alumniData.length,
+    };
+  }
+
   async list(collegeId: string, q: ListStudentsQuery) {
     const page = q.page ?? 1;
     const limit = q.limit ?? 25;

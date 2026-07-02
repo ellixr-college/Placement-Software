@@ -117,6 +117,21 @@ export function getStudent(id: string): Promise<Student> {
   return api<Student>(`/students/${id}`);
 }
 
+export interface GraduateResult {
+  graduationYear: number;
+  studentsGraduated: number;
+  alumniCreated: number;
+  alreadyAlumni: number;
+}
+
+/** Copy a batch to Alumni and disable their logins. */
+export function graduateBatch(graduationYear: number): Promise<GraduateResult> {
+  return api<GraduateResult>('/students/graduate', {
+    method: 'POST',
+    body: JSON.stringify({ graduationYear }),
+  });
+}
+
 export function createStudent(
   input: CreateStudentInput,
 ): Promise<{ student: Student; tempPassword: string }> {

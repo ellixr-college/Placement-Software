@@ -7,8 +7,10 @@ import { Badge, Button, Card } from '@ellixr/ui';
 import { useConfirm } from '../../../components/confirm-provider';
 import {
   deleteStudents,
+  graduateBatch,
   listStudents,
   setStudentActive,
+  type GraduateResult,
   type ListMeta,
   type Student,
 } from '../../../lib/students';
@@ -34,6 +36,7 @@ function StudentsList() {
   const searchParams = useSearchParams();
   const importedCount = searchParams.get('imported');
   const [showImported, setShowImported] = useState(false);
+  const [showGraduate, setShowGraduate] = useState(false);
   const [items, setItems] = useState<Student[]>([]);
   const [meta, setMeta] = useState<ListMeta | undefined>();
   const [search, setSearch] = useState('');
@@ -181,6 +184,9 @@ function StudentsList() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="ghost" onClick={() => setShowGraduate(true)}>
+            Graduate batch
+          </Button>
           <Link href="/students/import">
             <Button variant="ghost">Import CSV</Button>
           </Link>
@@ -189,6 +195,16 @@ function StudentsList() {
           </Link>
         </div>
       </header>
+
+      {showGraduate && (
+        <GraduateBatchModal
+          onClose={() => setShowGraduate(false)}
+          onDone={() => {
+            setShowGraduate(false);
+            load();
+          }}
+        />
+      )}
 
       <div className="flex gap-2">
         <input
@@ -348,6 +364,80 @@ function StudentsList() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Graduate a batch → copy to Alumni + disable their logins. */
+function GraduateBatchModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+  const [year, setYear] = useState(String(new Date().getFullYear()));
+  const [ack, setAck] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<GraduateResult | null>(null);
+
+  async function run() {
+    setBusy(true);
+    setError(null);
+    try {
+      setResult(await graduateBatch(Number(year)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not graduate the batch');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
+      <Card className="w-full max-w-md space-y-4 p-6">
+        {result ? (
+          <>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success/15 text-2xl text-success">
+              ✓
+            </div>
+            <div className="text-center">
+              <h2 className="text-lg font-semibold text-strong">Batch {result.graduationYear} graduated</h2>
+              <p className="mt-1 text-sm text-subtle">
+                {result.alumniCreated} added to Alumni
+                {result.alreadyAlumni > 0 ? ` (${result.alreadyAlumni} already there)` : ''} ·{' '}
+                {result.studentsGraduated} logins disabled.
+              </p>
+            </div>
+            <Button className="w-full" onClick={onDone}>Done</Button>
+          </>
+        ) : (
+          <>
+            <div>
+              <h2 className="text-lg font-semibold text-strong">Graduate a batch</h2>
+              <p className="mt-1 text-sm text-subtle">
+                Copies every student of this passout year into the Alumni directory and disables
+                their student logins. Their records are kept.
+              </p>
+            </div>
+            <label className="block space-y-1">
+              <span className="text-xs font-medium text-subtle">Passout year</span>
+              <input
+                type="number"
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
+              />
+            </label>
+            <label className="flex items-start gap-2 text-xs text-body">
+              <input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} className="mt-0.5" />
+              I understand the {year} students&apos; logins will be disabled.
+            </label>
+            {error && <p className="text-sm text-danger">{error}</p>}
+            <div className="flex gap-2">
+              <Button onClick={run} loading={busy} disabled={!ack || !year}>
+                {busy ? 'Graduating…' : 'Graduate batch'}
+              </Button>
+              <Button variant="ghost" onClick={onClose}>Cancel</Button>
+            </div>
+          </>
+        )}
+      </Card>
     </div>
   );
 }

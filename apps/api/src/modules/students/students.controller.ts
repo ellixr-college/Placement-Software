@@ -7,6 +7,7 @@ import { StudentsService } from './students.service';
 import {
   BulkDeleteStudentsDto,
   CreateStudentDto,
+  GraduateBatchDto,
   ImportStudentsDto,
   ListStudentsQuery,
   SetStudentStatusDto,
@@ -62,6 +63,23 @@ export class StudentsController {
     @Body() dto: UpdateStudentDto,
   ) {
     return { data: await this.students.update(this.collegeId(user), id, dto) };
+  }
+
+  @Post('graduate')
+  @Roles(UserRole.PLACEMENT_OFFICER, UserRole.COLLEGE_ADMIN)
+  async graduate(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: GraduateBatchDto,
+    @Ip() ip: string,
+  ) {
+    const result = await this.students.graduateBatch(this.collegeId(user), dto.graduationYear);
+    await this.audit.record(user, {
+      action: 'STUDENT_BATCH_GRADUATE',
+      targetType: 'student',
+      metadata: result,
+      ip,
+    });
+    return { data: result };
   }
 
   @Post('bulk-delete')
