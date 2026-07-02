@@ -50,7 +50,7 @@ export function checkEligibility(
     reasons.push('Graduation year not eligible');
   }
   if (job.minCgpa != null && (student.cgpa == null || student.cgpa < job.minCgpa)) {
-    reasons.push(`CGPA below ${job.minCgpa}`);
+    reasons.push(`Percentage below ${job.minCgpa}%`);
   }
   if (
     job.minTenthPercentage != null &&

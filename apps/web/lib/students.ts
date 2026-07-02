@@ -30,6 +30,7 @@ export interface Student {
   dateOfBirth: string | null;
   gender: string | null;
   personalEmail: string | null;
+  linkedinUrl: string | null;
   tenthPercentage: number | null;
   twelfthPercentage: number | null;
   semesterMarks: SemesterMark[] | null;
@@ -57,6 +58,7 @@ export interface ExtendedProfileFields {
   dateOfBirth?: string;
   gender?: string;
   personalEmail?: string;
+  linkedinUrl?: string;
   tenthPercentage?: number;
   twelfthPercentage?: number;
   semesterMarks?: SemesterMark[];

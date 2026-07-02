@@ -24,6 +24,7 @@ const EMPTY = {
   dateOfBirth: '',
   gender: '',
   personalEmail: '',
+  linkedinUrl: '',
   tenthPercentage: '',
   twelfthPercentage: '',
 };
@@ -70,6 +71,7 @@ export default function NewStudentPage() {
         dateOfBirth: form.dateOfBirth || undefined,
         gender: form.gender || undefined,
         personalEmail: form.personalEmail.trim() || undefined,
+        linkedinUrl: form.linkedinUrl.trim() || undefined,
         tenthPercentage: form.tenthPercentage === '' ? undefined : Number(form.tenthPercentage),
         twelfthPercentage: form.twelfthPercentage === '' ? undefined : Number(form.twelfthPercentage),
       };
@@ -171,7 +173,7 @@ export default function NewStudentPage() {
             placeholder="Not tracked"
           />
           <Field label="Phone" value={form.phone} onChange={set('phone')} />
-          <Field label="CGPA" type="number" value={form.cgpa} onChange={set('cgpa')} placeholder="8.2" />
+          <Field label="Percentage (%)" type="number" value={form.cgpa} onChange={set('cgpa')} placeholder="85" />
           <Field
             label="Active backlogs"
             type="number"
@@ -187,6 +189,7 @@ export default function NewStudentPage() {
           <Field label="Date of birth" type="date" value={form.dateOfBirth} onChange={set('dateOfBirth')} />
           <SelectField label="Gender" value={form.gender} onChange={set('gender')} options={GENDERS} placeholder="Not specified" />
           <Field label="Personal email" type="email" value={form.personalEmail} onChange={set('personalEmail')} />
+          <Field label="LinkedIn" value={form.linkedinUrl} onChange={set('linkedinUrl')} placeholder="https://linkedin.com/in/…" />
           <Field label="10th %" type="number" value={form.tenthPercentage} onChange={set('tenthPercentage')} placeholder="85" />
           <Field label="12th %" type="number" value={form.twelfthPercentage} onChange={set('twelfthPercentage')} placeholder="82" />
 

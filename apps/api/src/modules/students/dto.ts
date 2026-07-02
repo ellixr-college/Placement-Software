@@ -70,7 +70,7 @@ export class CreateStudentDto {
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  @Max(10)
+  @Max(100)
   cgpa?: number;
 
   @IsOptional()
@@ -88,6 +88,7 @@ export class CreateStudentDto {
   @EmptyToUndefined() @IsOptional() @IsDateString() dateOfBirth?: string;
   @IsOptional() @IsIn(GENDERS) gender?: string;
   @EmptyToUndefined() @IsOptional() @IsEmail() personalEmail?: string;
+  @IsOptional() @IsString() linkedinUrl?: string;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) tenthPercentage?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) twelfthPercentage?: number;
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => SemesterMarkDto)
@@ -107,12 +108,13 @@ export class UpdateStudentDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10) currentYear?: number;
   @IsOptional() @IsString() @MinLength(1) rollNumber?: string;
 
-  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(10) cgpa?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) cgpa?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) activeBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) totalBacklogs?: number;
   @EmptyToUndefined() @IsOptional() @IsDateString() dateOfBirth?: string;
   @IsOptional() @IsIn(GENDERS) gender?: string;
   @EmptyToUndefined() @IsOptional() @IsEmail() personalEmail?: string;
+  @IsOptional() @IsString() linkedinUrl?: string;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) tenthPercentage?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) twelfthPercentage?: number;
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => SemesterMarkDto) semesterMarks?: SemesterMarkDto[];
@@ -130,12 +132,13 @@ export class UpdateOwnProfileDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1990) @Max(CURRENT_YEAR + 10)
   graduationYear?: number;
 
-  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(10) cgpa?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) cgpa?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) activeBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) totalBacklogs?: number;
   @EmptyToUndefined() @IsOptional() @IsDateString() dateOfBirth?: string;
   @IsOptional() @IsIn(GENDERS) gender?: string;
   @EmptyToUndefined() @IsOptional() @IsEmail() personalEmail?: string;
+  @IsOptional() @IsString() linkedinUrl?: string;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) tenthPercentage?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) twelfthPercentage?: number;
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => SemesterMarkDto) semesterMarks?: SemesterMarkDto[];

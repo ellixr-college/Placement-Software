@@ -74,6 +74,7 @@ export class StudentsService {
           totalBacklogs: dto.totalBacklogs ?? 0,
           gender: dto.gender,
           personalEmail: dto.personalEmail,
+          linkedinUrl: dto.linkedinUrl,
           // Officer-registered students come from official college rolls — trust
           // them so they immediately see eligible jobs (no separate verify step).
           status: 'VERIFIED',
@@ -621,6 +622,7 @@ export class StudentsService {
     dateOfBirth: Date | null;
     gender: string | null;
     personalEmail: string | null;
+    linkedinUrl: string | null;
     tenthPercentage: Prisma.Decimal | null;
     twelfthPercentage: Prisma.Decimal | null;
     semesterMarks: Prisma.JsonValue;
@@ -655,6 +657,7 @@ export class StudentsService {
       dateOfBirth: s.dateOfBirth,
       gender: s.gender,
       personalEmail: s.personalEmail,
+      linkedinUrl: s.linkedinUrl,
       tenthPercentage: s.tenthPercentage != null ? Number(s.tenthPercentage) : null,
       twelfthPercentage: s.twelfthPercentage != null ? Number(s.twelfthPercentage) : null,
       semesterMarks: s.semesterMarks,

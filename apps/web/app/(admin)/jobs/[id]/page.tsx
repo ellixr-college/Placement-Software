@@ -183,7 +183,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         <Detail label="Courses" value={job.eligibleCourses.join(', ') || '—'} />
         <Detail label="Branches" value={job.eligibleBranches.join(', ') || '—'} />
         <Detail label="Grad years" value={job.graduationYears.join(', ') || '—'} />
-        <Detail label="Min CGPA" value={job.minCgpa != null ? String(job.minCgpa) : '—'} />
+        <Detail label="Min %" value={job.minCgpa != null ? `${job.minCgpa}%` : '—'} />
         <Detail label="Max active backlogs" value={job.maxActiveBacklogs != null ? String(job.maxActiveBacklogs) : '—'} />
         <Detail label="Max total backlogs" value={job.maxTotalBacklogs != null ? String(job.maxTotalBacklogs) : '—'} />
       </Card>
@@ -203,7 +203,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
             {eligible.map((s) => (
               <div key={s.id} className="flex items-center justify-between text-sm">
                 <span className="text-strong">{s.fullName} <span className="text-subtle">· {s.rollNumber}</span></span>
-                <span className="text-xs text-subtle">{s.branch} · CGPA {s.cgpa ?? '—'}</span>
+                <span className="text-xs text-subtle">{s.branch} · {s.cgpa != null ? `${s.cgpa}%` : '—'}</span>
               </div>
             ))}
           </div>

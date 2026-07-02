@@ -394,7 +394,7 @@ export default function ResumeEditorPage() {
                 <Text label="Start year" value={ed.startYear} onChange={(v) => set({ startYear: v })} />
                 <Text label="End year" value={ed.endYear} onChange={(v) => set({ endYear: v })} />
               </div>
-              <Text label="Score" value={ed.score} onChange={(v) => set({ score: v })} placeholder="e.g. 85% or CGPA 8.4" />
+              <Text label="Percentage" value={ed.score} onChange={(v) => set({ score: v })} placeholder="e.g. 85%" />
             </>
           );
         }}

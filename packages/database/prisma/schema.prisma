@@ -208,6 +208,7 @@ model Student {
   dateOfBirth        DateTime?          @map("date_of_birth")
   gender             String?
   personalEmail      String?            @map("personal_email")
+  linkedinUrl        String?            @map("linkedin_url")
   tenthPercentage    Decimal?           @db.Decimal(5, 2) @map("tenth_percentage")
   twelfthPercentage  Decimal?           @db.Decimal(5, 2) @map("twelfth_percentage")
   // Semester-wise marks: [{ label, score }] as JSON for flexibility.

@@ -220,12 +220,13 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
             <Detail label="Branch" value={student.branch || '—'} />
             <Detail label="Passout year" value={String(student.graduationYear)} />
             <Detail label="Current year" value={student.currentYear ? `Year ${student.currentYear}` : '—'} />
-            <Detail label="CGPA" value={student.cgpa != null ? String(student.cgpa) : '—'} />
+            <Detail label="Percentage" value={student.cgpa != null ? `${student.cgpa}%` : '—'} />
             <Detail label="Active backlogs" value={String(student.activeBacklogs)} />
             <Detail label="Total backlogs" value={String(student.totalBacklogs)} />
             <Detail label="Enrollment no." value={student.enrollmentNumber ?? '—'} />
             <Detail label="Phone" value={student.user.phone ?? '—'} />
             <Detail label="Personal email" value={student.personalEmail ?? '—'} />
+            <Detail label="LinkedIn" value={student.linkedinUrl ?? '—'} />
             <Detail
               label="Date of birth"
               value={student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : '—'}
@@ -341,7 +342,7 @@ function EditStudentForm({
           </select>
         </label>
         <EditField label="Phone" value={form.phone} onChange={set('phone')} />
-        <EditField label="CGPA" type="number" value={form.cgpa} onChange={set('cgpa')} />
+        <EditField label="Percentage (%)" type="number" value={form.cgpa} onChange={set('cgpa')} />
         <EditField label="Enrollment no." value={form.enrollmentNumber} onChange={set('enrollmentNumber')} />
       </div>
       {error && <p className="text-sm text-danger">{error}</p>}

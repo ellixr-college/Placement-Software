@@ -74,7 +74,7 @@ export default function PipelinePage({ params }: { params: Promise<{ id: string 
                       <p className="text-sm font-medium text-strong">{e.student.fullName}</p>
                       <p className="text-xs text-subtle">{e.student.rollNumber} · {e.student.branch}</p>
                       <p className="mt-1 text-xs text-subtle">
-                        CGPA {e.student.cgpa ?? '—'}
+                        {e.student.cgpa != null ? `${e.student.cgpa}%` : '—'}
                         {e.offerCtc != null && <> · ₹{(e.offerCtc / 100000).toFixed(1)} LPA</>}
                       </p>
                     </Card>

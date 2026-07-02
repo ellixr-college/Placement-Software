@@ -143,6 +143,12 @@ export default function StudentProfilePage() {
           onChange={(v) => patch({ personalEmail: v })}
           placeholder="you@gmail.com"
         />
+        <Text
+          label="LinkedIn"
+          value={form.linkedinUrl ?? ''}
+          onChange={(v) => patch({ linkedinUrl: v })}
+          placeholder="https://linkedin.com/in/…"
+        />
         <div className="grid grid-cols-2 gap-2">
           <Text
             label="Date of birth"
@@ -176,7 +182,7 @@ export default function StudentProfilePage() {
             onChange={(v) => patch({ graduationYear: toNum(v) })}
           />
           <Text
-            label="CGPA"
+            label="Percentage (%)"
             type="number"
             value={numStr(form.cgpa)}
             onChange={(v) => patch({ cgpa: toNum(v) })}
@@ -262,6 +268,7 @@ function toForm(s: Student): UpdateOwnProfileInput {
     dateOfBirth: s.dateOfBirth ? s.dateOfBirth.slice(0, 10) : '',
     gender: s.gender ?? '',
     personalEmail: s.personalEmail ?? '',
+    linkedinUrl: s.linkedinUrl ?? '',
     tenthPercentage: s.tenthPercentage ?? undefined,
     twelfthPercentage: s.twelfthPercentage ?? undefined,
     semesterMarks: s.semesterMarks ?? [],
@@ -284,6 +291,7 @@ function clean(form: UpdateOwnProfileInput): UpdateOwnProfileInput {
   if (form.dateOfBirth?.trim()) out.dateOfBirth = form.dateOfBirth.trim();
   if (form.gender?.trim()) out.gender = form.gender.trim();
   if (form.personalEmail?.trim()) out.personalEmail = form.personalEmail.trim();
+  if (form.linkedinUrl?.trim()) out.linkedinUrl = form.linkedinUrl.trim();
   if (form.tenthPercentage != null) out.tenthPercentage = form.tenthPercentage;
   if (form.twelfthPercentage != null) out.twelfthPercentage = form.twelfthPercentage;
   if (form.semesterMarks) {

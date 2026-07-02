@@ -98,7 +98,7 @@ export class ReportsService {
         { key: 'course', label: 'Course' },
         { key: 'branch', label: 'Branch' },
         { key: 'graduationYear', label: 'Graduation Year' },
-        { key: 'cgpa', label: 'CGPA' },
+        { key: 'cgpa', label: 'Percentage' },
         { key: 'activeBacklogs', label: 'Active Backlogs' },
         { key: 'totalBacklogs', label: 'Total Backlogs' },
         { key: 'status', label: 'Status' },

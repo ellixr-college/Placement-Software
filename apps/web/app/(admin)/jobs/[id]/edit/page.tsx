@@ -249,8 +249,8 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
               <input className={inputCls} value={form.graduationYears} onChange={set('graduationYears')} />
             </Field>
             <div className="grid grid-cols-3 gap-3">
-              <Field label="Min CGPA">
-                <input className={inputCls} type="number" value={form.minCgpa} onChange={set('minCgpa')} />
+              <Field label="Min %">
+                <input className={inputCls} type="number" value={form.minCgpa} onChange={set('minCgpa')} placeholder="60" />
               </Field>
               <Field label="Min 10th %">
                 <input className={inputCls} type="number" value={form.minTenthPercentage} onChange={set('minTenthPercentage')} />

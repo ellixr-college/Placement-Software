@@ -189,7 +189,7 @@ export default function NewJobPage() {
             )}
             <Field label="Graduation years * (comma-separated)"><input className={inputCls} value={form.graduationYears} onChange={set('graduationYears')} placeholder="2026, 2027" /></Field>
             <div className="grid grid-cols-3 gap-3">
-              <Field label="Min CGPA"><input className={inputCls} type="number" value={form.minCgpa} onChange={set('minCgpa')} /></Field>
+              <Field label="Min %"><input className={inputCls} type="number" value={form.minCgpa} onChange={set('minCgpa')} placeholder="60" /></Field>
               <Field label="Min 10th %"><input className={inputCls} type="number" value={form.minTenthPercentage} onChange={set('minTenthPercentage')} placeholder="60" /></Field>
               <Field label="Min 12th %"><input className={inputCls} type="number" value={form.minTwelfthPercentage} onChange={set('minTwelfthPercentage')} placeholder="60" /></Field>
               <Field label="Max active backlogs"><input className={inputCls} type="number" value={form.maxActiveBacklogs} onChange={set('maxActiveBacklogs')} /></Field>

@@ -36,7 +36,7 @@ export class ResumesService {
           field: student.branch,
           startYear: '',
           endYear: String(student.graduationYear),
-          score: student.cgpa != null ? `CGPA ${Number(student.cgpa)}` : '',
+          score: student.cgpa != null ? `${Number(student.cgpa)}%` : '',
         },
       ],
     });
