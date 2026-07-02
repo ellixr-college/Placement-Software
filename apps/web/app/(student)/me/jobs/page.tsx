@@ -85,6 +85,7 @@ export default function StudentJobsPage() {
       ) : (
         jobs.map((j) => {
           const notEligible = j.eligible === false;
+          const expired = !!j.applicationDeadline && new Date(j.applicationDeadline).getTime() < Date.now();
           return (
             <Card key={j.id} className="space-y-3 p-4">
               <div className="flex items-start justify-between">
@@ -116,6 +117,8 @@ export default function StudentJobsPage() {
                 <span className="text-sm font-medium text-strong">{formatCtc(j.ctcMin, j.ctcMax)}</span>
                 {j.applied ? (
                   <Button size="sm" variant="ghost" disabled>Applied</Button>
+                ) : expired ? (
+                  <Button size="sm" variant="ghost" disabled>Closed</Button>
                 ) : notEligible ? (
                   <Button size="sm" variant="ghost" disabled>Not eligible</Button>
                 ) : (
@@ -125,7 +128,10 @@ export default function StudentJobsPage() {
                 )}
               </div>
               {j.applicationDeadline && (
-                <p className="text-xs text-subtle">Apply by {new Date(j.applicationDeadline).toLocaleDateString()}</p>
+                <p className={`text-xs ${expired ? 'font-medium text-danger' : 'text-subtle'}`}>
+                  {expired ? 'Applications closed' : 'Apply by'}{' '}
+                  {new Date(j.applicationDeadline).toLocaleDateString()}
+                </p>
               )}
             </Card>
           );
