@@ -34,7 +34,10 @@ export class ApplyDto {
 
 export class CreateJobDto {
   @IsString() @MinLength(2) title!: string;
-  @IsString() @MinLength(1) companyId!: string;
+  // Company is now optional & independent of job posting — either link an existing
+  // company (companyId) or just type a name (companyName), or neither.
+  @IsOptional() @IsString() companyId?: string;
+  @IsOptional() @IsString() companyName?: string;
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsEnum(JobType) jobType?: JobType;
   @IsOptional() @IsEnum(WorkMode) workMode?: WorkMode;
@@ -69,6 +72,7 @@ export class CreateJobDto {
 
 export class UpdateJobDto {
   @IsOptional() @IsString() @MinLength(2) title?: string;
+  @IsOptional() @IsString() companyName?: string;
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsEnum(JobType) jobType?: JobType;
   @IsOptional() @IsEnum(WorkMode) workMode?: WorkMode;

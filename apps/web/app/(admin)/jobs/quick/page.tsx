@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
-import { listCompanies, type Company } from '../../../../lib/companies';
 import { listMyCourses, type CollegeCourse } from '../../../../lib/courses';
 import { createJob, uploadJobPdf } from '../../../../lib/jobs';
 
@@ -16,10 +15,9 @@ import { createJob, uploadJobPdf } from '../../../../lib/jobs';
 export default function QuickPostPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [companies, setCompanies] = useState<Company[]>([]);
   const [courses, setCourses] = useState<CollegeCourse[]>([]);
   const [title, setTitle] = useState('');
-  const [companyId, setCompanyId] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [graduationYears, setGraduationYears] = useState('');
   const [deadline, setDeadline] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -31,7 +29,6 @@ export default function QuickPostPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    listCompanies().then((c) => setCompanies(c.filter((x) => x.isActive))).catch(() => {});
     listMyCourses().then(setCourses).catch(() => {});
   }, []);
 
@@ -60,7 +57,7 @@ export default function QuickPostPage() {
   const eligibleCourses = hasCatalog ? pickedCourses : splitList(coursesText);
   const eligibleBranches = hasCatalog ? pickedBranches : splitList(branchesText);
 
-  const valid = title.trim() && companyId && eligibleCourses.length && numList(graduationYears).length;
+  const valid = title.trim() && eligibleCourses.length && numList(graduationYears).length;
 
   async function submit() {
     setSaving(true);
@@ -75,7 +72,7 @@ export default function QuickPostPage() {
       }
       const job = await createJob({
         title: title.trim(),
-        companyId,
+        companyName: companyName.trim() || undefined,
         eligibleCourses,
         eligibleBranches,
         graduationYears: numList(graduationYears),
@@ -92,26 +89,20 @@ export default function QuickPostPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="flex items-center justify-between">
-        <Link href="/jobs" className="text-sm text-primary-600 hover:underline">← Jobs</Link>
-        <Link href="/jobs/new" className="text-sm text-subtle hover:underline">Use full form →</Link>
-      </div>
+      <Link href="/jobs" className="text-sm text-primary-600 hover:underline">← Jobs</Link>
       <div>
-        <h1 className="text-2xl font-semibold text-strong">Quick post</h1>
+        <h1 className="text-2xl font-semibold text-strong">Post a job</h1>
         <p className="text-sm text-subtle">
-          Upload the company&apos;s JD and pick who can apply. Saved as a draft — publish to notify students.
+          Upload the JD (PDF) and pick who can apply. Saved as a draft — publish to notify students.
         </p>
       </div>
 
       <Card className="space-y-4 p-5">
-        <Field label="Title *">
+        <Field label="Job title *">
           <input className={inputCls} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Business Development Executive" />
         </Field>
-        <Field label="Company *">
-          <select className={inputCls} value={companyId} onChange={(e) => setCompanyId(e.target.value)}>
-            <option value="">Select a company…</option>
-            {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+        <Field label="Company name">
+          <input className={inputCls} value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="e.g. Infosys (optional)" />
         </Field>
 
         <Field label="Job description PDF">

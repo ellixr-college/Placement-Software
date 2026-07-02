@@ -79,7 +79,8 @@ export interface Job {
 
 export interface CreateJobInput {
   title: string;
-  companyId: string;
+  companyId?: string;
+  companyName?: string;
   description?: string;
   jobType?: string;
   workMode?: string;

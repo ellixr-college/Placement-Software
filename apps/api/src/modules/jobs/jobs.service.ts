@@ -41,17 +41,22 @@ export class JobsService {
   // ─────────────── Placement Officer: job lifecycle ───────────────
 
   async create(collegeId: string, createdById: string, dto: CreateJobDto) {
-    const company = await this.prisma.company.findFirst({
-      where: { id: dto.companyId, collegeId },
-    });
-    if (!company) throw new BadRequestException('Company not found');
+    // Company is optional now: link an existing one if an id is given, else the
+    // free-text companyName (or nothing). Job posting is independent of the POC/
+    // company directory.
+    if (dto.companyId) {
+      const company = await this.prisma.company.findFirst({
+        where: { id: dto.companyId, collegeId },
+      });
+      if (!company) throw new BadRequestException('Company not found');
+    }
 
     const { companyId, ctcMin, ctcMax, minCgpa, applicationDeadline, applicationFormFields, ...rest } =
       dto;
     return this.prisma.job.create({
       data: {
         collegeId,
-        companyId,
+        companyId: companyId ?? null,
         createdById,
         ...rest,
         ctcMin: ctcMin != null ? new Prisma.Decimal(ctcMin) : null,
