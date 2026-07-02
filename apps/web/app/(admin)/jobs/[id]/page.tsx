@@ -4,15 +4,19 @@ import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { PdfModal } from '../../../../components/pdf-modal';
+import { useRouter } from 'next/navigation';
 import {
   closeJob,
+  deleteJob,
   formatCtc,
   getEligibleStudents,
   getJob,
+  getJobApplicants,
   publishJob,
   type EligibleStudent,
   type Job,
 } from '../../../../lib/jobs';
+import { useConfirm } from '../../../../components/confirm-provider';
 
 const STATUS_TINT: Record<string, 'lavender' | 'mint' | 'cream' | 'primary'> = {
   DRAFT: 'cream',
@@ -22,6 +26,8 @@ const STATUS_TINT: Record<string, 'lavender' | 'mint' | 'cream' | 'primary'> = {
 
 export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
+  const confirm = useConfirm();
   const [job, setJob] = useState<Job | null>(null);
   const [eligible, setEligible] = useState<EligibleStudent[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,6 +80,60 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     setEligible(await getEligibleStudents(id));
   }
 
+  async function exportApplicants() {
+    setBusy(true);
+    setError(null);
+    try {
+      const rows = await getJobApplicants(id);
+      if (rows.length === 0) {
+        setError('No applicants to export yet.');
+        return;
+      }
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const header = ['Reg No', 'Name', 'Email', 'Mobile', 'DOB', 'Resume link', 'Stage', 'Applied on'];
+      const csv = [header, ...rows.map((r) => [
+        r.rollNumber,
+        r.fullName,
+        r.email,
+        r.phone ?? '',
+        r.dateOfBirth ? new Date(r.dateOfBirth).toLocaleDateString() : '',
+        r.resumeSlug ? `${origin}/r/${r.resumeSlug}` : '',
+        r.stage,
+        new Date(r.appliedAt).toLocaleDateString(),
+      ])]
+        .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `applicants-${job?.title ?? 'job'}.csv`.replace(/[^\w.-]+/g, '_');
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDelete() {
+    const ok = await confirm({
+      title: `Delete "${job?.title}"?`,
+      message: 'This permanently removes the job and all its applications. This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+      acknowledgement: 'I understand this is permanent.',
+    });
+    if (!ok) return;
+    try {
+      await deleteJob(id);
+      router.push('/jobs');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed');
+    }
+  }
+
   if (loading) return <p className="text-subtle">Loading…</p>;
   if (!job) return <p className="text-danger">{error ?? 'Job not found'}</p>;
 
@@ -110,8 +170,18 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
           )}
           {!isPlatform && job.status === 'DRAFT' && <Button onClick={onPublish} disabled={busy}>Publish</Button>}
           {!isPlatform && job.status !== 'CLOSED' && <Button variant="outline" onClick={onClose} disabled={busy}>Close</Button>}
+          {!isPlatform && job.status !== 'DRAFT' && (
+            <Button variant="outline" onClick={exportApplicants} disabled={busy}>
+              Export applicants
+            </Button>
+          )}
           {job.status !== 'DRAFT' && (
             <Link href={`/jobs/${id}/pipeline`}><Button variant="ghost">Pipeline →</Button></Link>
+          )}
+          {!isPlatform && (
+            <Button variant="ghost" onClick={onDelete} className="text-danger">
+              Delete
+            </Button>
           )}
         </div>
       </div>

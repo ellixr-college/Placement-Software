@@ -117,6 +117,37 @@ export class ApplicationsService {
     }));
   }
 
+  // Applicant contact + resume export for an officer to share with an HR outside
+  // the app. Resume slug only if published (so the link actually resolves).
+  async exportApplicants(collegeId: string, jobId: string) {
+    const job = await this.prisma.job.findFirst({ where: { id: jobId, collegeId } });
+    if (!job) throw new NotFoundException('Job not found');
+    const apps = await this.prisma.application.findMany({
+      where: { collegeId, jobId },
+      include: {
+        student: {
+          select: {
+            rollNumber: true,
+            dateOfBirth: true,
+            user: { select: { fullName: true, email: true, phone: true } },
+            resume: { select: { publicSlug: true, isPublished: true } },
+          },
+        },
+      },
+      orderBy: { appliedAt: 'asc' },
+    });
+    return apps.map((a) => ({
+      rollNumber: a.student.rollNumber,
+      fullName: a.student.user.fullName,
+      email: a.student.user.email,
+      phone: a.student.user.phone,
+      dateOfBirth: a.student.dateOfBirth,
+      resumeSlug: a.student.resume?.isPublished ? a.student.resume.publicSlug : null,
+      stage: a.stage,
+      appliedAt: a.appliedAt,
+    }));
+  }
+
   async findOne(collegeId: string, applicationId: string) {
     const app = await this.prisma.application.findFirst({
       where: { id: applicationId, collegeId },

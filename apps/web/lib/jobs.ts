@@ -150,6 +150,25 @@ export function closeJob(id: string): Promise<Job> {
   return api(`/jobs/${id}/close`, { method: 'POST' });
 }
 
+export function deleteJob(id: string): Promise<{ success: boolean }> {
+  return api(`/jobs/${id}`, { method: 'DELETE' });
+}
+
+export interface ApplicantRow {
+  rollNumber: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  dateOfBirth: string | null;
+  resumeSlug: string | null;
+  stage: string;
+  appliedAt: string;
+}
+
+export function getJobApplicants(id: string): Promise<ApplicantRow[]> {
+  return api<ApplicantRow[]>(`/jobs/${id}/applicants-export`);
+}
+
 export function getEligibleStudents(id: string): Promise<EligibleStudent[]> {
   return api<EligibleStudent[]>(`/jobs/${id}/eligible-students`);
 }

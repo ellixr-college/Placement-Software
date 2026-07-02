@@ -21,6 +21,7 @@ export default function QuickPostPage() {
   const [title, setTitle] = useState('');
   const [companyId, setCompanyId] = useState('');
   const [graduationYears, setGraduationYears] = useState('');
+  const [deadline, setDeadline] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [pickedCourses, setPickedCourses] = useState<string[]>([]);
   const [pickedBranches, setPickedBranches] = useState<string[]>([]);
@@ -80,6 +81,7 @@ export default function QuickPostPage() {
         graduationYears: numList(graduationYears),
         pdfUrl,
         pdfName,
+        applicationDeadline: deadline ? new Date(deadline).toISOString() : undefined,
       });
       router.push(`/jobs/${job.id}`);
     } catch (err) {
@@ -156,6 +158,9 @@ export default function QuickPostPage() {
             )}
             <Field label="Graduation years * (comma-separated)">
               <input className={inputCls} value={graduationYears} onChange={(e) => setGraduationYears(e.target.value)} placeholder="2026, 2027" />
+            </Field>
+            <Field label="Last date to apply">
+              <input className={inputCls} type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
             </Field>
           </div>
         </div>

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -107,6 +108,18 @@ export class JobsController {
   @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER)
   async close(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return { data: await this.jobs.close(this.collegeId(user), id) };
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER)
+  async remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return { data: await this.jobs.remove(this.collegeId(user), id) };
+  }
+
+  @Get(':id/applicants-export')
+  @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER)
+  async applicantsExport(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return { data: await this.applications.exportApplicants(this.collegeId(user), id) };
   }
 
   @Get(':id/eligible-students')

@@ -167,6 +167,15 @@ export class JobsService {
     return { job: this.publicJob(updated), eligibleCount: eligible.length };
   }
 
+  async remove(collegeId: string, id: string) {
+    // Only the owning college can delete its own job (platform jobs excluded by
+    // the collegeId filter). Applications cascade-delete with the job.
+    const job = await this.prisma.job.findFirst({ where: { id, collegeId } });
+    if (!job) throw new NotFoundException('Job not found');
+    await this.prisma.job.delete({ where: { id } });
+    return { success: true };
+  }
+
   async close(collegeId: string, id: string) {
     const job = await this.prisma.job.findFirst({ where: { id, collegeId } });
     if (!job) throw new NotFoundException('Job not found');
