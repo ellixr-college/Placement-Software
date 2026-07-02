@@ -224,6 +224,9 @@ model Student {
   rejectionReason    String?            @map("rejection_reason")
   profileCompletion  Int                @default(0) @map("profile_completion")
   isActive           Boolean            @default(true) @map("is_active")
+  // Set when the student's batch is graduated to Alumni. Graduated students are
+  // hidden from the Students list (they live in the Alumni directory now).
+  graduatedAt        DateTime?          @map("graduated_at")
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
 

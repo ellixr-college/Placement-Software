@@ -233,7 +233,7 @@ export class StudentsService {
       }),
       this.prisma.student.updateMany({
         where: { id: { in: students.map((s) => s.id) } },
-        data: { isActive: false },
+        data: { isActive: false, graduatedAt: new Date() },
       }),
     ]);
 
@@ -250,6 +250,8 @@ export class StudentsService {
     const limit = q.limit ?? 25;
     const where: Prisma.StudentWhereInput = {
       collegeId,
+      // Graduated students live in the Alumni directory — hide them here.
+      graduatedAt: null,
       ...(q.branch ? { branch: q.branch } : {}),
       ...(q.graduationYear ? { graduationYear: q.graduationYear } : {}),
       ...(q.status ? { status: q.status } : {}),
