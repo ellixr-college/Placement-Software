@@ -515,6 +515,7 @@ export class JobsService {
     minCgpa: Prisma.Decimal | null;
     minTenthPercentage: Prisma.Decimal | null;
     minTwelfthPercentage: Prisma.Decimal | null;
+    minUgPercentage: Prisma.Decimal | null;
     eligibleGenders: string[];
     maxActiveBacklogs: number | null;
     maxTotalBacklogs: number | null;
@@ -553,6 +554,7 @@ export class JobsService {
       minCgpa: j.minCgpa != null ? Number(j.minCgpa) : null,
       minTenthPercentage: j.minTenthPercentage != null ? Number(j.minTenthPercentage) : null,
       minTwelfthPercentage: j.minTwelfthPercentage != null ? Number(j.minTwelfthPercentage) : null,
+      minUgPercentage: j.minUgPercentage != null ? Number(j.minUgPercentage) : null,
       eligibleGenders: j.eligibleGenders,
       maxActiveBacklogs: j.maxActiveBacklogs,
       maxTotalBacklogs: j.maxTotalBacklogs,
@@ -587,6 +589,7 @@ function toEligibilityStudent(s: {
   cgpa: Prisma.Decimal | null;
   tenthPercentage: Prisma.Decimal | null;
   twelfthPercentage: Prisma.Decimal | null;
+  ugPercentage: Prisma.Decimal | null;
   gender: string | null;
   activeBacklogs: number;
   totalBacklogs: number;
@@ -600,6 +603,7 @@ function toEligibilityStudent(s: {
     cgpa: s.cgpa != null ? Number(s.cgpa) : null,
     tenthPercentage: s.tenthPercentage != null ? Number(s.tenthPercentage) : null,
     twelfthPercentage: s.twelfthPercentage != null ? Number(s.twelfthPercentage) : null,
+    ugPercentage: s.ugPercentage != null ? Number(s.ugPercentage) : null,
     gender: s.gender,
     activeBacklogs: s.activeBacklogs,
     totalBacklogs: s.totalBacklogs,
@@ -613,6 +617,7 @@ function toEligibilityJob(j: {
   minCgpa: Prisma.Decimal | null;
   minTenthPercentage: Prisma.Decimal | null;
   minTwelfthPercentage: Prisma.Decimal | null;
+  minUgPercentage: Prisma.Decimal | null;
   eligibleGenders: string[];
   maxActiveBacklogs: number | null;
   maxTotalBacklogs: number | null;
@@ -624,6 +629,7 @@ function toEligibilityJob(j: {
     minCgpa: j.minCgpa != null ? Number(j.minCgpa) : null,
     minTenthPercentage: j.minTenthPercentage != null ? Number(j.minTenthPercentage) : null,
     minTwelfthPercentage: j.minTwelfthPercentage != null ? Number(j.minTwelfthPercentage) : null,
+    minUgPercentage: j.minUgPercentage != null ? Number(j.minUgPercentage) : null,
     eligibleGenders: j.eligibleGenders,
     maxActiveBacklogs: j.maxActiveBacklogs,
     maxTotalBacklogs: j.maxTotalBacklogs,

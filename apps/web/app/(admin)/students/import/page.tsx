@@ -162,7 +162,8 @@ export default function ImportStudentsPage() {
         <div className="space-y-1 border-t border-border pt-4">
           <p className="text-sm font-medium text-strong">CSV rows</p>
           <p className="text-xs text-subtle">
-            First row is the header. Required columns: <b>regNo, name, email</b>. Everyone is created
+            First row is the header. Required columns: <b>regNo, name, email</b>. Optional:
+            <b> phone, cgpa, ugPercentage, activeBacklogs, totalBacklogs</b>. Everyone is created
             with the password <b>password123</b> — students can change it later.
           </p>
           <pre className="overflow-x-auto rounded-md bg-app p-3 text-xs text-strong">{TEMPLATE}</pre>

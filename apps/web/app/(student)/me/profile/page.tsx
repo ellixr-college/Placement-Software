@@ -215,6 +215,12 @@ export default function StudentProfilePage() {
             value={numStr(form.twelfthPercentage)}
             onChange={(v) => patch({ twelfthPercentage: toNum(v) })}
           />
+          <Text
+            label="UG %"
+            type="number"
+            value={numStr(form.ugPercentage)}
+            onChange={(v) => patch({ ugPercentage: toNum(v) })}
+          />
         </div>
       </Section>
 
@@ -271,6 +277,7 @@ function toForm(s: Student): UpdateOwnProfileInput {
     linkedinUrl: s.linkedinUrl ?? '',
     tenthPercentage: s.tenthPercentage ?? undefined,
     twelfthPercentage: s.twelfthPercentage ?? undefined,
+    ugPercentage: s.ugPercentage ?? undefined,
     semesterMarks: s.semesterMarks ?? [],
   };
 }
@@ -294,6 +301,7 @@ function clean(form: UpdateOwnProfileInput): UpdateOwnProfileInput {
   if (form.linkedinUrl?.trim()) out.linkedinUrl = form.linkedinUrl.trim();
   if (form.tenthPercentage != null) out.tenthPercentage = form.tenthPercentage;
   if (form.twelfthPercentage != null) out.twelfthPercentage = form.twelfthPercentage;
+  if (form.ugPercentage != null) out.ugPercentage = form.ugPercentage;
   if (form.semesterMarks) {
     // Keep only rows with both a label and a score.
     const rows = form.semesterMarks.filter((m) => m.label.trim() && m.score.trim());

@@ -91,6 +91,7 @@ export class CreateStudentDto {
   @IsOptional() @IsString() linkedinUrl?: string;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) tenthPercentage?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) twelfthPercentage?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) ugPercentage?: number;
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => SemesterMarkDto)
   semesterMarks?: SemesterMarkDto[];
 }
@@ -117,6 +118,7 @@ export class UpdateStudentDto {
   @IsOptional() @IsString() linkedinUrl?: string;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) tenthPercentage?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) twelfthPercentage?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) ugPercentage?: number;
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => SemesterMarkDto) semesterMarks?: SemesterMarkDto[];
 }
 
@@ -141,6 +143,7 @@ export class UpdateOwnProfileDto {
   @IsOptional() @IsString() linkedinUrl?: string;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) tenthPercentage?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) twelfthPercentage?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) ugPercentage?: number;
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => SemesterMarkDto) semesterMarks?: SemesterMarkDto[];
 }
 

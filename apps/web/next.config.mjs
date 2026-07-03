@@ -19,6 +19,12 @@ const nextConfig = {
   async rewrites() {
     return [{ source: '/api/v1/:path*', destination: `${API_PROXY_TARGET}/api/v1/:path*` }];
   },
+  webpack: (webpackConfig) => {
+    // pdfjs-dist lists `canvas` as an optional Node-only dependency for server
+    // rendering; we only render in the browser, so stub it out of the bundle.
+    webpackConfig.resolve.alias = { ...webpackConfig.resolve.alias, canvas: false };
+    return webpackConfig;
+  },
 };
 
 export default nextConfig;

@@ -33,6 +33,7 @@ export interface Student {
   linkedinUrl: string | null;
   tenthPercentage: number | null;
   twelfthPercentage: number | null;
+  ugPercentage: number | null;
   semesterMarks: SemesterMark[] | null;
   status: string;
   verificationStatus: string;
@@ -61,6 +62,7 @@ export interface ExtendedProfileFields {
   linkedinUrl?: string;
   tenthPercentage?: number;
   twelfthPercentage?: number;
+  ugPercentage?: number;
   semesterMarks?: SemesterMark[];
 }
 

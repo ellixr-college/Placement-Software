@@ -11,6 +11,7 @@ export interface EligibilityStudent {
   cgpa: number | null;
   tenthPercentage: number | null;
   twelfthPercentage: number | null;
+  ugPercentage: number | null;
   gender: string | null;
   activeBacklogs: number;
   totalBacklogs: number;
@@ -23,6 +24,7 @@ export interface EligibilityJob {
   minCgpa: number | null;
   minTenthPercentage: number | null;
   minTwelfthPercentage: number | null;
+  minUgPercentage: number | null;
   eligibleGenders: string[];
   maxActiveBacklogs: number | null;
   maxTotalBacklogs: number | null;
@@ -63,6 +65,12 @@ export function checkEligibility(
     (student.twelfthPercentage == null || student.twelfthPercentage < job.minTwelfthPercentage)
   ) {
     reasons.push(`12th below ${job.minTwelfthPercentage}%`);
+  }
+  if (
+    job.minUgPercentage != null &&
+    (student.ugPercentage == null || student.ugPercentage < job.minUgPercentage)
+  ) {
+    reasons.push(`UG below ${job.minUgPercentage}%`);
   }
   if (
     job.eligibleGenders.length > 0 &&

@@ -274,7 +274,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         <Detail label="Courses" value={job.eligibleCourses.join(', ') || '—'} />
         <Detail label="Branches" value={job.eligibleBranches.join(', ') || '—'} />
         <Detail label="Grad years" value={job.graduationYears.join(', ') || '—'} />
-        <Detail label="Min %" value={job.minCgpa != null ? `${job.minCgpa}%` : '—'} />
+        <Detail label="Min UG %" value={job.minUgPercentage != null ? `${job.minUgPercentage}%` : '—'} />
+        <Detail label="Min PG %" value={job.minCgpa != null ? `${job.minCgpa}%` : '—'} />
         <Detail label="Max active backlogs" value={job.maxActiveBacklogs != null ? String(job.maxActiveBacklogs) : '—'} />
         <Detail label="Max total backlogs" value={job.maxTotalBacklogs != null ? String(job.maxTotalBacklogs) : '—'} />
       </Card>

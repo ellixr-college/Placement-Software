@@ -211,6 +211,9 @@ model Student {
   linkedinUrl        String?            @map("linkedin_url")
   tenthPercentage    Decimal?           @db.Decimal(5, 2) @map("tenth_percentage")
   twelfthPercentage  Decimal?           @db.Decimal(5, 2) @map("twelfth_percentage")
+  // Undergraduate degree percentage — relevant for PG students whose main
+  // "Percentage" (cgpa) reflects their current/PG course. Separate eligibility gate.
+  ugPercentage       Decimal?           @db.Decimal(5, 2) @map("ug_percentage")
   // Semester-wise marks: [{ label, score }] as JSON for flexibility.
   semesterMarks      Json?              @map("semester_marks")
   // Employability assessment scores (0–100); readiness is derived from these
@@ -378,6 +381,8 @@ model Job {
   minCgpa             Decimal?  @db.Decimal(4, 2) @map("min_cgpa")
   minTenthPercentage  Decimal?  @db.Decimal(5, 2) @map("min_tenth_percentage")
   minTwelfthPercentage Decimal? @db.Decimal(5, 2) @map("min_twelfth_percentage")
+  // Minimum undergraduate degree % (checked against Student.ugPercentage).
+  minUgPercentage     Decimal?  @db.Decimal(5, 2) @map("min_ug_percentage")
   // Empty = any gender. Otherwise only these genders are eligible.
   eligibleGenders     String[]  @map("eligible_genders")
   maxActiveBacklogs   Int?      @map("max_active_backlogs")

@@ -118,7 +118,7 @@ export default function QuickPostPage() {
         ctcMin: num(details.ctc),
         ctcMax: num(details.ctc),
         minCgpa: num(details.minPg), // PG/current % → student.cgpa (their Percentage)
-        minTwelfthPercentage: num(details.minUg), // UG %
+        minUgPercentage: num(details.minUg), // UG % → student.ugPercentage
         maxActiveBacklogs: num(details.maxActiveBacklogs),
         maxTotalBacklogs: num(details.maxTotalBacklogs),
         applicationFormFields: formFields.length > 0 ? cleanFields(formFields) : undefined,

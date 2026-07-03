@@ -234,6 +234,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
             <Detail label="Gender" value={student.gender ?? '—'} />
             <Detail label="10th %" value={student.tenthPercentage != null ? String(student.tenthPercentage) : '—'} />
             <Detail label="12th %" value={student.twelfthPercentage != null ? String(student.twelfthPercentage) : '—'} />
+            <Detail label="UG %" value={student.ugPercentage != null ? String(student.ugPercentage) : '—'} />
             <Detail
               label="Last login"
               value={student.user.lastLoginAt ? new Date(student.user.lastLoginAt).toLocaleString() : 'Never'}
@@ -288,6 +289,7 @@ function EditStudentForm({
     graduationYear: String(student.graduationYear),
     currentYear: student.currentYear != null ? String(student.currentYear) : '',
     cgpa: student.cgpa != null ? String(student.cgpa) : '',
+    ugPercentage: student.ugPercentage != null ? String(student.ugPercentage) : '',
     enrollmentNumber: student.enrollmentNumber ?? '',
   });
   const [saving, setSaving] = useState(false);
@@ -309,6 +311,7 @@ function EditStudentForm({
         graduationYear: Number(form.graduationYear),
         currentYear: form.currentYear === '' ? undefined : Number(form.currentYear),
         cgpa: form.cgpa === '' ? undefined : Number(form.cgpa),
+        ugPercentage: form.ugPercentage === '' ? undefined : Number(form.ugPercentage),
         enrollmentNumber: form.enrollmentNumber.trim() || undefined,
       });
       onSaved(updated);
@@ -343,6 +346,7 @@ function EditStudentForm({
         </label>
         <EditField label="Phone" value={form.phone} onChange={set('phone')} />
         <EditField label="Percentage (%)" type="number" value={form.cgpa} onChange={set('cgpa')} />
+        <EditField label="UG %" type="number" value={form.ugPercentage} onChange={set('ugPercentage')} />
         <EditField label="Enrollment no." value={form.enrollmentNumber} onChange={set('enrollmentNumber')} />
       </div>
       {error && <p className="text-sm text-danger">{error}</p>}

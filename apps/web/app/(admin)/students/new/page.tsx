@@ -27,6 +27,7 @@ const EMPTY = {
   linkedinUrl: '',
   tenthPercentage: '',
   twelfthPercentage: '',
+  ugPercentage: '',
 };
 
 const GENDERS = ['MALE', 'FEMALE', 'OTHER'];
@@ -74,6 +75,7 @@ export default function NewStudentPage() {
         linkedinUrl: form.linkedinUrl.trim() || undefined,
         tenthPercentage: form.tenthPercentage === '' ? undefined : Number(form.tenthPercentage),
         twelfthPercentage: form.twelfthPercentage === '' ? undefined : Number(form.twelfthPercentage),
+        ugPercentage: form.ugPercentage === '' ? undefined : Number(form.ugPercentage),
       };
       const res = await createStudent(input);
       setCreated({
@@ -192,6 +194,10 @@ export default function NewStudentPage() {
           <Field label="LinkedIn" value={form.linkedinUrl} onChange={set('linkedinUrl')} placeholder="https://linkedin.com/in/…" />
           <Field label="10th %" type="number" value={form.tenthPercentage} onChange={set('tenthPercentage')} placeholder="85" />
           <Field label="12th %" type="number" value={form.twelfthPercentage} onChange={set('twelfthPercentage')} placeholder="82" />
+          <Field label="UG %" type="number" value={form.ugPercentage} onChange={set('ugPercentage')} placeholder="70" />
+          <p className="text-xs text-subtle sm:col-span-2">
+            &ldquo;Percentage&rdquo; is the current/PG course; UG % is the undergraduate degree (for PG students).
+          </p>
 
           {error && <p className="text-sm text-danger sm:col-span-2">{error}</p>}
 
