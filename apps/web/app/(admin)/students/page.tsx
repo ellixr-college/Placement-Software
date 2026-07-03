@@ -40,17 +40,37 @@ function StudentsList() {
   const [items, setItems] = useState<Student[]>([]);
   const [meta, setMeta] = useState<ListMeta | undefined>();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [batch, setBatch] = useState('');
+  const [resumeFilter, setResumeFilter] = useState<'' | 'complete' | 'incomplete'>('');
+  const [loginFilter, setLoginFilter] = useState<'' | 'active' | 'disabled'>('');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
 
+  // Debounce the search box so typing doesn't fire a request per keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await listStudents({ search: search || undefined, page, limit: 10 });
+      const res = await listStudents({
+        search: debouncedSearch || undefined,
+        graduationYear: batch ? Number(batch) : undefined,
+        resumeComplete: resumeFilter === '' ? undefined : resumeFilter === 'complete',
+        active: loginFilter === '' ? undefined : loginFilter === 'active',
+        page,
+        limit: 10,
+      });
       setItems(res.items);
       setMeta(res.meta);
       setSelected(new Set());
@@ -59,7 +79,7 @@ function StudentsList() {
     } finally {
       setLoading(false);
     }
-  }, [search, page]);
+  }, [debouncedSearch, batch, resumeFilter, loginFilter, page]);
 
   useEffect(() => {
     load();
@@ -206,17 +226,48 @@ function StudentsList() {
         />
       )}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <input
           type="search"
           value={search}
-          onChange={(e) => {
-            setPage(1);
-            setSearch(e.target.value);
-          }}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, email, or roll number…"
           className="h-10 w-full max-w-md rounded-md border border-border bg-white px-4 text-sm outline-none focus:border-primary-400"
         />
+        <input
+          type="number"
+          value={batch}
+          onChange={(e) => {
+            setPage(1);
+            setBatch(e.target.value);
+          }}
+          placeholder="Batch (passout year)"
+          className="h-10 w-44 rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
+        />
+        <select
+          value={resumeFilter}
+          onChange={(e) => {
+            setPage(1);
+            setResumeFilter(e.target.value as typeof resumeFilter);
+          }}
+          className="h-10 rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
+        >
+          <option value="">All resumes</option>
+          <option value="complete">Resume complete</option>
+          <option value="incomplete">Resume incomplete</option>
+        </select>
+        <select
+          value={loginFilter}
+          onChange={(e) => {
+            setPage(1);
+            setLoginFilter(e.target.value as typeof loginFilter);
+          }}
+          className="h-10 rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
+        >
+          <option value="">All logins</option>
+          <option value="active">Login active</option>
+          <option value="disabled">Login disabled</option>
+        </select>
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -237,8 +288,8 @@ function StudentsList() {
         </div>
       )}
 
-      <Card className="overflow-hidden p-0">
-        <table className="w-full text-left text-sm">
+      <Card className="overflow-x-auto p-0">
+        <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="border-b border-border bg-app text-xs uppercase text-subtle">
             <tr>
               <th className="px-4 py-3">
@@ -298,10 +349,7 @@ function StudentsList() {
                   </td>
                   <td className="px-4 py-3 text-strong">{s.rollNumber}</td>
                   <td className="px-4 py-3">{s.branch || '—'}</td>
-                  <td className="px-4 py-3">
-                    {s.graduationYear}
-                    {s.currentYear ? <span className="text-xs text-subtle"> · Yr {s.currentYear}</span> : ''}
-                  </td>
+                  <td className="px-4 py-3">{s.graduationYear}</td>
                   <td className="px-4 py-3">
                     <Badge tint={STATUS_TINT[s.status] ?? 'primary'}>{s.status}</Badge>
                   </td>

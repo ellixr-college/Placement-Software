@@ -257,6 +257,11 @@ export class StudentsService {
       ...(q.graduationYear ? { graduationYear: q.graduationYear } : {}),
       ...(q.status ? { status: q.status } : {}),
       ...(q.verificationStatus ? { verificationStatus: q.verificationStatus } : {}),
+      ...(q.active !== undefined ? { isActive: q.active } : {}),
+      // Resume complete = resume.isComplete true; incomplete = anything else
+      // (no resume or not yet complete). NOT avoids clashing with the search OR.
+      ...(q.resumeComplete === true ? { resume: { isComplete: true } } : {}),
+      ...(q.resumeComplete === false ? { NOT: { resume: { isComplete: true } } } : {}),
       ...(q.search
         ? {
             OR: [

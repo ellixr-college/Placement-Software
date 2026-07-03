@@ -99,6 +99,8 @@ export interface ListParams {
   branch?: string;
   graduationYear?: number;
   status?: string;
+  resumeComplete?: boolean;
+  active?: boolean;
   page?: number;
   limit?: number;
 }
