@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
 import { listMyCourses, type CollegeCourse } from '../../../../lib/courses';
-import { createJob, uploadJobPdf } from '../../../../lib/jobs';
+import { createJob, publishJob, uploadJobPdf } from '../../../../lib/jobs';
 
 /**
  * Fast job posting: upload the company's JD PDF + pick who can apply. Everything
@@ -25,7 +25,7 @@ export default function QuickPostPage() {
   const [pickedBranches, setPickedBranches] = useState<string[]>([]);
   const [coursesText, setCoursesText] = useState('');
   const [branchesText, setBranchesText] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState<false | 'draft' | 'publish'>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,8 +59,8 @@ export default function QuickPostPage() {
 
   const valid = title.trim() && eligibleCourses.length && numList(graduationYears).length;
 
-  async function submit() {
-    setSaving(true);
+  async function submit(publish: boolean) {
+    setSaving(publish ? 'publish' : 'draft');
     setError(null);
     try {
       let pdfUrl: string | undefined;
@@ -80,6 +80,8 @@ export default function QuickPostPage() {
         pdfName,
         applicationDeadline: deadline ? new Date(deadline).toISOString() : undefined,
       });
+      // Publish straight away (notifies students) or leave as a draft.
+      if (publish) await publishJob(job.id);
       router.push(`/jobs/${job.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create job');
@@ -157,9 +159,22 @@ export default function QuickPostPage() {
         </div>
 
         {error && <p className="text-sm text-danger">{error}</p>}
-        <Button onClick={submit} loading={saving} disabled={!valid}>
-          {saving ? 'Posting…' : 'Create draft'}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => submit(true)} loading={saving === 'publish'} disabled={!valid || !!saving}>
+            {saving === 'publish' ? 'Publishing…' : 'Publish'}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => submit(false)}
+            loading={saving === 'draft'}
+            disabled={!valid || !!saving}
+          >
+            {saving === 'draft' ? 'Saving…' : 'Save as draft'}
+          </Button>
+        </div>
+        <p className="text-xs text-subtle">
+          Publish notifies all students immediately. Save as draft to publish later.
+        </p>
       </Card>
     </div>
   );
