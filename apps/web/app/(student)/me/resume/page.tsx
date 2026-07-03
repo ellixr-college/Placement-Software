@@ -145,7 +145,7 @@ export default function ResumeEditorPage() {
           <p className="text-sm text-subtle">Fill in your details, pick a template, and share the link.</p>
         </div>
         {meta && readiness.ready && (
-          <Button variant="outline" onClick={() => setMode('view')}>
+          <Button onClick={() => setMode('view')}>
             Preview
           </Button>
         )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { PdfModal } from '../../../../components/pdf-modal';
@@ -188,19 +188,21 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
             </Link>
           )}
           {!isPlatform && job.status === 'DRAFT' && <Button onClick={onPublish} disabled={busy}>Publish</Button>}
-          {!isPlatform && job.status !== 'CLOSED' && <Button variant="outline" onClick={onClose} disabled={busy}>Close</Button>}
           {!isPlatform && job.status !== 'DRAFT' && (
             <Button variant="outline" onClick={exportApplicants} disabled={busy}>
               Export applicants
             </Button>
           )}
           {job.status !== 'DRAFT' && (
-            <Link href={`/jobs/${id}/pipeline`}><Button variant="ghost">Pipeline →</Button></Link>
+            <Link href={`/jobs/${id}/pipeline`}><Button variant="ghost">View applicants →</Button></Link>
           )}
           {!isPlatform && (
-            <Button variant="ghost" onClick={onDelete} className="text-danger">
-              Delete
-            </Button>
+            <JobMenu
+              canClose={job.status !== 'CLOSED'}
+              onClose={onClose}
+              onDelete={onDelete}
+              disabled={busy}
+            />
           )}
         </div>
       </div>
@@ -298,6 +300,74 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
           </div>
         )}
       </Card>
+      )}
+    </div>
+  );
+}
+
+/** ⋮ menu for secondary job actions (close / delete). */
+function JobMenu({
+  canClose,
+  onClose,
+  onDelete,
+  disabled,
+}: {
+  canClose: boolean;
+  onClose: () => void;
+  onDelete: () => void;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+
+  const item = 'block w-full px-3 py-2 text-left text-sm hover:bg-app';
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        disabled={disabled}
+        aria-label="More actions"
+        className="flex h-10 w-10 items-center justify-center rounded-md text-subtle transition hover:bg-app hover:text-strong disabled:opacity-50"
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+          <circle cx="12" cy="5" r="1.6" />
+          <circle cx="12" cy="12" r="1.6" />
+          <circle cx="12" cy="19" r="1.6" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 z-30 mt-1 w-40 overflow-hidden rounded-md border border-border bg-white py-1 shadow-card">
+          {canClose && (
+            <button
+              onClick={() => {
+                setOpen(false);
+                onClose();
+              }}
+              className={`${item} text-body`}
+            >
+              Close job
+            </button>
+          )}
+          <button
+            onClick={() => {
+              setOpen(false);
+              onDelete();
+            }}
+            className={`${item} text-danger`}
+          >
+            Delete job
+          </button>
+        </div>
       )}
     </div>
   );

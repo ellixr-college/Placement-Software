@@ -126,7 +126,7 @@ export default function StudentProfilePage() {
         )}
 
         {canSubmit && (
-          <Button className="w-full" variant="outline" onClick={onSubmit} disabled={submitting}>
+          <Button className="w-full" onClick={onSubmit} disabled={submitting}>
             {submitting ? 'Submitting…' : 'Submit for verification'}
           </Button>
         )}

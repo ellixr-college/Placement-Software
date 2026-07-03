@@ -54,7 +54,7 @@ export default function PipelinePage({ params }: { params: Promise<{ id: string 
     <div className="space-y-6">
       <div>
         <Link href={`/jobs/${id}`} className="text-sm text-primary-600 hover:underline">← {job?.title ?? 'Job'}</Link>
-        <h1 className="mt-1 text-2xl font-semibold text-strong">Pipeline</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-strong">Applicants</h1>
         <p className="text-sm text-subtle">{entries.length} applicant(s)</p>
       </div>
 
