@@ -15,7 +15,6 @@ import {
 
 const JOB_TYPES = ['FULL_TIME', 'INTERNSHIP', 'INTERNSHIP_PPO'];
 const WORK_MODES = ['ONSITE', 'HYBRID', 'REMOTE'];
-const GENDERS = ['MALE', 'FEMALE', 'OTHER'];
 
 /**
  * Post a job. HRs send JDs ~50:50 as a PDF or as typed text — this one form does
@@ -41,13 +40,9 @@ export default function QuickPostPage() {
     jobType: 'FULL_TIME',
     workMode: '',
     location: '',
-    experienceMin: '',
-    experienceMax: '',
-    ctcMin: '',
-    ctcMax: '',
-    minCgpa: '',
-    minTenthPercentage: '',
-    minTwelfthPercentage: '',
+    ctc: '',
+    minUg: '', // min UG %  (undergrad)
+    minPg: '', // min PG %  (current/postgrad — student's Percentage)
     maxActiveBacklogs: '',
     maxTotalBacklogs: '',
   });
@@ -55,9 +50,6 @@ export default function QuickPostPage() {
     (k: keyof typeof details) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setDetails((d) => ({ ...d, [k]: e.target.value }));
-  const [pickedGenders, setPickedGenders] = useState<string[]>([]);
-  const toggleGender = (g: string) =>
-    setPickedGenders((gs) => (gs.includes(g) ? gs.filter((x) => x !== g) : [...gs, g]));
   const [formFields, setFormFields] = useState<ApplicationField[]>([]);
   const [saving, setSaving] = useState<false | 'draft' | 'publish'>(false);
   const [error, setError] = useState<string | null>(null);
@@ -118,16 +110,13 @@ export default function QuickPostPage() {
         jobType: details.jobType,
         workMode: details.workMode || undefined,
         location: details.location.trim() || undefined,
-        experienceMin: num(details.experienceMin),
-        experienceMax: num(details.experienceMax),
-        ctcMin: num(details.ctcMin),
-        ctcMax: num(details.ctcMax),
-        minCgpa: num(details.minCgpa),
-        minTenthPercentage: num(details.minTenthPercentage),
-        minTwelfthPercentage: num(details.minTwelfthPercentage),
+        // Single CTC value → stored as both min & max so it shows as one figure.
+        ctcMin: num(details.ctc),
+        ctcMax: num(details.ctc),
+        minCgpa: num(details.minPg), // PG/current % → student.cgpa (their Percentage)
+        minTwelfthPercentage: num(details.minUg), // UG %
         maxActiveBacklogs: num(details.maxActiveBacklogs),
         maxTotalBacklogs: num(details.maxTotalBacklogs),
-        eligibleGenders: pickedGenders,
         applicationFormFields: formFields.length > 0 ? cleanFields(formFields) : undefined,
         // Date-only input → deadline is the end of that day (local 23:59:59).
         applicationDeadline: deadline ? new Date(`${deadline}T23:59:59`).toISOString() : undefined,
@@ -232,25 +221,16 @@ export default function QuickPostPage() {
                 </select>
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <Field label="Location"><input className={inputCls} value={details.location} onChange={setD('location')} placeholder="Bangalore" /></Field>
-              <Field label="Min exp (yrs)"><input className={inputCls} type="number" value={details.experienceMin} onChange={setD('experienceMin')} /></Field>
-              <Field label="Max exp (yrs)"><input className={inputCls} type="number" value={details.experienceMax} onChange={setD('experienceMax')} /></Field>
+              <Field label="CTC (₹/yr)"><input className={inputCls} type="number" value={details.ctc} onChange={setD('ctc')} placeholder="600000" /></Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="CTC min (₹/yr)"><input className={inputCls} type="number" value={details.ctcMin} onChange={setD('ctcMin')} /></Field>
-              <Field label="CTC max (₹/yr)"><input className={inputCls} type="number" value={details.ctcMax} onChange={setD('ctcMax')} /></Field>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <Field label="Min %"><input className={inputCls} type="number" value={details.minCgpa} onChange={setD('minCgpa')} placeholder="60" /></Field>
-              <Field label="Min 10th %"><input className={inputCls} type="number" value={details.minTenthPercentage} onChange={setD('minTenthPercentage')} /></Field>
-              <Field label="Min 12th %"><input className={inputCls} type="number" value={details.minTwelfthPercentage} onChange={setD('minTwelfthPercentage')} /></Field>
+              <Field label="Min UG %"><input className={inputCls} type="number" value={details.minUg} onChange={setD('minUg')} placeholder="60" /></Field>
+              <Field label="Min PG %"><input className={inputCls} type="number" value={details.minPg} onChange={setD('minPg')} placeholder="60" /></Field>
               <Field label="Max active backlogs"><input className={inputCls} type="number" value={details.maxActiveBacklogs} onChange={setD('maxActiveBacklogs')} /></Field>
               <Field label="Max total backlogs"><input className={inputCls} type="number" value={details.maxTotalBacklogs} onChange={setD('maxTotalBacklogs')} /></Field>
             </div>
-            <Field label="Eligible genders (leave empty = any)">
-              <ChipPicker options={GENDERS} selected={pickedGenders} onToggle={toggleGender} />
-            </Field>
           </div>
         </div>
 
