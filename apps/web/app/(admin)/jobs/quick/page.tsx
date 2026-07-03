@@ -15,6 +15,8 @@ import {
 
 const JOB_TYPES = ['FULL_TIME', 'INTERNSHIP', 'INTERNSHIP_PPO'];
 const WORK_MODES = ['ONSITE', 'HYBRID', 'REMOTE'];
+// Current passout year through +3, as batch chips.
+const GRAD_YEARS = Array.from({ length: 4 }, (_, i) => String(new Date().getFullYear() + i));
 
 /**
  * Post a job. HRs send JDs ~50:50 as a PDF or as typed text — this one form does
@@ -27,8 +29,11 @@ export default function QuickPostPage() {
   const [courses, setCourses] = useState<CollegeCourse[]>([]);
   const [title, setTitle] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [graduationYears, setGraduationYears] = useState('');
+  const [gradYears, setGradYears] = useState<string[]>([]);
+  const toggleGradYear = (y: string) =>
+    setGradYears((ys) => (ys.includes(y) ? ys.filter((x) => x !== y) : [...ys, y]));
   const [deadline, setDeadline] = useState('');
+  const [deadlineTime, setDeadlineTime] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [pickedCourses, setPickedCourses] = useState<string[]>([]);
   const [pickedBranches, setPickedBranches] = useState<string[]>([]);
@@ -79,12 +84,11 @@ export default function QuickPostPage() {
     setPickedBranches((bs) => (bs.includes(b) ? bs.filter((x) => x !== b) : [...bs, b]));
 
   const splitList = (v: string) => v.split(',').map((s) => s.trim()).filter(Boolean);
-  const numList = (v: string) => splitList(v).map(Number).filter((n) => !Number.isNaN(n));
   const num = (v: string) => (v.trim() === '' ? undefined : Number(v));
   const eligibleCourses = hasCatalog ? pickedCourses : splitList(coursesText);
   const eligibleBranches = hasCatalog ? pickedBranches : splitList(branchesText);
 
-  const valid = title.trim() && eligibleCourses.length && numList(graduationYears).length;
+  const valid = title.trim() && eligibleCourses.length && gradYears.length > 0;
 
   async function submit(publish: boolean) {
     setSaving(publish ? 'publish' : 'draft');
@@ -102,7 +106,7 @@ export default function QuickPostPage() {
         companyName: companyName.trim() || undefined,
         eligibleCourses,
         eligibleBranches,
-        graduationYears: numList(graduationYears),
+        graduationYears: gradYears.map(Number),
         pdfUrl,
         pdfName,
         // Optional typed details (LinkedIn-style JD).
@@ -118,8 +122,10 @@ export default function QuickPostPage() {
         maxActiveBacklogs: num(details.maxActiveBacklogs),
         maxTotalBacklogs: num(details.maxTotalBacklogs),
         applicationFormFields: formFields.length > 0 ? cleanFields(formFields) : undefined,
-        // Date-only input → deadline is the end of that day (local 23:59:59).
-        applicationDeadline: deadline ? new Date(`${deadline}T23:59:59`).toISOString() : undefined,
+        // Optional time; defaults to end of that day (23:59) if left blank.
+        applicationDeadline: deadline
+          ? new Date(`${deadline}T${deadlineTime || '23:59'}:00`).toISOString()
+          : undefined,
       });
       // Publish straight away (notifies students) or leave as a draft.
       if (publish) await publishJob(job.id);
@@ -194,12 +200,15 @@ export default function QuickPostPage() {
                 </Field>
               </>
             )}
-            <Field label="Graduation years * (comma-separated)">
-              <input className={inputCls} value={graduationYears} onChange={(e) => setGraduationYears(e.target.value)} placeholder="2026, 2027" />
+            <Field label="Graduation years *">
+              <ChipPicker options={GRAD_YEARS} selected={gradYears} onToggle={toggleGradYear} />
             </Field>
             <Field label="Last date to apply">
-              <input className={inputCls} type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
-              <span className="text-xs text-subtle">Applications close at the end of this day.</span>
+              <div className="flex gap-2">
+                <input className={inputCls} type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+                <input className="h-10 w-32 rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400" type="time" value={deadlineTime} onChange={(e) => setDeadlineTime(e.target.value)} />
+              </div>
+              <span className="text-xs text-subtle">Leave time blank to close at 11:59 PM that day.</span>
             </Field>
           </div>
         </div>
