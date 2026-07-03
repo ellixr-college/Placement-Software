@@ -172,6 +172,17 @@ export class JobsService {
     return { job: this.publicJob(updated), eligibleCount: eligible.length };
   }
 
+  // Resolve a job's (private) PDF reference for streaming — scoped to jobs the
+  // caller's college can see (own + platform jobs targeted to them).
+  async pdfRef(collegeId: string, id: string) {
+    const job = await this.prisma.job.findFirst({
+      where: { id, ...this.visibleToCollege(collegeId) },
+      select: { pdfUrl: true, pdfName: true },
+    });
+    if (!job?.pdfUrl) throw new NotFoundException('No PDF for this job');
+    return { pdfUrl: job.pdfUrl, pdfName: job.pdfName };
+  }
+
   async remove(collegeId: string, id: string) {
     // Only the owning college can delete its own job (platform jobs excluded by
     // the collegeId filter). Applications cascade-delete with the job.

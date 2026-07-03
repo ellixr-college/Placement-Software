@@ -170,6 +170,25 @@ export function getJobApplicants(id: string): Promise<ApplicantRow[]> {
   return api<ApplicantRow[]>(`/jobs/${id}/applicants-export`);
 }
 
+/** Fetch the (private) JD PDF through the authenticated API and return a local
+ * object URL for the viewer. Caller should URL.revokeObjectURL when done. */
+export async function getJobPdfObjectUrl(id: string): Promise<string> {
+  const send = () => {
+    const token = getAccessToken();
+    return fetch(`${API_URL}/jobs/${id}/pdf`, {
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  };
+  let res = await send();
+  if (res.status === 401 && (await tryRefresh())) res = await send();
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.error?.message ?? 'Could not load PDF');
+  }
+  return URL.createObjectURL(await res.blob());
+}
+
 export function getEligibleStudents(id: string): Promise<EligibleStudent[]> {
   return api<EligibleStudent[]>(`/jobs/${id}/eligible-students`);
 }

@@ -12,7 +12,9 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { put } from '@vercel/blob';
+import type { Response } from 'express';
+import { get as blobGet, put } from '@vercel/blob';
+import { Res } from '@nestjs/common';
 import { UserRole } from '@ellixr/shared';
 import type { JwtPayload } from '@ellixr/shared';
 import { CurrentUser, Roles } from '../../common/decorators';
@@ -55,11 +57,28 @@ export class JobsController {
     if (!token) throw new BadRequestException('File storage is not configured (BLOB_READ_WRITE_TOKEN)');
     const safe = file.originalname.replace(/[^\w.\-]+/g, '_').slice(-80) || 'job.pdf';
     const blob = await put(`job-pdfs/${user.collegeId}/${Date.now()}-${safe}`, file.buffer, {
-      access: 'public',
+      access: 'private',
       token,
       contentType: 'application/pdf',
     });
     return { data: { url: blob.url, name: file.originalname } };
+  }
+
+  // Stream the (private) JD PDF to an authenticated viewer. The blob store is
+  // private, so files aren't publicly reachable — the API fetches with the token
+  // and relays the bytes. Any student/officer of the owning college may view.
+  @Get(':id/pdf')
+  @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER, UserRole.STUDENT)
+  async pdf(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Res() res: Response) {
+    const ref = await this.jobs.pdfRef(this.collegeId(user), id);
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!token) throw new BadRequestException('File storage is not configured');
+    const result = await blobGet(ref.pdfUrl, { access: 'private', token });
+    if (!result || !result.stream) throw new BadRequestException('PDF not found');
+    const buffer = Buffer.from(await new Response(result.stream as ReadableStream).arrayBuffer());
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${(ref.pdfName ?? 'job.pdf').replace(/"/g, '')}"`);
+    res.send(buffer);
   }
 
   // GET /jobs — officer management list OR student eligible feed, by role.

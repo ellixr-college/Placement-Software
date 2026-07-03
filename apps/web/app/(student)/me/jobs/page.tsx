@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card } from '@ellixr/ui';
-import { applyToJob, formatCtc, getJobFeed, type ApplicationField, type Job } from '../../../../lib/jobs';
+import { applyToJob, formatCtc, getJobFeed, getJobPdfObjectUrl, type ApplicationField, type Job } from '../../../../lib/jobs';
 import { PdfModal } from '../../../../components/pdf-modal';
 
 /**
@@ -64,7 +64,14 @@ export default function StudentJobsPage() {
       {error && <p className="text-sm text-danger">{error}</p>}
 
       {pdfView && (
-        <PdfModal url={pdfView.url} name={pdfView.name} onClose={() => setPdfView(null)} />
+        <PdfModal
+          url={pdfView.url}
+          name={pdfView.name}
+          onClose={() => {
+            URL.revokeObjectURL(pdfView.url);
+            setPdfView(null);
+          }}
+        />
       )}
 
       {formJob && (
@@ -98,7 +105,14 @@ export default function StudentJobsPage() {
               {j.description && <p className="line-clamp-3 text-sm text-body">{j.description}</p>}
               {j.pdfUrl && (
                 <button
-                  onClick={() => setPdfView({ url: j.pdfUrl!, name: j.pdfName })}
+                  onClick={async () => {
+                    setError(null);
+                    try {
+                      setPdfView({ url: await getJobPdfObjectUrl(j.id), name: j.pdfName });
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : 'Could not open PDF');
+                    }
+                  }}
                   className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:underline"
                 >
                   📄 View job description (PDF)

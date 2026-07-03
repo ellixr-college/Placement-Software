@@ -12,6 +12,7 @@ import {
   getEligibleStudents,
   getJob,
   getJobApplicants,
+  getJobPdfObjectUrl,
   publishJob,
   type EligibleStudent,
   type Job,
@@ -32,7 +33,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [eligible, setEligible] = useState<EligibleStudent[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [showPdf, setShowPdf] = useState(false);
+  const [pdfObjectUrl, setPdfObjectUrl] = useState<string | null>(null);
+  const [loadingPdf, setLoadingPdf] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
@@ -78,6 +80,23 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
   async function loadEligible() {
     setEligible(await getEligibleStudents(id));
+  }
+
+  async function openPdf() {
+    setLoadingPdf(true);
+    setError(null);
+    try {
+      setPdfObjectUrl(await getJobPdfObjectUrl(id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not open PDF');
+    } finally {
+      setLoadingPdf(false);
+    }
+  }
+
+  function closePdf() {
+    if (pdfObjectUrl) URL.revokeObjectURL(pdfObjectUrl);
+    setPdfObjectUrl(null);
   }
 
   async function exportApplicants() {
@@ -229,13 +248,13 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               <p className="text-xs text-subtle">{job.pdfName ?? 'Attached PDF'}</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setShowPdf(true)}>
+          <Button variant="outline" size="sm" onClick={openPdf} loading={loadingPdf}>
             View PDF
           </Button>
         </Card>
       )}
-      {showPdf && job.pdfUrl && (
-        <PdfModal url={job.pdfUrl} name={job.pdfName} onClose={() => setShowPdf(false)} />
+      {pdfObjectUrl && (
+        <PdfModal url={pdfObjectUrl} name={job.pdfName} onClose={closePdf} />
       )}
       {job.description && (
         <Card className="space-y-2 p-5">
