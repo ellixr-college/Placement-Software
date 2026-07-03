@@ -78,7 +78,8 @@ export default function QuickPostPage() {
         graduationYears: numList(graduationYears),
         pdfUrl,
         pdfName,
-        applicationDeadline: deadline ? new Date(deadline).toISOString() : undefined,
+        // Date-only input → deadline is the end of that day (local 23:59:59).
+        applicationDeadline: deadline ? new Date(`${deadline}T23:59:59`).toISOString() : undefined,
       });
       // Publish straight away (notifies students) or leave as a draft.
       if (publish) await publishJob(job.id);
@@ -153,7 +154,8 @@ export default function QuickPostPage() {
               <input className={inputCls} value={graduationYears} onChange={(e) => setGraduationYears(e.target.value)} placeholder="2026, 2027" />
             </Field>
             <Field label="Last date to apply">
-              <input className={inputCls} type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+              <input className={inputCls} type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+              <span className="text-xs text-subtle">Applications close at the end of this day.</span>
             </Field>
           </div>
         </div>
