@@ -1,208 +1,148 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Badge, Button, Card } from '@ellixr/ui';
-import {
-  INTERNSHIP_STATUSES,
-  listInternships,
-  verifyInternship,
-  type Internship,
-  type InternshipStatus,
-} from '../../../lib/internships';
+import { useEffect, useMemo, useState } from 'react';
+import { Card } from '@ellixr/ui';
+import { listInternships, type Internship } from '../../../lib/internships';
 
-const STATUS_TINT: Record<InternshipStatus, 'mint' | 'cream' | 'rose'> = {
-  VERIFIED: 'mint',
-  PENDING: 'cream',
-  REJECTED: 'rose',
-};
+interface Batch {
+  key: string;
+  label: string;
+  graduationYear: number;
+  course: string;
+  items: Internship[];
+}
 
+/** Officer view: student-reported internships grouped batch by batch (e.g.
+ * "2026 MBA"). Read-only — students self-report, there is no verification. */
 export default function InternshipsPage() {
   const [items, setItems] = useState<Internship[]>([]);
-  const [filter, setFilter] = useState<InternshipStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [rejecting, setRejecting] = useState<string | null>(null);
-  const [reason, setReason] = useState('');
-  const [busyId, setBusyId] = useState<string | null>(null);
-
-  async function load(status = filter) {
-    setLoading(true);
-    setError(null);
-    try {
-      setItems(await listInternships(status ?? undefined));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load internships');
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    (async () => {
+      try {
+        setItems(await listInternships());
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load internships');
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  function applyFilter(s: InternshipStatus | null) {
-    setFilter(s);
-    load(s);
-  }
-
-  async function act(i: Internship, action: 'verify' | 'reject', why?: string) {
-    setBusyId(i.id);
-    setError(null);
-    try {
-      await verifyInternship(i.id, action, why);
-      setRejecting(null);
-      setReason('');
-      load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Action failed');
-    } finally {
-      setBusyId(null);
+  const batches = useMemo<Batch[]>(() => {
+    const map = new Map<string, Batch>();
+    for (const i of items) {
+      const gradYear = i.graduationYear ?? 0;
+      const course = i.studentCourse ?? 'Unknown';
+      const key = `${gradYear}|${course}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          label: `${gradYear || '—'} ${course}`,
+          graduationYear: gradYear,
+          course,
+          items: [],
+        });
+      }
+      map.get(key)!.items.push(i);
     }
-  }
-
-  const pendingCount = items.filter((i) => i.status === 'PENDING').length;
+    // Newest batch first, then course alphabetically.
+    return [...map.values()].sort(
+      (a, b) => b.graduationYear - a.graduationYear || a.course.localeCompare(b.course),
+    );
+  }, [items]);
 
   return (
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold text-strong">Internships</h1>
         <p className="text-sm text-subtle">
-          Student-submitted internships{filter == null && pendingCount > 0
-            ? ` · ${pendingCount} awaiting verification`
-            : ''}
+          Internships students found on their own · {items.length} total across {batches.length}{' '}
+          {batches.length === 1 ? 'batch' : 'batches'}
         </p>
       </header>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <FilterChip active={filter === null} onClick={() => applyFilter(null)}>
-          All
-        </FilterChip>
-        {INTERNSHIP_STATUSES.map((s) => (
-          <FilterChip key={s} active={filter === s} onClick={() => applyFilter(s)}>
-            {s.charAt(0) + s.slice(1).toLowerCase()}
-          </FilterChip>
-        ))}
-      </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
       {loading ? (
         <p className="text-subtle">Loading…</p>
-      ) : items.length === 0 ? (
-        <Card className="p-8 text-center text-sm text-subtle">No internships match this filter.</Card>
+      ) : batches.length === 0 ? (
+        <Card className="p-8 text-center text-sm text-subtle">
+          No internships submitted yet.
+        </Card>
       ) : (
         <div className="space-y-3">
-          {items.map((i) => (
-            <Card key={i.id} className="space-y-3 p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-semibold text-strong">
-                    {i.studentName}{' '}
-                    <span className="text-xs font-normal text-subtle">· {i.rollNumber}</span>
-                  </p>
-                  <p className="text-sm text-body">
-                    {i.role} @ {i.companyName}
-                  </p>
-                  <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-subtle">
-                    {i.location && <span>{i.location}</span>}
-                    {i.workMode && <span>{i.workMode}</span>}
-                    {(i.startDate || i.endDate) && (
-                      <span>
-                        {fmt(i.startDate)} – {fmt(i.endDate)}
-                      </span>
-                    )}
-                    {i.isPaid && <span>Paid{i.stipend != null ? ` ₹${i.stipend}/mo` : ''}</span>}
-                    {i.isPpo && <span className="font-medium text-primary-600">PPO</span>}
-                  </p>
-                </div>
-                <Badge tint={STATUS_TINT[i.status]}>{i.status}</Badge>
-              </div>
-
-              {i.description && <p className="text-sm text-body">{i.description}</p>}
-              {i.certificateUrl && (
-                <a
-                  href={i.certificateUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs font-medium text-primary-600 hover:underline"
+          {batches.map((b) => {
+            const open = openKey === b.key;
+            return (
+              <Card key={b.key} className="overflow-hidden p-0">
+                <button
+                  onClick={() => setOpenKey(open ? null : b.key)}
+                  className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-app/60"
                 >
-                  View certificate →
-                </a>
-              )}
-              {i.status === 'REJECTED' && i.rejectionReason && (
-                <p className="rounded-md bg-danger/10 px-3 py-2 text-xs text-danger">
-                  Sent back: {i.rejectionReason}
-                </p>
-              )}
+                  <div>
+                    <p className="font-semibold text-strong">{b.label}</p>
+                    <p className="text-xs text-subtle">
+                      {b.items.length} {b.items.length === 1 ? 'internship' : 'internships'}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-subtle transition-transform ${open ? 'rotate-90' : ''}`}
+                    aria-hidden
+                  >
+                    →
+                  </span>
+                </button>
 
-              {rejecting === i.id ? (
-                <div className="space-y-2">
-                  <textarea
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    rows={2}
-                    placeholder="Reason (shown to the student)"
-                    className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary-400"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      variant="danger"
-                      onClick={() => act(i, 'reject', reason.trim() || undefined)}
-                      loading={busyId === i.id}
-                    >
-                      Confirm reject
-                    </Button>
-                    <Button variant="ghost" onClick={() => setRejecting(null)}>
-                      Cancel
-                    </Button>
+                {open && (
+                  <div className="space-y-3 border-t border-border bg-app/40 p-4">
+                    {b.items.map((i) => (
+                      <div key={i.id} className="rounded-card border border-border bg-white p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-strong">
+                              {i.studentName}{' '}
+                              <span className="text-xs font-normal text-subtle">· {i.rollNumber}</span>
+                            </p>
+                            <p className="text-sm text-body">
+                              {i.role} @ {i.companyName}
+                            </p>
+                            {i.location && <p className="text-xs text-subtle">{i.location}</p>}
+                          </div>
+                          <span className="shrink-0 text-xs text-subtle">{fmt(i.createdAt)}</span>
+                        </div>
+                        {i.description && <p className="mt-2 text-sm text-body">{i.description}</p>}
+                        {(i.pocName || i.pocEmail || i.pocPhone) && (
+                          <div className="mt-2 rounded-md bg-app px-3 py-2 text-xs text-subtle">
+                            <span className="font-medium text-body">Contact:</span>{' '}
+                            {i.pocName && <span>{i.pocName}</span>}
+                            {i.pocEmail && (
+                              <>
+                                {i.pocName ? ' · ' : ''}
+                                <a href={`mailto:${i.pocEmail}`} className="text-primary-600 hover:underline">
+                                  {i.pocEmail}
+                                </a>
+                              </>
+                            )}
+                            {i.pocPhone && <span> · {i.pocPhone}</span>}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ) : (
-                i.status !== 'VERIFIED' && (
-                  <div className="flex gap-2">
-                    <Button onClick={() => act(i, 'verify')} loading={busyId === i.id}>
-                      Verify
-                    </Button>
-                    <Button variant="outline" onClick={() => setRejecting(i.id)}>
-                      Reject
-                    </Button>
-                  </div>
-                )
-              )}
-            </Card>
-          ))}
+                )}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-function fmt(d: string | null): string {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-}
-
-function FilterChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-pill px-3 py-1.5 text-xs font-medium transition ${
-        active
-          ? 'bg-primary-500 text-white'
-          : 'border border-border bg-white text-subtle hover:border-primary-400'
-      }`}
-    >
-      {children}
-    </button>
-  );
+function fmt(d: string): string {
+  return new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }

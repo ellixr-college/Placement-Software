@@ -1,461 +1,240 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button, Card } from '@ellixr/ui';
+import Link from 'next/link';
+import { Card } from '@ellixr/ui';
+import { getOwnStudent, type Student } from '../../../../lib/students';
 import { useSession } from '../../../../lib/session';
-import {
-  getOwnStudent,
-  updateOwnProfile,
-  submitOwnProfile,
-  type Student,
-  type UpdateOwnProfileInput,
-} from '../../../../lib/students';
 
 /**
- * Student self-profile editor (mobile). Students edit their own academic fields
- * and submit the profile for placement-officer verification. rollNumber is
- * read-only — it is the officer-assigned identity.
+ * Student "Profile" hub — an actions menu listing everything the student can do
+ * (edit details, resume, jobs, applications, internships, training, alerts,
+ * password, sign out). The profile editor itself lives at /me/profile/edit.
  */
-export default function StudentProfilePage() {
+export default function ProfileMenuPage() {
   const { signOut } = useSession();
   const [student, setStudent] = useState<Student | null>(null);
-  const [form, setForm] = useState<UpdateOwnProfileInput>({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const s = await getOwnStudent();
-        setStudent(s);
-        setForm(toForm(s));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load profile');
-      } finally {
-        setLoading(false);
-      }
-    })();
+    getOwnStudent()
+      .then(setStudent)
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  function patch(p: Partial<UpdateOwnProfileInput>) {
-    setForm((f) => ({ ...f, ...p }));
-    setSaved(false);
-  }
-
-  async function onSave() {
-    setSaving(true);
-    setError(null);
-    try {
-      const s = await updateOwnProfile(clean(form));
-      setStudent(s);
-      setForm(toForm(s));
-      setSaved(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function onSubmit() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      const s = await submitOwnProfile();
-      setStudent(s);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not submit');
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  if (loading) return <p className="text-subtle">Loading…</p>;
-  if (!student) return <p className="text-danger">{error ?? 'Profile not found'}</p>;
-
-  const locked = student.verificationStatus === 'SUBMITTED';
-  const canSubmit =
-    student.verificationStatus === 'PENDING' || student.verificationStatus === 'REJECTED';
+  const verified = student?.verificationStatus === 'VERIFIED';
+  const completion = student?.profileCompletion ?? 0;
+  const profileDone = verified && completion >= 100;
 
   return (
-    <div className="space-y-5 pb-4">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-strong">My profile</h1>
-        <p className="text-sm text-subtle">
-          {student.user.fullName} · {student.rollNumber}
-        </p>
-      </header>
+    <div className="space-y-6 pb-4">
+      <h1 className="text-2xl font-semibold text-strong">Profile</h1>
 
-      {/* Verification status */}
-      <Card className="space-y-3 p-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-strong">Verification</p>
-          <StatusBadge status={student.verificationStatus} />
+      {/* Identity card */}
+      <Card className="flex items-center gap-4 p-4">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-primary text-xl font-semibold text-white">
+          {initial(student?.user.fullName)}
         </div>
-
-        <div>
-          <div className="flex items-center justify-between text-xs text-subtle">
-            <span>Profile completion</span>
-            <span>{student.profileCompletion}%</span>
-          </div>
-          <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-app">
-            <div
-              className="h-full rounded-full bg-gradient-primary"
-              style={{ width: `${student.profileCompletion}%` }}
-            />
-          </div>
+        <div className="min-w-0">
+          <p className="truncate text-base font-semibold text-strong">
+            {loading ? 'Loading…' : student?.user.fullName ?? 'Student'}
+          </p>
+          {student && (
+            <p className="truncate text-xs text-subtle">
+              {student.rollNumber} · {student.course} · {student.graduationYear}
+            </p>
+          )}
+          {student && (
+            <span
+              className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                verified ? 'bg-success/15 text-success' : 'bg-tint-cream text-tint-cream-fg'
+              }`}
+            >
+              {verified ? 'Verified' : verLabel(student.verificationStatus)}
+            </span>
+          )}
         </div>
-
-        {student.verificationStatus === 'REJECTED' && student.rejectionReason && (
-          <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
-            Officer feedback: {student.rejectionReason}
-          </p>
-        )}
-        {student.verificationStatus === 'SUBMITTED' && (
-          <p className="text-xs text-subtle">
-            Submitted for review — your officer will verify it shortly.
-          </p>
-        )}
-        {student.verificationStatus === 'VERIFIED' && (
-          <p className="text-xs text-success">
-            Verified ✓ — editing your details will send it back for re-verification.
-          </p>
-        )}
-
-        {canSubmit && (
-          <Button className="w-full" onClick={onSubmit} disabled={submitting}>
-            {submitting ? 'Submitting…' : 'Submit for verification'}
-          </Button>
-        )}
       </Card>
 
-      {/* Personal */}
-      <Section title="Personal">
-        <Text label="Full name" value={form.fullName ?? ''} onChange={(v) => patch({ fullName: v })} />
-        <Text label="Phone" value={form.phone ?? ''} onChange={(v) => patch({ phone: v })} />
-        <Text
-          label="Personal email"
-          type="email"
-          value={form.personalEmail ?? ''}
-          onChange={(v) => patch({ personalEmail: v })}
-          placeholder="you@gmail.com"
-        />
-        <Text
-          label="LinkedIn"
-          value={form.linkedinUrl ?? ''}
-          onChange={(v) => patch({ linkedinUrl: v })}
-          placeholder="https://linkedin.com/in/…"
-        />
-        <div className="grid grid-cols-2 gap-2">
-          <Text
-            label="Date of birth"
-            type="date"
-            value={form.dateOfBirth ?? ''}
-            onChange={(v) => patch({ dateOfBirth: v })}
-          />
-          <Select
-            label="Gender"
-            value={form.gender ?? ''}
-            onChange={(v) => patch({ gender: v })}
-            options={GENDERS}
-          />
+      <p className="px-1 text-xs font-semibold uppercase tracking-[0.18em] text-subtle">
+        Actions on your profile
+      </p>
+
+      {/* Highlighted: complete/verify profile */}
+      <Link
+        href="/me/profile/edit"
+        className={`flex items-center gap-4 rounded-card border p-4 transition ${
+          profileDone
+            ? 'border-border bg-white hover:shadow-card'
+            : 'border-primary-200 bg-primary-50/60 hover:shadow-card'
+        }`}
+      >
+        <IconBox highlight={!profileDone}>
+          <UserIcon />
+        </IconBox>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-strong">
+            {profileDone ? 'Personal details' : 'Complete your profile'}
+          </p>
+          <p className="text-xs text-subtle">
+            {profileDone ? 'Edit your academic & personal info' : `${completion}% done · unlock more roles`}
+          </p>
         </div>
-      </Section>
+        <Arrow />
+      </Link>
 
-      {/* Academic */}
-      <Section title="Academic">
-        <Text label="Course" value={form.course ?? ''} onChange={(v) => patch({ course: v })} placeholder="B.Tech" />
-        <Text label="Branch" value={form.branch ?? ''} onChange={(v) => patch({ branch: v })} placeholder="Computer Science" />
-        <Text
-          label="Enrollment number"
-          value={form.enrollmentNumber ?? ''}
-          onChange={(v) => patch({ enrollmentNumber: v })}
-        />
-        <div className="grid grid-cols-2 gap-2">
-          <Text
-            label="Graduation year"
-            type="number"
-            value={numStr(form.graduationYear)}
-            onChange={(v) => patch({ graduationYear: toNum(v) })}
-          />
-          <Text
-            label="Percentage (%)"
-            type="number"
-            value={numStr(form.cgpa)}
-            onChange={(v) => patch({ cgpa: toNum(v) })}
-          />
+      {/* The rest of the actions */}
+      <Card className="divide-y divide-border p-0">
+        <Row href="/me/resume" title="Resume" sub="Build & share your resume" icon={<DocIcon />} />
+        <Row href="/me/jobs" title="Jobs" sub="Browse & apply" icon={<BriefcaseIcon />} />
+        <Row href="/me/applications" title="My applications" sub="Track your status" icon={<ListIcon />} />
+        <Row href="/me/internships" title="Internships" sub="Add internships you found" icon={<StarIcon />} />
+        <Row href="/me/training" title="Readiness & training" sub="Scores & programs" icon={<ChartIcon />} />
+        <Row href="/me/notifications" title="Notifications" sub="Alerts on your account" icon={<BellIcon />} />
+        <Row href="/me/change-password" title="Change password" sub="Update your login password" icon={<LockIcon />} />
+      </Card>
+
+      <button
+        onClick={signOut}
+        className="flex w-full items-center gap-4 rounded-card border border-border bg-white p-4 text-left transition hover:shadow-card"
+      >
+        <IconBox>
+          <LogoutIcon />
+        </IconBox>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-danger">Sign out</p>
+          <p className="text-xs text-subtle">Log out of this device</p>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Text
-            label="Active backlogs"
-            type="number"
-            value={numStr(form.activeBacklogs)}
-            onChange={(v) => patch({ activeBacklogs: toNum(v) })}
-          />
-          <Text
-            label="Total backlogs"
-            type="number"
-            value={numStr(form.totalBacklogs)}
-            onChange={(v) => patch({ totalBacklogs: toNum(v) })}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Text
-            label="10th %"
-            type="number"
-            value={numStr(form.tenthPercentage)}
-            onChange={(v) => patch({ tenthPercentage: toNum(v) })}
-          />
-          <Text
-            label="12th %"
-            type="number"
-            value={numStr(form.twelfthPercentage)}
-            onChange={(v) => patch({ twelfthPercentage: toNum(v) })}
-          />
-          <Text
-            label="UG %"
-            type="number"
-            value={numStr(form.ugPercentage)}
-            onChange={(v) => patch({ ugPercentage: toNum(v) })}
-          />
-        </div>
-      </Section>
-
-      {/* Semester marks */}
-      <Section title="Semester marks">
-        <p className="text-xs text-subtle">
-          Add your SGPA/percentage per semester. These show on your profile and resume.
-        </p>
-        <SemesterEditor
-          rows={form.semesterMarks ?? []}
-          onChange={(rows) => patch({ semesterMarks: rows })}
-        />
-      </Section>
-
-      {error && <p className="text-sm text-danger">{error}</p>}
-
-      {locked && (
-        <p className="text-xs text-subtle">
-          Your profile is awaiting review. You can still edit and re-save.
-        </p>
-      )}
-
-      {/* Sticky save bar */}
-      <div className="sticky bottom-24 z-10 flex items-center gap-3 rounded-pill bg-white/95 p-2 shadow-nav backdrop-blur">
-        <Button className="flex-1" onClick={onSave} disabled={saving}>
-          {saving ? 'Saving…' : 'Save profile'}
-        </Button>
-        {saved && <span className="pr-2 text-sm text-success">Saved ✓</span>}
-      </div>
-
-      {/* Account */}
-      <Button variant="outline" className="w-full" onClick={signOut}>
-        Sign out
-      </Button>
+      </button>
     </div>
   );
 }
 
-// ── helpers ──
-function toForm(s: Student): UpdateOwnProfileInput {
-  return {
-    fullName: s.user.fullName,
-    phone: s.user.phone ?? '',
-    enrollmentNumber: s.enrollmentNumber ?? '',
-    course: s.course,
-    branch: s.branch,
-    graduationYear: s.graduationYear,
-    cgpa: s.cgpa ?? undefined,
-    activeBacklogs: s.activeBacklogs,
-    totalBacklogs: s.totalBacklogs,
-    dateOfBirth: s.dateOfBirth ? s.dateOfBirth.slice(0, 10) : '',
-    gender: s.gender ?? '',
-    personalEmail: s.personalEmail ?? '',
-    linkedinUrl: s.linkedinUrl ?? '',
-    tenthPercentage: s.tenthPercentage ?? undefined,
-    twelfthPercentage: s.twelfthPercentage ?? undefined,
-    ugPercentage: s.ugPercentage ?? undefined,
-    semesterMarks: s.semesterMarks ?? [],
-  };
-}
-
-// Only send fields with a meaningful value; strip empty strings so optional
-// fields aren't rejected by the API's string validators.
-function clean(form: UpdateOwnProfileInput): UpdateOwnProfileInput {
-  const out: UpdateOwnProfileInput = {};
-  if (form.fullName?.trim()) out.fullName = form.fullName.trim();
-  if (form.phone?.trim()) out.phone = form.phone.trim();
-  if (form.enrollmentNumber?.trim()) out.enrollmentNumber = form.enrollmentNumber.trim();
-  if (form.course?.trim()) out.course = form.course.trim();
-  if (form.branch?.trim()) out.branch = form.branch.trim();
-  if (form.graduationYear != null) out.graduationYear = form.graduationYear;
-  if (form.cgpa != null) out.cgpa = form.cgpa;
-  if (form.activeBacklogs != null) out.activeBacklogs = form.activeBacklogs;
-  if (form.totalBacklogs != null) out.totalBacklogs = form.totalBacklogs;
-  if (form.dateOfBirth?.trim()) out.dateOfBirth = form.dateOfBirth.trim();
-  if (form.gender?.trim()) out.gender = form.gender.trim();
-  if (form.personalEmail?.trim()) out.personalEmail = form.personalEmail.trim();
-  if (form.linkedinUrl?.trim()) out.linkedinUrl = form.linkedinUrl.trim();
-  if (form.tenthPercentage != null) out.tenthPercentage = form.tenthPercentage;
-  if (form.twelfthPercentage != null) out.twelfthPercentage = form.twelfthPercentage;
-  if (form.ugPercentage != null) out.ugPercentage = form.ugPercentage;
-  if (form.semesterMarks) {
-    // Keep only rows with both a label and a score.
-    const rows = form.semesterMarks.filter((m) => m.label.trim() && m.score.trim());
-    out.semesterMarks = rows;
-  }
-  return out;
-}
-
-function numStr(n: number | undefined): string {
-  return n == null ? '' : String(n);
-}
-function toNum(v: string): number | undefined {
-  const t = v.trim();
-  if (t === '') return undefined;
-  const n = Number(t);
-  return Number.isNaN(n) ? undefined : n;
-}
-
-const STATUS_CLASS: Record<string, string> = {
-  PENDING: 'bg-tint-cream text-tint-cream-fg',
-  SUBMITTED: 'bg-primary-50 text-primary-700',
-  VERIFIED: 'bg-success/15 text-success',
-  REJECTED: 'bg-danger/15 text-danger',
-};
-function StatusBadge({ status }: { status: string }) {
+function Row({
+  href,
+  title,
+  sub,
+  icon,
+}: {
+  href: string;
+  title: string;
+  sub: string;
+  icon: React.ReactNode;
+}) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-        STATUS_CLASS[status] ?? 'bg-primary-50 text-primary-700'
+    <Link href={href} className="flex items-center gap-4 px-4 py-4 transition hover:bg-app/50">
+      <IconBox>{icon}</IconBox>
+      <div className="flex-1">
+        <p className="text-sm font-semibold text-strong">{title}</p>
+        <p className="text-xs text-subtle">{sub}</p>
+      </div>
+      <Arrow />
+    </Link>
+  );
+}
+
+function IconBox({ children, highlight }: { children: React.ReactNode; highlight?: boolean }) {
+  return (
+    <div
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${
+        highlight ? 'border-primary-300 bg-white text-primary-600' : 'border-border bg-white text-strong'
       }`}
     >
-      {status}
-    </span>
-  );
-}
-
-const GENDERS = ['MALE', 'FEMALE', 'OTHER'];
-
-function Select({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-subtle">{label}</label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
-      >
-        <option value="">Select…</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o.charAt(0) + o.slice(1).toLowerCase()}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function SemesterEditor({
-  rows,
-  onChange,
-}: {
-  rows: { label: string; score: string }[];
-  onChange: (rows: { label: string; score: string }[]) => void;
-}) {
-  function update(i: number, patch: Partial<{ label: string; score: string }>) {
-    onChange(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
-  }
-  function add() {
-    onChange([...rows, { label: `Semester ${rows.length + 1}`, score: '' }]);
-  }
-  function remove(i: number) {
-    onChange(rows.filter((_, idx) => idx !== i));
-  }
-  return (
-    <div className="space-y-2">
-      {rows.map((r, i) => (
-        <div key={i} className="flex items-end gap-2">
-          <div className="flex-1 space-y-1">
-            <label className="text-xs font-medium text-subtle">Label</label>
-            <input
-              value={r.label}
-              onChange={(e) => update(i, { label: e.target.value })}
-              placeholder="Semester 1"
-              className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
-            />
-          </div>
-          <div className="w-24 space-y-1">
-            <label className="text-xs font-medium text-subtle">Score</label>
-            <input
-              value={r.score}
-              onChange={(e) => update(i, { score: e.target.value })}
-              placeholder="8.4"
-              className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => remove(i)}
-            className="mb-2 text-xs text-danger hover:underline"
-          >
-            Remove
-          </button>
-        </div>
-      ))}
-      <Button type="button" size="sm" variant="outline" onClick={add}>
-        Add semester
-      </Button>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <Card className="space-y-3 p-4">
-      <p className="text-sm font-semibold text-strong">{title}</p>
       {children}
-    </Card>
+    </div>
   );
 }
 
-function Text({
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = 'text',
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  type?: string;
-}) {
+function Arrow() {
+  return <span className="shrink-0 text-lg text-subtle">→</span>;
+}
+
+function initial(name?: string): string {
+  return (name?.trim()?.[0] ?? 'S').toUpperCase();
+}
+function verLabel(status: string): string {
+  if (status === 'SUBMITTED') return 'Under review';
+  if (status === 'REJECTED') return 'Needs changes';
+  return 'Not verified';
+}
+
+// ── icons ──
+const sv = {
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  className: 'h-5 w-5',
+} as const;
+function UserIcon() {
   return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-subtle">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
+    <svg {...sv}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c0-4 4-6 8-6s8 2 8 6" strokeLinecap="round" />
+    </svg>
+  );
+}
+function DocIcon() {
+  return (
+    <svg {...sv}>
+      <path d="M6 2h8l4 4v16H6z" strokeLinejoin="round" />
+      <path d="M14 2v4h4M9 13h6M9 17h6" strokeLinecap="round" />
+    </svg>
+  );
+}
+function BriefcaseIcon() {
+  return (
+    <svg {...sv}>
+      <rect x="3" y="7" width="18" height="13" rx="2" />
+      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" strokeLinecap="round" />
+    </svg>
+  );
+}
+function ListIcon() {
+  return (
+    <svg {...sv}>
+      <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" strokeLinecap="round" />
+    </svg>
+  );
+}
+function StarIcon() {
+  return (
+    <svg {...sv}>
+      <path
+        d="m12 3 2.5 5 5.5.8-4 3.9.9 5.5L12 21l-4.9 2.6.9-5.5-4-3.9 5.5-.8z"
+        strokeLinejoin="round"
       />
-    </div>
+    </svg>
+  );
+}
+function ChartIcon() {
+  return (
+    <svg {...sv}>
+      <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" strokeLinecap="round" />
+    </svg>
+  );
+}
+function BellIcon() {
+  return (
+    <svg {...sv}>
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9M10 21a2 2 0 0 0 4 0" strokeLinecap="round" />
+    </svg>
+  );
+}
+function LockIcon() {
+  return (
+    <svg {...sv}>
+      <rect x="4" y="10" width="16" height="11" rx="2" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" strokeLinecap="round" />
+    </svg>
+  );
+}
+function LogoutIcon() {
+  return (
+    <svg {...sv}>
+      <path d="M15 12H3m0 0 4-4m-4 4 4 4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

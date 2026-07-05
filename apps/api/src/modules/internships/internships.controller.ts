@@ -7,15 +7,15 @@ import {
   Param,
   Patch,
   Post,
-  Query,
 } from '@nestjs/common';
 import { UserRole } from '@ellixr/shared';
 import type { JwtPayload } from '@ellixr/shared';
 import { CurrentUser, Roles } from '../../common/decorators';
 import { InternshipsService } from './internships.service';
-import { CreateInternshipDto, UpdateInternshipDto, VerifyInternshipDto } from './dto';
+import { CreateInternshipDto, UpdateInternshipDto } from './dto';
 
-/** Officer/Admin: review and verify student internship records. */
+/** Officer/Admin: view student-reported internships (read-only, grouped by batch
+ * in the UI). Students self-report; there is no verification step. */
 @Controller('internships')
 @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER)
 export class InternshipsController {
@@ -27,22 +27,8 @@ export class InternshipsController {
   }
 
   @Get()
-  async list(@CurrentUser() user: JwtPayload, @Query('status') status?: string) {
-    return { data: await this.internships.list(this.collegeId(user), status) };
-  }
-
-  @Get(':id')
-  async get(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
-    return { data: await this.internships.get(this.collegeId(user), id) };
-  }
-
-  @Patch(':id/verify')
-  async verify(
-    @CurrentUser() user: JwtPayload,
-    @Param('id') id: string,
-    @Body() dto: VerifyInternshipDto,
-  ) {
-    return { data: await this.internships.verify(this.collegeId(user), id, user.sub, dto) };
+  async list(@CurrentUser() user: JwtPayload) {
+    return { data: await this.internships.list(this.collegeId(user)) };
   }
 }
 

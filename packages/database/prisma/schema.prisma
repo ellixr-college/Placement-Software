@@ -602,6 +602,10 @@ model Internship {
   // Converted into a pre-placement offer (PPO).
   isPpo           Boolean          @default(false) @map("is_ppo")
   description     String?
+  // Point-of-contact at the company (students self-report internships they found).
+  pocName         String?          @map("poc_name")
+  pocEmail        String?          @map("poc_email")
+  pocPhone        String?          @map("poc_phone")
   certificateUrl  String?          @map("certificate_url")
   status          InternshipStatus @default(PENDING)
   verifiedById    String?          @map("verified_by_id")

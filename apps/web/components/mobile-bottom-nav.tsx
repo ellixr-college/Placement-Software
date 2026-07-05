@@ -8,7 +8,7 @@ const items = [
   { href: '/me', label: 'Home', icon: HomeIcon },
   { href: '/me/jobs', label: 'Jobs', icon: BriefcaseIcon },
   { href: '/me/resume', label: 'Resume', icon: DocIcon },
-  { href: '/notifications', label: 'Alerts', icon: BellIcon },
+  { href: '/me/profile', label: 'Profile', icon: UserIcon },
 ];
 
 export function MobileBottomNav() {
@@ -52,10 +52,11 @@ function BriefcaseIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function BellIcon(props: React.SVGProps<SVGSVGElement>) {
+function UserIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} {...props}>
-      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9M10 21a2 2 0 0 0 4 0" strokeLinecap="round" />
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c0-4 4-6 8-6s8 2 8 6" strokeLinecap="round" />
     </svg>
   );
 }

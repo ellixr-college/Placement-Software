@@ -5,9 +5,6 @@ import { api } from './api';
 export const WORK_MODES = ['ONSITE', 'HYBRID', 'REMOTE'] as const;
 export type WorkMode = (typeof WORK_MODES)[number];
 
-export const INTERNSHIP_STATUSES = ['PENDING', 'VERIFIED', 'REJECTED'] as const;
-export type InternshipStatus = (typeof INTERNSHIP_STATUSES)[number];
-
 export interface Internship {
   id: string;
   studentId: string;
@@ -21,14 +18,17 @@ export interface Internship {
   endDate: string | null;
   isPpo: boolean;
   description: string | null;
+  // Point-of-contact at the company.
+  pocName: string | null;
+  pocEmail: string | null;
+  pocPhone: string | null;
   certificateUrl: string | null;
-  status: InternshipStatus;
-  verifiedAt: string | null;
-  rejectionReason: string | null;
   createdAt: string;
-  // Present only on officer list/detail.
+  // Present only on the officer list (used to group batch by batch).
   studentName?: string;
   rollNumber?: string;
+  studentCourse?: string;
+  graduationYear?: number;
 }
 
 export interface InternshipInput {
@@ -42,6 +42,9 @@ export interface InternshipInput {
   endDate?: string;
   isPpo?: boolean;
   description?: string;
+  pocName?: string;
+  pocEmail?: string;
+  pocPhone?: string;
   certificateUrl?: string;
 }
 
@@ -57,12 +60,5 @@ export const updateMyInternship = (id: string, input: Partial<InternshipInput>) 
 export const deleteMyInternship = (id: string) =>
   api<{ success: boolean }>(`/me/internships/${id}`, { method: 'DELETE' });
 
-// ─── Officer / College Admin ───
-export const listInternships = (status?: InternshipStatus) =>
-  api<Internship[]>(`/internships${status ? `?status=${status}` : ''}`);
-
-export const verifyInternship = (id: string, action: 'verify' | 'reject', reason?: string) =>
-  api<Internship>(`/internships/${id}/verify`, {
-    method: 'PATCH',
-    body: JSON.stringify({ action, reason }),
-  });
+// ─── Officer / College Admin (read-only) ───
+export const listInternships = () => api<Internship[]>('/internships');

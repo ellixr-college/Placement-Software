@@ -2,8 +2,8 @@ import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
+  IsEmail,
   IsEnum,
-  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -24,6 +24,10 @@ export class CreateInternshipDto {
   @EmptyToUndefined() @IsOptional() @IsDateString() endDate?: string;
   @IsOptional() @IsBoolean() isPpo?: boolean;
   @IsOptional() @IsString() description?: string;
+  // Point-of-contact at the company.
+  @IsOptional() @IsString() pocName?: string;
+  @EmptyToUndefined() @IsOptional() @IsEmail() pocEmail?: string;
+  @IsOptional() @IsString() pocPhone?: string;
   @IsOptional() @IsString() certificateUrl?: string;
 }
 
@@ -38,10 +42,8 @@ export class UpdateInternshipDto {
   @EmptyToUndefined() @IsOptional() @IsDateString() endDate?: string;
   @IsOptional() @IsBoolean() isPpo?: boolean;
   @IsOptional() @IsString() description?: string;
+  @IsOptional() @IsString() pocName?: string;
+  @EmptyToUndefined() @IsOptional() @IsEmail() pocEmail?: string;
+  @IsOptional() @IsString() pocPhone?: string;
   @IsOptional() @IsString() certificateUrl?: string;
-}
-
-export class VerifyInternshipDto {
-  @IsIn(['verify', 'reject']) action!: 'verify' | 'reject';
-  @IsOptional() @IsString() reason?: string;
 }

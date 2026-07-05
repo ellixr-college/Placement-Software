@@ -7,20 +7,25 @@ import {
 import { PRISMA } from '../../common/prisma.module';
 import { Prisma } from '@ellixr/database';
 import type { Internship, PrismaClient } from '@ellixr/database';
-import { NotificationsService } from '../notifications/notifications.service';
-import { CreateInternshipDto, UpdateInternshipDto, VerifyInternshipDto } from './dto';
+import { CreateInternshipDto, UpdateInternshipDto } from './dto';
 
 const dec = (v: Prisma.Decimal | null) => (v != null ? Number(v) : null);
 const toDec = (v?: number) => (v != null ? new Prisma.Decimal(v) : null);
 
 @Injectable()
 export class InternshipsService {
-  constructor(
-    @Inject(PRISMA) private readonly prisma: PrismaClient,
-    private readonly notifications: NotificationsService,
-  ) {}
+  constructor(@Inject(PRISMA) private readonly prisma: PrismaClient) {}
 
-  private toPublic(i: Internship & { student?: { user: { fullName: string }; rollNumber: string } }) {
+  private toPublic(
+    i: Internship & {
+      student?: {
+        user: { fullName: string };
+        rollNumber: string;
+        course: string;
+        graduationYear: number;
+      };
+    },
+  ) {
     return {
       id: i.id,
       studentId: i.studentId,
@@ -34,13 +39,21 @@ export class InternshipsService {
       endDate: i.endDate,
       isPpo: i.isPpo,
       description: i.description,
+      pocName: i.pocName,
+      pocEmail: i.pocEmail,
+      pocPhone: i.pocPhone,
       certificateUrl: i.certificateUrl,
       status: i.status,
       verifiedAt: i.verifiedAt,
       rejectionReason: i.rejectionReason,
       createdAt: i.createdAt,
       ...(i.student
-        ? { studentName: i.student.user.fullName, rollNumber: i.student.rollNumber }
+        ? {
+            studentName: i.student.user.fullName,
+            rollNumber: i.student.rollNumber,
+            studentCourse: i.student.course,
+            graduationYear: i.student.graduationYear,
+          }
         : {}),
     };
   }
@@ -80,28 +93,23 @@ export class InternshipsService {
         endDate: dto.endDate ? new Date(dto.endDate) : null,
         isPpo: dto.isPpo ?? false,
         description: dto.description,
+        pocName: dto.pocName,
+        pocEmail: dto.pocEmail,
+        pocPhone: dto.pocPhone,
         certificateUrl: dto.certificateUrl,
       },
-    });
-    // Let the placement cell know a new internship is awaiting verification.
-    await this.notifications.notifyOfficers(student.collegeId, {
-      type: 'GENERAL',
-      title: 'Internship submitted for verification',
-      body: `${dto.companyName.trim()} — ${dto.role.trim()}`,
-      link: '/internships',
     });
     return this.toPublic(created);
   }
 
+  // Students self-report internships they found on their own and can freely edit
+  // them — there is no officer verification step (the placement cell only views).
   async updateOwn(userId: string, id: string, dto: UpdateInternshipDto) {
     const student = await this.studentForUser(userId);
     const existing = await this.prisma.internship.findFirst({
       where: { id, studentId: student.id },
     });
     if (!existing) throw new NotFoundException('Internship not found');
-    if (existing.status === 'VERIFIED') {
-      throw new ForbiddenException('A verified internship cannot be edited');
-    }
     const updated = await this.prisma.internship.update({
       where: { id },
       data: {
@@ -115,11 +123,10 @@ export class InternshipsService {
         ...(dto.endDate !== undefined ? { endDate: dto.endDate ? new Date(dto.endDate) : null } : {}),
         ...(dto.isPpo !== undefined ? { isPpo: dto.isPpo } : {}),
         ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.pocName !== undefined ? { pocName: dto.pocName } : {}),
+        ...(dto.pocEmail !== undefined ? { pocEmail: dto.pocEmail } : {}),
+        ...(dto.pocPhone !== undefined ? { pocPhone: dto.pocPhone } : {}),
         ...(dto.certificateUrl !== undefined ? { certificateUrl: dto.certificateUrl } : {}),
-        // Editing a rejected record resubmits it for review.
-        ...(existing.status === 'REJECTED'
-          ? { status: 'PENDING' as const, rejectionReason: null, verifiedAt: null, verifiedById: null }
-          : {}),
       },
     });
     return this.toPublic(updated);
@@ -135,52 +142,24 @@ export class InternshipsService {
     return { success: true };
   }
 
-  // ─────────────── Officer / Admin ───────────────
-  async list(collegeId: string, status?: string) {
+  // ─────────────── Officer / Admin (read-only) ───────────────
+  // Every self-reported internship at the college, with the student's batch info
+  // (course + graduation year) so the officer UI can group them batch by batch.
+  async list(collegeId: string) {
     const rows = await this.prisma.internship.findMany({
-      where: { collegeId, ...(status ? { status: status as never } : {}) },
+      where: { collegeId },
       orderBy: { createdAt: 'desc' },
-      include: { student: { select: { rollNumber: true, user: { select: { fullName: true } } } } },
+      include: {
+        student: {
+          select: {
+            rollNumber: true,
+            course: true,
+            graduationYear: true,
+            user: { select: { fullName: true } },
+          },
+        },
+      },
     });
     return rows.map((r) => this.toPublic(r));
-  }
-
-  async get(collegeId: string, id: string) {
-    const row = await this.prisma.internship.findFirst({
-      where: { id, collegeId },
-      include: { student: { select: { rollNumber: true, user: { select: { fullName: true } } } } },
-    });
-    if (!row) throw new NotFoundException('Internship not found');
-    return this.toPublic(row);
-  }
-
-  async verify(collegeId: string, id: string, verifierId: string, dto: VerifyInternshipDto) {
-    const existing = await this.prisma.internship.findFirst({
-      where: { id, collegeId },
-      include: { student: { select: { userId: true } } },
-    });
-    if (!existing) throw new NotFoundException('Internship not found');
-    const verify = dto.action === 'verify';
-    const updated = await this.prisma.internship.update({
-      where: { id },
-      data: {
-        status: verify ? 'VERIFIED' : 'REJECTED',
-        verifiedById: verifierId,
-        verifiedAt: new Date(),
-        rejectionReason: verify ? null : dto.reason ?? null,
-      },
-      include: { student: { select: { rollNumber: true, user: { select: { fullName: true } } } } },
-    });
-    await this.notifications.notify({
-      userId: existing.student.userId,
-      collegeId,
-      type: 'GENERAL',
-      title: verify ? 'Internship verified' : 'Internship needs changes',
-      body: verify
-        ? `${updated.companyName} — ${updated.role} is now verified.`
-        : dto.reason ?? `${updated.companyName} — ${updated.role} was sent back for changes.`,
-      link: '/me/internships',
-    });
-    return this.toPublic(updated);
   }
 }

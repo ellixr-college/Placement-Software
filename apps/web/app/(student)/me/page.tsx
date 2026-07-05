@@ -131,7 +131,7 @@ export default function StudentHome() {
 
       {/* Profile / verification nudge */}
       {showProfileNudge && (
-        <Link href="/me/profile" className="block">
+        <Link href="/me/profile/edit" className="block">
           <Card className="space-y-3 p-5 transition hover:shadow-nav">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-strong">
@@ -163,10 +163,10 @@ export default function StudentHome() {
       {/* Quick links */}
       <div className="grid grid-cols-3 gap-3">
         <QuickLink href="/me/jobs" title="Jobs" sub="Browse & apply" />
-        <QuickLink href="/me/profile" title="Profile" sub="Edit · verify" />
+        <QuickLink href="/me/profile" title="Profile" sub="Account & more" />
         <QuickLink href="/me/resume" title="Resume" sub="Build · share" />
         <QuickLink href="/me/training" title="Readiness" sub="Scores · training" />
-        <QuickLink href="/me/internships" title="Internships" sub="Add · verify" />
+        <QuickLink href="/me/internships" title="Internships" sub="Add yours" />
         <QuickLink href="/me/applications" title="Applications" sub="Track status" />
       </div>
 
