@@ -23,6 +23,26 @@ export async function uploadJobPdf(file: File): Promise<{ url: string; name: str
   return body.data as { url: string; name: string };
 }
 
+/** Upload an offer letter PDF (multipart) → returns its public URL. */
+export async function uploadOfferLetter(file: File): Promise<{ url: string; name: string }> {
+  const send = () => {
+    const form = new FormData();
+    form.append('file', file);
+    const token = getAccessToken();
+    return fetch(`${API_URL}/jobs/upload-offer-letter`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+  };
+  let res = await send();
+  if (res.status === 401 && (await tryRefresh())) res = await send();
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body?.error?.message ?? 'Upload failed');
+  return body.data as { url: string; name: string };
+}
+
 export type ApplicationFieldType = 'text' | 'textarea' | 'select' | 'number';
 
 export interface ApplicationField {

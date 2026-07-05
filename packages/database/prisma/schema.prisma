@@ -321,6 +321,31 @@ enum InterviewResult {
   NO_SHOW
 }
 
+// ── Dynamic interview-rounds funnel ──
+// A job's rounds are added on demand (Round 1, 2, 3…). Each round is OPEN until
+// the officer decides who advances, then DECIDED (read-only history).
+enum RoundStatus {
+  OPEN
+  DECIDED
+}
+
+// A single applicant's result within one round.
+enum RoundOutcome {
+  PENDING
+  ADVANCED
+  REJECTED
+}
+
+// Overall progress of an application through the funnel. Drives the student's
+// tracking timeline and the officer's applicant lists.
+enum ApplicationOutcome {
+  APPLIED
+  IN_PROGRESS
+  SELECTED
+  REJECTED
+  WITHDRAWN
+}
+
 model Company {
   id          String   @id @default(uuid())
   collegeId   String   @map("college_id")
@@ -405,6 +430,7 @@ model Job {
 
   company      Company?      @relation(fields: [companyId], references: [id])
   applications Application[]
+  rounds       JobRound[]
 
   @@index([collegeId, status])
   @@index([companyId])
@@ -418,10 +444,15 @@ model Application {
   jobId           String           @map("job_id")
   studentId       String           @map("student_id")
   stage           ApplicationStage @default(APPLIED)
+  // New rounds-funnel status. `stage` is kept as a legacy bridge for analytics/
+  // reports (stamped OFFER_ACCEPTED/REJECTED on select/reject); the UI uses status.
+  status          ApplicationOutcome @default(APPLIED)
   appliedAt       DateTime         @default(now()) @map("applied_at")
   rejectedAt      DateTime?        @map("rejected_at")
   rejectionReason String?          @map("rejection_reason")
   offerCtc        Decimal?         @db.Decimal(12, 2) @map("offer_ctc")
+  // Optional offer letter (Vercel Blob URL) uploaded when a student is selected.
+  offerLetterUrl  String?          @map("offer_letter_url")
   notes           String?
   // Answers to the job's custom application questions: { [fieldId]: value }.
   formResponses   Json?            @map("form_responses")
@@ -431,11 +462,52 @@ model Application {
   student      Student                   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   stageHistory ApplicationStageHistory[]
   interviews   InterviewRound[]
+  rounds       ApplicationRound[]
 
   @@unique([jobId, studentId])
   @@index([collegeId, stage])
+  @@index([collegeId, status])
   @@index([studentId])
   @@map("applications")
+}
+
+// A dynamic interview round on a job (Round 1, 2, 3…). Officer adds these on
+// demand; each carries an optional schedule that drives the "results pending" alert.
+model JobRound {
+  id          String      @id @default(uuid())
+  jobId       String      @map("job_id")
+  collegeId   String      @map("college_id")
+  seq         Int
+  title       String
+  scheduledAt DateTime?   @map("scheduled_at")
+  status      RoundStatus @default(OPEN)
+  createdById String      @map("created_by_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  job          Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  participants ApplicationRound[]
+
+  @@unique([jobId, seq])
+  @@index([collegeId, status])
+  @@map("job_rounds")
+}
+
+// One applicant's participation + result in one round.
+model ApplicationRound {
+  id            String       @id @default(uuid())
+  applicationId String       @map("application_id")
+  roundId       String       @map("round_id")
+  outcome       RoundOutcome @default(PENDING)
+  decidedAt     DateTime?    @map("decided_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  round       JobRound    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, roundId])
+  @@index([roundId, outcome])
+  @@map("application_rounds")
 }
 
 model ApplicationStageHistory {

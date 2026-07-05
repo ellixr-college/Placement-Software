@@ -20,12 +20,25 @@ export interface StageHistoryEntry {
   createdAt: string;
 }
 
+// One round on the student's tracking timeline.
+export interface ApplicationRoundStep {
+  seq: number;
+  title: string;
+  scheduledAt: string | null;
+  roundStatus: 'OPEN' | 'DECIDED';
+  outcome: 'PENDING' | 'ADVANCED' | 'REJECTED';
+}
+
 export interface Application {
   id: string;
   stage: string;
+  // Rounds-funnel status: APPLIED | IN_PROGRESS | SELECTED | REJECTED | WITHDRAWN.
+  status: string;
   appliedAt: string;
   rejectionReason: string | null;
   offerCtc: number | null;
+  offerLetterUrl: string | null;
+  rounds: ApplicationRoundStep[];
   notes: string | null;
   job: {
     id: string;

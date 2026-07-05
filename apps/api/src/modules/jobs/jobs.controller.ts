@@ -64,6 +64,27 @@ export class JobsController {
     return { data: { url: blob.url, name: file.originalname } };
   }
 
+  // Upload an offer letter to Vercel Blob (PUBLIC, unguessable URL — same trust
+  // model as a public résumé link) so the officer and the placed student can open
+  // it directly. Officer/admin only.
+  @Post('upload-offer-letter')
+  @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  async uploadOfferLetter(@CurrentUser() user: JwtPayload, @UploadedFile() file?: UploadedPdf) {
+    this.collegeId(user);
+    if (!file) throw new BadRequestException('No file uploaded');
+    if (file.mimetype !== 'application/pdf') throw new BadRequestException('Only PDF files are allowed');
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!token) throw new BadRequestException('File storage is not configured (BLOB_READ_WRITE_TOKEN)');
+    const safe = file.originalname.replace(/[^\w.\-]+/g, '_').slice(-80) || 'offer.pdf';
+    const blob = await put(`offer-letters/${user.collegeId}/${Date.now()}-${safe}`, file.buffer, {
+      access: 'public',
+      token,
+      contentType: 'application/pdf',
+    });
+    return { data: { url: blob.url, name: file.originalname } };
+  }
+
   // Stream the (private) JD PDF to an authenticated viewer. The blob store is
   // private, so files aren't publicly reachable — the API fetches with the token
   // and relays the bytes. Any student/officer of the owning college may view.

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { SectionCard, StatTile } from '@ellixr/ui';
+import Link from 'next/link';
+import { Card, SectionCard, StatTile } from '@ellixr/ui';
 import { useSession } from '../../../lib/session';
 import {
   getJobMetrics,
@@ -11,6 +12,7 @@ import {
   type PlacementMetrics,
   type StudentMetrics,
 } from '../../../lib/analytics';
+import { listPendingResults, type PendingResult } from '../../../lib/rounds';
 
 /** Placement Officer / College Admin home — real tenant metrics. */
 export default function DashboardPage() {
@@ -18,6 +20,7 @@ export default function DashboardPage() {
   const [students, setStudents] = useState<StudentMetrics | null>(null);
   const [jobs, setJobs] = useState<JobMetrics | null>(null);
   const [placement, setPlacement] = useState<PlacementMetrics | null>(null);
+  const [pending, setPending] = useState<PendingResult[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,6 +33,7 @@ export default function DashboardPage() {
         setPlacement(p);
       })
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load metrics'));
+    listPendingResults().then(setPending).catch(() => {});
   }, [loading, user]);
 
   const firstName = user?.fullName?.split(' ')[0] ?? 'there';
@@ -43,6 +47,31 @@ export default function DashboardPage() {
       </header>
 
       {error && <p className="text-sm text-danger">{error}</p>}
+
+      {/* Rounds whose interview date has passed but results aren't entered yet */}
+      {pending.length > 0 && (
+        <Card className="space-y-2 border border-warning/40 bg-warning/5 p-4">
+          <p className="text-sm font-semibold text-strong">
+            ⚠ {pending.length} round result{pending.length === 1 ? '' : 's'} pending
+          </p>
+          <div className="space-y-1">
+            {pending.map((p) => (
+              <Link
+                key={p.roundId}
+                href={`/jobs/${p.jobId}/pipeline`}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm transition hover:bg-white"
+              >
+                <span className="text-body">
+                  <span className="font-medium text-strong">{p.jobTitle}</span> · {p.roundTitle}
+                </span>
+                <span className="text-xs text-warning">
+                  due {p.scheduledAt ? new Date(p.scheduledAt).toLocaleDateString() : ''} · enter results →
+                </span>
+              </Link>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile

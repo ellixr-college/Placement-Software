@@ -52,6 +52,7 @@ export class ApplicationsService {
         job: { include: { company: true } },
         interviews: { orderBy: { scheduledAt: 'asc' } },
         stageHistory: { orderBy: { createdAt: 'asc' } },
+        rounds: { include: { round: true }, orderBy: { round: { seq: 'asc' } } },
       },
     });
     return apps.map((a) => this.publicApplication(a));
@@ -71,6 +72,7 @@ export class ApplicationsService {
       where: { id: applicationId },
       data: {
         stage: 'WITHDRAWN',
+        status: 'WITHDRAWN',
         stageHistory: {
           create: {
             fromStage: app.stage,
@@ -156,6 +158,7 @@ export class ApplicationsService {
         student: { include: { user: true } },
         interviews: { orderBy: { scheduledAt: 'asc' } },
         stageHistory: { orderBy: { createdAt: 'asc' } },
+        rounds: { include: { round: true }, orderBy: { round: { seq: 'asc' } } },
       },
     });
     if (!app) throw new NotFoundException('Application not found');
@@ -322,11 +325,17 @@ export class ApplicationsService {
     a: {
       id: string;
       stage: string;
+      status: string;
       appliedAt: Date;
       rejectionReason: string | null;
       offerCtc: Prisma.Decimal | null;
+      offerLetterUrl?: string | null;
       notes: string | null;
       formResponses?: Prisma.JsonValue;
+      rounds?: Array<{
+        outcome: string;
+        round: { seq: number; title: string; scheduledAt: Date | null; status: string };
+      }>;
       job: {
         id: string;
         title: string;
@@ -359,10 +368,20 @@ export class ApplicationsService {
     return {
       id: a.id,
       stage: a.stage,
+      status: a.status,
       appliedAt: a.appliedAt,
       rejectionReason: a.rejectionReason,
       offerCtc: a.offerCtc != null ? Number(a.offerCtc) : null,
+      offerLetterUrl: a.offerLetterUrl ?? null,
       notes: a.notes,
+      // Round-by-round progress for the student's tracking timeline.
+      rounds: (a.rounds ?? []).map((r) => ({
+        seq: r.round.seq,
+        title: r.round.title,
+        scheduledAt: r.round.scheduledAt,
+        roundStatus: r.round.status,
+        outcome: r.outcome,
+      })),
       job: {
         id: a.job.id,
         title: a.job.title,
