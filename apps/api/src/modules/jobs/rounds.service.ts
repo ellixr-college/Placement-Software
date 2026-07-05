@@ -408,7 +408,9 @@ export class RoundsService {
       fullName: a.student.user.fullName,
       branch: a.student.branch,
       email: a.student.user.email,
-      resumeSlug: a.student.resume?.isPublished ? a.student.resume.publicSlug : null,
+      // Present whenever a resume row exists — the officer views it via an
+      // authenticated route, so publish state doesn't matter here.
+      resumeSlug: a.student.resume ? a.student.resume.publicSlug : null,
       appliedAt: a.appliedAt,
       status: a.status,
       offerCtc: a.offerCtc != null ? Number(a.offerCtc) : null,

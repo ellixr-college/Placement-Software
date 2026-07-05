@@ -17,6 +17,19 @@ export interface UpdateResumeInput {
   data?: ResumeData;
 }
 
+export interface OfficerResume {
+  template: string;
+  data: ResumeData;
+  fullName: string;
+  isPublished: boolean;
+  updatedAt: string;
+}
+
+/** Officer/admin: view any of their students' resumes (completeness aside). */
+export function getStudentResume(studentId: string): Promise<OfficerResume> {
+  return api<OfficerResume>(`/students/${studentId}/resume`);
+}
+
 export function getMyResume(): Promise<MyResume> {
   return api<MyResume>('/me/resume');
 }

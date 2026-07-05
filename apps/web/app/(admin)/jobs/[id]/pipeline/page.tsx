@@ -367,7 +367,7 @@ function RoundView({
                   <td className="px-4 py-3">{p.branch}</td>
                   <td className="px-4 py-3">
                     {p.resumeSlug ? (
-                      <a href={`/r/${p.resumeSlug}`} target="_blank" rel="noreferrer" className="text-xs text-primary-600 hover:underline">
+                      <a href={`/students/${p.studentId}/resume`} target="_blank" rel="noreferrer" className="text-xs text-primary-600 hover:underline">
                         View
                       </a>
                     ) : (
@@ -426,7 +426,7 @@ function PeopleList({
               {s.resumeSlug && (
                 <>
                   {' · '}
-                  <a href={`/r/${s.resumeSlug}`} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">
+                  <a href={`/students/${s.studentId}/resume`} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">
                     resume
                   </a>
                 </>

@@ -102,6 +102,24 @@ export class ResumesService {
     return { template: resume.template, data: resume.data, updatedAt: resume.updatedAt };
   }
 
+  // Officer/admin view of a student's resume — returns it regardless of
+  // completeness or publish state (the public /r/:slug page stays gated).
+  async getForOfficer(collegeId: string, studentId: string) {
+    const student = await this.prisma.student.findFirst({
+      where: { id: studentId, collegeId },
+      include: { user: { select: { fullName: true } }, resume: true },
+    });
+    if (!student) throw new NotFoundException('Student not found');
+    if (!student.resume) throw new NotFoundException('This student has not created a resume yet');
+    return {
+      template: student.resume.template,
+      data: student.resume.data,
+      fullName: student.user.fullName,
+      isPublished: student.resume.isPublished,
+      updatedAt: student.resume.updatedAt,
+    };
+  }
+
   private async studentForUser(userId: string) {
     const student = await this.prisma.student.findUnique({
       where: { userId },

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Put } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Put } from '@nestjs/common';
 import { UserRole } from '@ellixr/shared';
 import type { JwtPayload } from '@ellixr/shared';
 import { CurrentUser, Public, Roles } from '../../common/decorators';
@@ -27,5 +27,13 @@ export class ResumesController {
   @Public()
   async getPublic(@Param('slug') slug: string) {
     return { data: await this.resumes.getPublic(slug) };
+  }
+
+  // Officer/admin: view any of their college's students' resumes (uncompleted too).
+  @Get('students/:studentId/resume')
+  @Roles(UserRole.PLACEMENT_OFFICER, UserRole.COLLEGE_ADMIN)
+  async getForStudent(@CurrentUser() user: JwtPayload, @Param('studentId') studentId: string) {
+    if (!user.collegeId) throw new BadRequestException('No college context');
+    return { data: await this.resumes.getForOfficer(user.collegeId, studentId) };
   }
 }
