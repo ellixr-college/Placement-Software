@@ -107,15 +107,15 @@ export default function StudentJobsPage() {
                 topRight={j.applied ? <Badge tint="mint">{j.myStage ?? 'Applied'}</Badge> : undefined}
                 footer={
                   j.applied ? (
-                    <button disabled className="rounded-full bg-white/70 px-4 py-2 text-xs font-semibold text-subtle">
+                    <button disabled className="rounded-full bg-app px-4 py-2 text-xs font-semibold text-subtle">
                       Applied
                     </button>
                   ) : expired ? (
-                    <button disabled className="rounded-full bg-white/70 px-4 py-2 text-xs font-semibold text-subtle">
+                    <button disabled className="rounded-full bg-app px-4 py-2 text-xs font-semibold text-subtle">
                       Closed
                     </button>
                   ) : notEligible ? (
-                    <button disabled className="rounded-full bg-white/70 px-4 py-2 text-xs font-semibold text-subtle">
+                    <button disabled className="rounded-full bg-app px-4 py-2 text-xs font-semibold text-subtle">
                       Not eligible
                     </button>
                   ) : (
@@ -147,7 +147,7 @@ export default function StudentJobsPage() {
                   </button>
                 )}
                 {notEligible && !j.applied && (
-                  <div className="rounded-md bg-white/60 px-3 py-2 text-xs text-body">
+                  <div className="rounded-md bg-app px-3 py-2 text-xs text-body">
                     <span className="font-medium">You can&apos;t apply yet.</span>{' '}
                     {(j.eligibilityReasons ?? []).filter((r) => r !== 'Profile not verified').join(' · ') ||
                       'You don&apos;t meet the criteria.'}
