@@ -201,6 +201,12 @@ export class ListStudentsQuery {
   @IsBoolean()
   resumeComplete?: boolean;
 
+  // Filter by "details complete" (10th, 12th and a degree % all on record).
+  @IsOptional()
+  @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : value))
+  @IsBoolean()
+  detailsComplete?: boolean;
+
   @IsOptional()
   @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : value))
   @IsBoolean()

@@ -54,6 +54,7 @@ function StudentsList() {
   const [meta, setMeta] = useState<ListMeta | undefined>();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [detailsFilter, setDetailsFilter] = useState<'' | 'complete' | 'incomplete'>('');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +95,7 @@ function StudentsList() {
         search: debouncedSearch || undefined,
         course: batch.course,
         graduationYear: batch.graduationYear,
+        detailsComplete: detailsFilter === '' ? undefined : detailsFilter === 'complete',
         page,
         limit: 10,
       });
@@ -105,7 +107,7 @@ function StudentsList() {
     } finally {
       setLoading(false);
     }
-  }, [batch, debouncedSearch, page]);
+  }, [batch, debouncedSearch, detailsFilter, page]);
 
   useEffect(() => {
     if (batch) load();
@@ -120,6 +122,7 @@ function StudentsList() {
     setBatch({ graduationYear: Number(year), course: rest.join('|') });
     setSearch('');
     setDebouncedSearch('');
+    setDetailsFilter('');
     setPage(1);
     setItems([]);
     setMeta(undefined);
@@ -297,13 +300,27 @@ function StudentsList() {
             <button onClick={backToBatches} className="text-sm font-medium text-primary-600 hover:underline">
               ← All batches
             </button>
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search this batch by name, email, or roll…"
-              className="h-10 w-full max-w-sm rounded-md border border-border bg-white px-4 text-sm outline-none focus:border-primary-400"
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={detailsFilter}
+                onChange={(e) => {
+                  setPage(1);
+                  setDetailsFilter(e.target.value as typeof detailsFilter);
+                }}
+                className="h-10 rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
+              >
+                <option value="">All details</option>
+                <option value="complete">Details complete</option>
+                <option value="incomplete">Details incomplete</option>
+              </select>
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search this batch by name, email, or roll…"
+                className="h-10 w-full max-w-sm rounded-md border border-border bg-white px-4 text-sm outline-none focus:border-primary-400"
+              />
+            </div>
           </div>
 
           {selected.size > 0 && (

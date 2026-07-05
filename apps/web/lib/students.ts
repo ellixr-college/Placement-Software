@@ -115,6 +115,7 @@ export interface ListParams {
   graduationYear?: number;
   status?: string;
   resumeComplete?: boolean;
+  detailsComplete?: boolean;
   active?: boolean;
   page?: number;
   limit?: number;

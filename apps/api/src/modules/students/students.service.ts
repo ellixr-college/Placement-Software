@@ -293,17 +293,25 @@ export class StudentsService {
         : {}),
     };
 
+    // "Details complete" = 10th, 12th and a degree % all on record. AND-wrapped so
+    // the extra conditions compose with the search OR without clobbering it.
+    const listWhere =
+      q.detailsComplete === undefined
+        ? where
+        : {
+            AND: [where, q.detailsComplete ? DETAILS_COMPLETE_WHERE : { NOT: DETAILS_COMPLETE_WHERE }],
+          };
+
     const [total, students, detailsCompleteCount] = await this.prisma.$transaction([
-      this.prisma.student.count({ where }),
+      this.prisma.student.count({ where: listWhere }),
       this.prisma.student.findMany({
-        where,
+        where: listWhere,
         include: { user: true },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
-      // "Details complete" = 10th, 12th and a degree % all on record. AND-wrapped
-      // so it composes with the search OR without clobbering it.
+      // Batch-wide complete count (uses the base where, ignoring the details filter).
       this.prisma.student.count({ where: { AND: [where, DETAILS_COMPLETE_WHERE] } }),
     ]);
 
