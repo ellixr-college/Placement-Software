@@ -19,17 +19,10 @@ import {
 
 const lpa = (v: number | null) => (v == null ? '—' : `₹${(v / 100000).toFixed(2)} LPA`);
 
-const STAGE_LABEL: Record<string, string> = {
+const STATUS_LABEL: Record<string, string> = {
   APPLIED: 'Applied',
-  VERIFIED: 'Verified',
-  SHORTLISTED: 'Shortlisted',
-  ROUND_1: 'Round 1',
-  ROUND_2: 'Round 2',
-  ROUND_3: 'Round 3',
-  HR: 'HR',
-  OFFER_RELEASED: 'Offer released',
-  OFFER_ACCEPTED: 'Offer accepted',
-  JOINED: 'Joined',
+  IN_PROGRESS: 'In rounds',
+  SELECTED: 'Selected',
   REJECTED: 'Rejected',
   WITHDRAWN: 'Withdrawn',
 };
@@ -160,8 +153,8 @@ export default function AnalyticsPage() {
       <SectionCard title="Application funnel">
         <div className="space-y-2.5">
           {funnel.map((f) => (
-            <div key={f.stage} className="flex items-center gap-3">
-              <span className="w-32 shrink-0 text-xs text-subtle">{STAGE_LABEL[f.stage] ?? f.stage}</span>
+            <div key={f.status} className="flex items-center gap-3">
+              <span className="w-32 shrink-0 text-xs text-subtle">{STATUS_LABEL[f.status] ?? f.status}</span>
               <div className="h-5 flex-1 overflow-hidden rounded-pill bg-muted">
                 <div
                   className="h-full rounded-pill bg-gradient-ocean"

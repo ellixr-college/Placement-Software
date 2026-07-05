@@ -27,11 +27,12 @@ export interface StudentMetrics {
   active: number;
   placed: number;
   unplaced: number;
+  internships: number;
   completionDistribution: Record<string, number>;
 }
 
 export interface FunnelStage {
-  stage: string;
+  status: string;
   count: number;
 }
 

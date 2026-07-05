@@ -100,8 +100,9 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatTile label="Verified" value={placement ? placement.verifiedStudents.toLocaleString() : '—'} />
+        <StatTile label="Internships" value={students ? students.internships.toLocaleString() : '—'} />
         <StatTile label="Applications" value={jobs ? jobs.applicationsReceived.toLocaleString() : '—'} />
         <StatTile label="Highest package" value={lpa(placement?.highestPackage ?? null)} />
         <StatTile label="Median package" value={lpa(placement?.medianPackage ?? null)} />

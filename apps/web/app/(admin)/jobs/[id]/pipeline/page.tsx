@@ -176,6 +176,9 @@ export default function FunnelPage({ params }: { params: Promise<{ id: string }>
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
+      {/* Visual round-by-round funnel */}
+      {funnel.rounds.length > 0 && <FunnelChart funnel={funnel} />}
+
       {/* Round stepper */}
       <div className="flex flex-wrap items-center gap-2">
         {tabs.map((t) => (
@@ -424,6 +427,60 @@ function RoundView({
         </div>
       )}
     </div>
+  );
+}
+
+/** Visual selection funnel: how many students carry from stage to stage. */
+function FunnelChart({ funnel }: { funnel: Funnel }) {
+  const total = Math.max(1, funnel.applicantsTotal);
+  const stages: { label: string; count: number; sub?: string; tone: 'app' | 'open' | 'done' | 'success' }[] = [
+    { label: 'Applied', count: funnel.applicantsTotal, tone: 'app' },
+    ...funnel.rounds.map((r) => {
+      const advanced = r.participants.filter((p) => p.outcome === 'ADVANCED').length;
+      return {
+        label: r.title,
+        count: r.participants.length,
+        sub: r.status === 'OPEN' ? 'in progress' : `${advanced} advanced`,
+        tone: (r.status === 'OPEN' ? 'open' : 'done') as 'open' | 'done',
+      };
+    }),
+    { label: 'Selected', count: funnel.selectedCount, tone: 'success' },
+  ];
+  const barTone: Record<string, string> = {
+    app: 'bg-primary-300',
+    open: 'bg-warning',
+    done: 'bg-primary-500',
+    success: 'bg-success',
+  };
+
+  return (
+    <Card className="space-y-3 p-5">
+      <p className="text-sm font-semibold text-strong">Round-by-round funnel</p>
+      <div className="space-y-2.5">
+        {stages.map((s, i) => {
+          const prev = i > 0 ? stages[i - 1]?.count ?? 0 : s.count;
+          const dropped = i > 0 && prev - s.count > 0 ? prev - s.count : 0;
+          return (
+            <div key={`${s.label}-${i}`}>
+              <div className="mb-1 flex items-center justify-between text-xs">
+                <span className="font-medium text-body">{s.label}</span>
+                <span className="text-subtle">
+                  <span className="font-semibold text-strong">{s.count}</span>
+                  {s.sub ? ` · ${s.sub}` : ''}
+                  {dropped > 0 ? <span className="text-danger"> · {dropped} dropped</span> : ''}
+                </span>
+              </div>
+              <div className="h-6 overflow-hidden rounded-md bg-app">
+                <div
+                  className={`flex h-full items-center rounded-md ${barTone[s.tone]} transition-all`}
+                  style={{ width: `${Math.max(4, (s.count / total) * 100)}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 

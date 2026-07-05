@@ -5,20 +5,8 @@ import type { PrismaClient } from '@ellixr/database';
 // Application stages that count as a secured placement / a released offer.
 const PLACING_STAGES = ['OFFER_ACCEPTED', 'JOINED'] as const;
 const OFFER_STAGES = ['OFFER_RELEASED', 'OFFER_ACCEPTED', 'JOINED'] as const;
-const ALL_STAGES = [
-  'APPLIED',
-  'VERIFIED',
-  'SHORTLISTED',
-  'ROUND_1',
-  'ROUND_2',
-  'ROUND_3',
-  'HR',
-  'OFFER_RELEASED',
-  'OFFER_ACCEPTED',
-  'JOINED',
-  'REJECTED',
-  'WITHDRAWN',
-] as const;
+// Rounds-funnel outcome statuses, in progression order.
+const APPLICATION_STATUSES = ['APPLIED', 'IN_PROGRESS', 'SELECTED', 'REJECTED', 'WITHDRAWN'] as const;
 
 const num = (x: unknown): number | null => (x == null ? null : Number(x));
 
@@ -96,10 +84,11 @@ export class AnalyticsService {
 
   // ─────────────── Students ───────────────
   async students(collegeId: string) {
-    const [total, active, placed, completions] = await Promise.all([
+    const [total, active, placed, internships, completions] = await Promise.all([
       this.prisma.student.count({ where: { collegeId } }),
       this.prisma.student.count({ where: { collegeId, isActive: true } }),
       this.prisma.student.count({ where: { collegeId, status: 'PLACED' } }),
+      this.prisma.internship.count({ where: { collegeId } }),
       this.prisma.student.findMany({ where: { collegeId }, select: { profileCompletion: true } }),
     ]);
 
@@ -116,19 +105,22 @@ export class AnalyticsService {
       active,
       placed,
       unplaced: active - placed,
+      internships,
       completionDistribution: buckets,
     };
   }
 
   // ─────────────── Funnel ───────────────
+  // The rounds funnel tracks applications by outcome status (not the legacy
+  // 12-stage enum): Applied → In progress → Selected, plus Rejected/Withdrawn.
   async funnel(collegeId: string) {
     const grouped = await this.prisma.application.groupBy({
-      by: ['stage'],
+      by: ['status'],
       where: { collegeId },
       _count: { _all: true },
     });
-    const counts = new Map(grouped.map((g) => [g.stage, g._count._all]));
-    return ALL_STAGES.map((stage) => ({ stage, count: counts.get(stage) ?? 0 }));
+    const counts = new Map(grouped.map((g) => [g.status, g._count._all]));
+    return APPLICATION_STATUSES.map((status) => ({ status, count: counts.get(status) ?? 0 }));
   }
 
   // ─────────────── Insights (enrichment) ───────────────
