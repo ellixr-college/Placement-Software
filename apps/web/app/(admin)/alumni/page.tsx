@@ -6,6 +6,7 @@ import { Badge, Button, Card, SectionCard, StatTile } from '@ellixr/ui';
 import { isValidEmail, isValidPhone, toTitleCase } from '@ellixr/shared';
 import { useSession } from '../../../lib/session';
 import { CopyButton } from '../../../components/copy-button';
+import { BatchCards } from '../../../components/batch-cards';
 import {
   approveAlumni,
   createAlumni,
@@ -105,6 +106,33 @@ export default function AlumniPage() {
         </div>
       )}
 
+      {/* Batches — tap a card to filter the directory to that passout year */}
+      {stats && stats.byGraduationYear.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium uppercase text-subtle">Batches</p>
+            {filters.graduationYear != null && (
+              <button
+                onClick={() => apply({ graduationYear: undefined })}
+                className="text-xs text-primary-600 hover:underline"
+              >
+                Clear batch ({filters.graduationYear})
+              </button>
+            )}
+          </div>
+          <BatchCards
+            items={[...stats.byGraduationYear]
+              .sort((a, b) => b.graduationYear - a.graduationYear)
+              .map((y) => ({
+                key: String(y.graduationYear),
+                title: String(y.graduationYear),
+                stats: [{ label: y.count === 1 ? 'alumnus' : 'alumni', value: y.count }],
+              }))}
+            onSelect={(k) => apply({ graduationYear: Number(k) })}
+          />
+        </div>
+      )}
+
       {/* Self-registration link to share with graduating batches */}
       {registerUrl && (
         <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
@@ -177,19 +205,6 @@ export default function AlumniPage() {
           </FacetRow>
         )}
 
-        {stats && stats.facets.graduationYears.length > 0 && (
-          <FacetRow label="Batch">
-            {stats.facets.graduationYears.map((y) => (
-              <Chip
-                key={y}
-                active={filters.graduationYear === y}
-                onClick={() => toggle('graduationYear', y)}
-              >
-                {y}
-              </Chip>
-            ))}
-          </FacetRow>
-        )}
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}

@@ -5,14 +5,17 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { useConfirm } from '../../../components/confirm-provider';
+import { BatchCards } from '../../../components/batch-cards';
 import {
   deleteStudents,
   graduateBatch,
+  listStudentBatches,
   listStudents,
   setStudentActive,
   type GraduateResult,
   type ListMeta,
   type Student,
+  type StudentBatch,
 } from '../../../lib/students';
 
 const STATUS_TINT: Record<string, 'lavender' | 'mint' | 'cream' | 'primary'> = {
@@ -30,6 +33,11 @@ export default function StudentsPage() {
   );
 }
 
+interface SelectedBatch {
+  graduationYear: number;
+  course: string;
+}
+
 function StudentsList() {
   const confirm = useConfirm();
   const router = useRouter();
@@ -37,20 +45,38 @@ function StudentsList() {
   const importedCount = searchParams.get('imported');
   const [showImported, setShowImported] = useState(false);
   const [showGraduate, setShowGraduate] = useState(false);
+
+  const [batches, setBatches] = useState<StudentBatch[]>([]);
+  const [batchesLoading, setBatchesLoading] = useState(true);
+  const [batch, setBatch] = useState<SelectedBatch | null>(null);
+
   const [items, setItems] = useState<Student[]>([]);
   const [meta, setMeta] = useState<ListMeta | undefined>();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [batch, setBatch] = useState('');
-  const [resumeFilter, setResumeFilter] = useState<'' | 'complete' | 'incomplete'>('');
-  const [loginFilter, setLoginFilter] = useState<'' | 'active' | 'disabled'>('');
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
 
-  // Debounce the search box so typing doesn't fire a request per keystroke.
+  const loadBatches = useCallback(async () => {
+    setBatchesLoading(true);
+    setError(null);
+    try {
+      setBatches(await listStudentBatches());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load batches');
+    } finally {
+      setBatchesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadBatches();
+  }, [loadBatches]);
+
+  // Debounce the search box within a batch.
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedSearch(search);
@@ -60,14 +86,14 @@ function StudentsList() {
   }, [search]);
 
   const load = useCallback(async () => {
+    if (!batch) return;
     setLoading(true);
     setError(null);
     try {
       const res = await listStudents({
         search: debouncedSearch || undefined,
-        graduationYear: batch ? Number(batch) : undefined,
-        resumeComplete: resumeFilter === '' ? undefined : resumeFilter === 'complete',
-        active: loginFilter === '' ? undefined : loginFilter === 'active',
+        course: batch.course,
+        graduationYear: batch.graduationYear,
         page,
         limit: 10,
       });
@@ -79,16 +105,31 @@ function StudentsList() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, batch, resumeFilter, loginFilter, page]);
+  }, [batch, debouncedSearch, page]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (batch) load();
+  }, [batch, load]);
 
-  // Show the "N students added" modal once after an import redirect.
   useEffect(() => {
     if (importedCount) setShowImported(true);
   }, [importedCount]);
+
+  function openBatch(key: string) {
+    const [year, ...rest] = key.split('|');
+    setBatch({ graduationYear: Number(year), course: rest.join('|') });
+    setSearch('');
+    setDebouncedSearch('');
+    setPage(1);
+    setItems([]);
+    setMeta(undefined);
+  }
+
+  function backToBatches() {
+    setBatch(null);
+    setSelected(new Set());
+    loadBatches();
+  }
 
   function dismissImported() {
     setShowImported(false);
@@ -115,9 +156,7 @@ function StudentsList() {
   }
 
   function toggleSelectAll() {
-    setSelected((prev) =>
-      prev.size === items.length ? new Set() : new Set(items.map((s) => s.id)),
-    );
+    setSelected((prev) => (prev.size === items.length ? new Set() : new Set(items.map((s) => s.id))));
   }
 
   async function removeOne(s: Student) {
@@ -161,15 +200,30 @@ function StudentsList() {
   }
 
   const allSelected = items.length > 0 && selected.size === items.length;
+  const totalStudents = batches.reduce((n, b) => n + b.count, 0);
+
+  const batchItems = batches.map((b) => ({
+    key: `${b.graduationYear}|${b.course}`,
+    title: `${b.graduationYear} ${b.course}`,
+    stats: [
+      { label: 'students', value: b.count },
+      {
+        label: 'logged in',
+        value: `${b.loggedIn}/${b.count}`,
+        tint: (b.loggedIn === b.count ? 'success' : 'default') as 'success' | 'default',
+      },
+      {
+        label: 'details done',
+        value: `${b.detailsComplete}/${b.count}`,
+        tint: (b.detailsComplete === b.count ? 'success' : 'warn') as 'success' | 'warn',
+      },
+    ],
+  }));
 
   return (
     <div className="space-y-6">
       {showImported && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          role="dialog"
-          aria-modal="true"
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
           <Card className="w-full max-w-sm space-y-4 p-6 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success/15 text-2xl text-success">
               ✓
@@ -194,13 +248,11 @@ function StudentsList() {
         <div>
           <h1 className="text-2xl font-semibold text-strong">Students</h1>
           <p className="text-sm text-subtle">
-            {meta
-              ? `${meta.total} registered${
-                  meta.resumesComplete != null
-                    ? ` · ${meta.resumesComplete} resume${meta.resumesComplete === 1 ? '' : 's'} complete`
-                    : ''
-                }`
-              : 'Manage your student registry'}
+            {batch
+              ? meta
+                ? `${meta.total} in ${batch.graduationYear} ${batch.course} · ${meta.detailsCompleteCount ?? 0} details complete`
+                : `${batch.graduationYear} ${batch.course}`
+              : `${totalStudents} registered · ${batches.length} ${batches.length === 1 ? 'batch' : 'batches'}`}
           </p>
         </div>
         <div className="flex gap-2">
@@ -221,199 +273,175 @@ function StudentsList() {
           onClose={() => setShowGraduate(false)}
           onDone={() => {
             setShowGraduate(false);
-            load();
+            backToBatches();
           }}
         />
       )}
-
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, email, or roll number…"
-          className="h-10 w-full max-w-md rounded-md border border-border bg-white px-4 text-sm outline-none focus:border-primary-400"
-        />
-        <input
-          type="number"
-          value={batch}
-          onChange={(e) => {
-            setPage(1);
-            setBatch(e.target.value);
-          }}
-          placeholder="Batch (passout year)"
-          className="h-10 w-44 rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
-        />
-        <select
-          value={resumeFilter}
-          onChange={(e) => {
-            setPage(1);
-            setResumeFilter(e.target.value as typeof resumeFilter);
-          }}
-          className="h-10 rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
-        >
-          <option value="">All resumes</option>
-          <option value="complete">Resume complete</option>
-          <option value="incomplete">Resume incomplete</option>
-        </select>
-        <select
-          value={loginFilter}
-          onChange={(e) => {
-            setPage(1);
-            setLoginFilter(e.target.value as typeof loginFilter);
-          }}
-          className="h-10 rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
-        >
-          <option value="">All logins</option>
-          <option value="active">Login active</option>
-          <option value="disabled">Login disabled</option>
-        </select>
-      </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
-      {selected.size > 0 && (
-        <div className="flex items-center justify-between rounded-md border border-primary-200 bg-primary-50 px-4 py-2">
-          <span className="text-sm font-medium text-primary-700">
-            {selected.size} selected
-          </span>
-          <div className="flex items-center gap-3">
-            <button onClick={() => setSelected(new Set())} className="text-xs text-subtle hover:underline">
-              Clear
+      {/* ── Batch picker ── */}
+      {!batch ? (
+        batchesLoading ? (
+          <p className="text-subtle">Loading batches…</p>
+        ) : batches.length === 0 ? (
+          <Card className="p-8 text-center text-sm text-subtle">
+            No students yet. Add one or import a CSV to activate student logins.
+          </Card>
+        ) : (
+          <BatchCards items={batchItems} onSelect={openBatch} />
+        )
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <button onClick={backToBatches} className="text-sm font-medium text-primary-600 hover:underline">
+              ← All batches
             </button>
-            <Button variant="danger" size="sm" onClick={deleteSelected} loading={deleting}>
-              {deleting ? 'Deleting…' : 'Delete selected'}
-            </Button>
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search this batch by name, email, or roll…"
+              className="h-10 w-full max-w-sm rounded-md border border-border bg-white px-4 text-sm outline-none focus:border-primary-400"
+            />
           </div>
-        </div>
-      )}
 
-      <Card className="overflow-x-auto p-0">
-        <table className="w-full min-w-[820px] text-left text-sm">
-          <thead className="border-b border-border bg-app text-xs uppercase text-subtle">
-            <tr>
-              <th className="px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  onChange={toggleSelectAll}
-                  aria-label="Select all"
-                  className="h-4 w-4 cursor-pointer accent-primary-600"
-                />
-              </th>
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Reg No.</th>
-              <th className="px-4 py-3 font-medium">Branch</th>
-              <th className="px-4 py-3 font-medium">Passout</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Resume</th>
-              <th className="px-4 py-3 font-medium">Login</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-subtle">
-                  Loading…
-                </td>
-              </tr>
-            ) : items.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-subtle">
-                  No students yet. Add one or import a CSV to activate student logins.
-                </td>
-              </tr>
-            ) : (
-              items.map((s) => (
-                <tr
-                  key={s.id}
-                  className={`border-b border-border last:border-0 hover:bg-app/60 ${
-                    selected.has(s.id) ? 'bg-primary-50/50' : ''
-                  }`}
-                >
-                  <td className="px-4 py-3">
+          {selected.size > 0 && (
+            <div className="flex items-center justify-between rounded-md border border-primary-200 bg-primary-50 px-4 py-2">
+              <span className="text-sm font-medium text-primary-700">{selected.size} selected</span>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setSelected(new Set())} className="text-xs text-subtle hover:underline">
+                  Clear
+                </button>
+                <Button variant="danger" size="sm" onClick={deleteSelected} loading={deleting}>
+                  {deleting ? 'Deleting…' : 'Delete selected'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <Card className="overflow-x-auto p-0">
+            <table className="w-full min-w-[820px] text-left text-sm">
+              <thead className="border-b border-border bg-app text-xs uppercase text-subtle">
+                <tr>
+                  <th className="px-4 py-3">
                     <input
                       type="checkbox"
-                      checked={selected.has(s.id)}
-                      onChange={() => toggleSelect(s.id)}
-                      aria-label={`Select ${s.user.fullName}`}
+                      checked={allSelected}
+                      onChange={toggleSelectAll}
+                      aria-label="Select all"
                       className="h-4 w-4 cursor-pointer accent-primary-600"
                     />
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link href={`/students/${s.id}`} className="font-medium text-strong hover:underline">
-                      {s.user.fullName}
-                    </Link>
-                    <p className="text-xs text-subtle">{s.user.email}</p>
-                  </td>
-                  <td className="px-4 py-3 text-strong">{s.rollNumber}</td>
-                  <td className="px-4 py-3">{s.branch || '—'}</td>
-                  <td className="px-4 py-3">{s.graduationYear}</td>
-                  <td className="px-4 py-3">
-                    <Badge tint={STATUS_TINT[s.status] ?? 'primary'}>{s.status}</Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    {s.resumeComplete ? (
-                      <Badge tint="mint">Complete</Badge>
-                    ) : (
-                      <ResumeIncomplete
-                        missing={s.resumeMissing?.length ? s.resumeMissing : ['Resume not started']}
-                      />
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {s.isActive ? (
-                      <span className="text-xs text-success">Active</span>
-                    ) : (
-                      <span className="text-xs text-subtle">Disabled</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end">
-                      <RowMenu
-                        student={s}
-                        onToggle={() => toggleActive(s)}
-                        onDelete={() => removeOne(s)}
-                      />
-                    </div>
-                  </td>
+                  </th>
+                  <th className="px-4 py-3 font-medium">Name</th>
+                  <th className="px-4 py-3 font-medium">Reg No.</th>
+                  <th className="px-4 py-3 font-medium">Branch</th>
+                  <th className="px-4 py-3 font-medium">Passout</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Details</th>
+                  <th className="px-4 py-3 font-medium">Login</th>
+                  <th className="px-4 py-3 text-right font-medium">Actions</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </Card>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-8 text-center text-subtle">
+                      Loading…
+                    </td>
+                  </tr>
+                ) : items.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-8 text-center text-subtle">
+                      No students match your search.
+                    </td>
+                  </tr>
+                ) : (
+                  items.map((s) => (
+                    <tr
+                      key={s.id}
+                      className={`border-b border-border last:border-0 hover:bg-app/60 ${
+                        selected.has(s.id) ? 'bg-primary-50/50' : ''
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(s.id)}
+                          onChange={() => toggleSelect(s.id)}
+                          aria-label={`Select ${s.user.fullName}`}
+                          className="h-4 w-4 cursor-pointer accent-primary-600"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link href={`/students/${s.id}`} className="font-medium text-strong hover:underline">
+                          {s.user.fullName}
+                        </Link>
+                        <p className="text-xs text-subtle">{s.user.email}</p>
+                      </td>
+                      <td className="px-4 py-3 text-strong">{s.rollNumber}</td>
+                      <td className="px-4 py-3">{s.branch || '—'}</td>
+                      <td className="px-4 py-3">{s.graduationYear}</td>
+                      <td className="px-4 py-3">
+                        <Badge tint={STATUS_TINT[s.status] ?? 'primary'}>{s.status}</Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        {s.detailsComplete ? (
+                          <Badge tint="mint">Complete</Badge>
+                        ) : (
+                          <DetailsIncomplete
+                            missing={s.detailsMissing?.length ? s.detailsMissing : ['10th %', '12th %', 'Degree %']}
+                          />
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <LoginCell student={s} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end">
+                          <RowMenu student={s} onToggle={() => toggleActive(s)} onDelete={() => removeOne(s)} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </Card>
 
-      {meta && meta.total > 0 && (
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-subtle">
-            Showing {(meta.page - 1) * meta.limit + 1}–
-            {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} students · page{' '}
-            {meta.page} of {meta.pages}
-          </span>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={page >= meta.pages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+          {meta && meta.total > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-subtle">
+                Showing {(meta.page - 1) * meta.limit + 1}–{Math.min(meta.page * meta.limit, meta.total)} of{' '}
+                {meta.total} · page {meta.page} of {meta.pages}
+              </span>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                  Previous
+                </Button>
+                <Button variant="ghost" size="sm" disabled={page >= meta.pages} onClick={() => setPage((p) => p + 1)}>
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
+}
+
+/** Whether the student has ever signed in (plus login-disabled state). */
+function LoginCell({ student }: { student: Student }) {
+  if (!student.isActive) return <span className="text-xs text-subtle">Disabled</span>;
+  if (student.user.lastLoginAt) {
+    return (
+      <span className="text-xs text-success" title={new Date(student.user.lastLoginAt).toLocaleString()}>
+        Logged in
+      </span>
+    );
+  }
+  return <span className="text-xs text-warning">Never</span>;
 }
 
 /** Graduate a batch → copy to Alumni + disable their logins. */
@@ -452,15 +480,17 @@ function GraduateBatchModal({ onClose, onDone }: { onClose: () => void; onDone: 
                 {result.studentsGraduated} logins disabled.
               </p>
             </div>
-            <Button className="w-full" onClick={onDone}>Done</Button>
+            <Button className="w-full" onClick={onDone}>
+              Done
+            </Button>
           </>
         ) : (
           <>
             <div>
               <h2 className="text-lg font-semibold text-strong">Graduate a batch</h2>
               <p className="mt-1 text-sm text-subtle">
-                Copies every student of this passout year into the Alumni directory and disables
-                their student logins. Their records are kept.
+                Copies every student of this passout year into the Alumni directory and disables their
+                student logins. Their records are kept.
               </p>
             </div>
             <label className="block space-y-1">
@@ -481,7 +511,9 @@ function GraduateBatchModal({ onClose, onDone }: { onClose: () => void; onDone: 
               <Button onClick={run} loading={busy} disabled={!ack || !year}>
                 {busy ? 'Graduating…' : 'Graduate batch'}
               </Button>
-              <Button variant="ghost" onClick={onClose}>Cancel</Button>
+              <Button variant="ghost" onClick={onClose}>
+                Cancel
+              </Button>
             </div>
           </>
         )}
@@ -490,9 +522,9 @@ function GraduateBatchModal({ onClose, onDone }: { onClose: () => void; onDone: 
   );
 }
 
-/** "Incomplete" resume badge with a hover tooltip listing what's still missing.
- * The tooltip is fixed-positioned so the table card's overflow doesn't clip it. */
-function ResumeIncomplete({ missing }: { missing: string[] }) {
+/** "Incomplete" details badge with a hover tooltip listing what's still missing.
+ * Fixed-positioned so the table card's overflow doesn't clip it. */
+function DetailsIncomplete({ missing }: { missing: string[] }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
 
@@ -502,12 +534,7 @@ function ResumeIncomplete({ missing }: { missing: string[] }) {
   }
 
   return (
-    <span
-      ref={ref}
-      className="inline-block"
-      onMouseEnter={show}
-      onMouseLeave={() => setPos(null)}
-    >
+    <span ref={ref} className="inline-block" onMouseEnter={show} onMouseLeave={() => setPos(null)}>
       <Badge tint="cream" className="cursor-help">
         Incomplete
       </Badge>

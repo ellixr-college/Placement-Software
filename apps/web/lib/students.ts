@@ -42,9 +42,21 @@ export interface Student {
   profileCompletion: number;
   resumeComplete: boolean;
   resumeMissing?: string[];
+  // Officer list: "details complete" = 10th, 12th and a degree % on record.
+  detailsComplete?: boolean;
+  detailsMissing?: string[];
   isActive: boolean;
   createdAt: string;
   user: StudentUser;
+}
+
+// A cohort card on the officer's Students screen: one per (passout year, course).
+export interface StudentBatch {
+  graduationYear: number;
+  course: string;
+  count: number;
+  loggedIn: number;
+  detailsComplete: number;
 }
 
 export interface ListMeta {
@@ -52,7 +64,7 @@ export interface ListMeta {
   page: number;
   limit: number;
   pages: number;
-  resumesComplete?: number;
+  detailsCompleteCount?: number;
 }
 
 export interface ExtendedProfileFields {
@@ -99,6 +111,7 @@ export interface ImportResult {
 export interface ListParams {
   search?: string;
   branch?: string;
+  course?: string;
   graduationYear?: number;
   status?: string;
   resumeComplete?: boolean;
@@ -121,6 +134,11 @@ export async function listStudents(
 
 export function getStudent(id: string): Promise<Student> {
   return api<Student>(`/students/${id}`);
+}
+
+/** Cohort cards (one per passout year + course) for the officer's Students screen. */
+export function listStudentBatches(): Promise<StudentBatch[]> {
+  return api<StudentBatch[]>('/students/batches');
 }
 
 export interface GraduateResult {

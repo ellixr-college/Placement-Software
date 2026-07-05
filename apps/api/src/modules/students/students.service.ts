@@ -10,7 +10,27 @@ import { randomUUID } from 'crypto';
 import { PRISMA } from '../../common/prisma.module';
 import { Prisma } from '@ellixr/database';
 import type { PrismaClient } from '@ellixr/database';
-import { resumeDataSchema, resumeReadiness } from '@ellixr/shared';
+import type { Prisma as PrismaTypes } from '@ellixr/database';
+
+// A student's "details" are complete when 10th, 12th and a degree % are on record.
+const DETAILS_COMPLETE_WHERE: PrismaTypes.StudentWhereInput = {
+  tenthPercentage: { not: null },
+  twelfthPercentage: { not: null },
+  OR: [{ cgpa: { not: null } }, { ugPercentage: { not: null } }],
+};
+
+function detailsStatus(s: {
+  tenthPercentage: PrismaTypes.Decimal | null;
+  twelfthPercentage: PrismaTypes.Decimal | null;
+  cgpa: PrismaTypes.Decimal | null;
+  ugPercentage: PrismaTypes.Decimal | null;
+}): { complete: boolean; missing: string[] } {
+  const missing: string[] = [];
+  if (s.tenthPercentage == null) missing.push('10th %');
+  if (s.twelfthPercentage == null) missing.push('12th %');
+  if (s.cgpa == null && s.ugPercentage == null) missing.push('Degree %');
+  return { complete: missing.length === 0, missing };
+}
 import { NotificationsService } from '../notifications/notifications.service';
 import {
   CreateStudentDto,
@@ -168,6 +188,8 @@ export class StudentsService {
         currentYear: d.currentYear ?? null,
         cgpa: d.cgpa != null ? new Prisma.Decimal(d.cgpa) : null,
         ugPercentage: d.ugPercentage != null ? new Prisma.Decimal(d.ugPercentage) : null,
+        tenthPercentage: d.tenthPercentage != null ? new Prisma.Decimal(d.tenthPercentage) : null,
+        twelfthPercentage: d.twelfthPercentage != null ? new Prisma.Decimal(d.twelfthPercentage) : null,
         activeBacklogs: d.activeBacklogs ?? 0,
         totalBacklogs: d.totalBacklogs ?? 0,
         gender: d.gender,
@@ -255,14 +277,11 @@ export class StudentsService {
       // Graduated students live in the Alumni directory — hide them here.
       graduatedAt: null,
       ...(q.branch ? { branch: q.branch } : {}),
+      ...(q.course ? { course: q.course } : {}),
       ...(q.graduationYear ? { graduationYear: q.graduationYear } : {}),
       ...(q.status ? { status: q.status } : {}),
       ...(q.verificationStatus ? { verificationStatus: q.verificationStatus } : {}),
       ...(q.active !== undefined ? { isActive: q.active } : {}),
-      // Resume complete = resume.isComplete true; incomplete = anything else
-      // (no resume or not yet complete). NOT avoids clashing with the search OR.
-      ...(q.resumeComplete === true ? { resume: { isComplete: true } } : {}),
-      ...(q.resumeComplete === false ? { NOT: { resume: { isComplete: true } } } : {}),
       ...(q.search
         ? {
             OR: [
@@ -274,42 +293,64 @@ export class StudentsService {
         : {}),
     };
 
-    const [total, students, resumesComplete] = await this.prisma.$transaction([
+    const [total, students, detailsCompleteCount] = await this.prisma.$transaction([
       this.prisma.student.count({ where }),
       this.prisma.student.findMany({
         where,
-        // `data` is only for computing the missing-items tooltip for THIS page's
-        // rows (≤ limit), so it's cheap. The college-wide count uses isComplete.
-        include: { user: true, resume: { select: { isComplete: true, data: true } } },
+        include: { user: true },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
-      // College-wide completed-resume count (not just this page).
-      this.prisma.resume.count({ where: { collegeId, isComplete: true } }),
+      // "Details complete" = 10th, 12th and a degree % all on record. AND-wrapped
+      // so it composes with the search OR without clobbering it.
+      this.prisma.student.count({ where: { AND: [where, DETAILS_COMPLETE_WHERE] } }),
     ]);
 
     return {
       items: students.map((s) => {
-        // Compute completion from the LIVE resume data (not the persisted flag,
-        // which can be stale for resumes saved before the flag existed).
-        const { complete, missing } = this.resumeStatus(s.resume);
-        return { ...this.publicStudent(s), resumeComplete: complete, resumeMissing: missing };
+        const { complete, missing } = detailsStatus(s);
+        return { ...this.publicStudent(s), detailsComplete: complete, detailsMissing: missing };
       }),
-      meta: { total, page, limit, pages: Math.ceil(total / limit), resumesComplete },
+      meta: { total, page, limit, pages: Math.ceil(total / limit), detailsCompleteCount },
     };
   }
 
-  // Fresh completion + missing-items checklist for the officer's list/tooltip.
-  private resumeStatus(resume: { data: Prisma.JsonValue } | null): {
-    complete: boolean;
-    missing: string[];
-  } {
-    if (!resume) return { complete: false, missing: ['Resume not started'] };
-    const parsed = resumeDataSchema.safeParse(resume.data);
-    if (!parsed.success) return { complete: false, missing: ['Resume not started'] };
-    const r = resumeReadiness(parsed.data);
-    return { complete: r.ready, missing: r.missing };
+  // Batch cards for the officer's students screen: one entry per (passout year,
+  // course), with how many have logged in and how many have complete details.
+  async batches(collegeId: string) {
+    const rows = await this.prisma.student.findMany({
+      where: { collegeId, graduatedAt: null },
+      select: {
+        course: true,
+        graduationYear: true,
+        tenthPercentage: true,
+        twelfthPercentage: true,
+        cgpa: true,
+        ugPercentage: true,
+        user: { select: { lastLoginAt: true } },
+      },
+    });
+
+    const map = new Map<
+      string,
+      { course: string; graduationYear: number; count: number; loggedIn: number; detailsComplete: number }
+    >();
+    for (const s of rows) {
+      const key = `${s.graduationYear}|${s.course}`;
+      let b = map.get(key);
+      if (!b) {
+        b = { course: s.course, graduationYear: s.graduationYear, count: 0, loggedIn: 0, detailsComplete: 0 };
+        map.set(key, b);
+      }
+      b.count++;
+      if (s.user.lastLoginAt) b.loggedIn++;
+      if (detailsStatus(s).complete) b.detailsComplete++;
+    }
+    // Newest passout first, then course alphabetically.
+    return [...map.values()].sort(
+      (a, b) => b.graduationYear - a.graduationYear || a.course.localeCompare(b.course),
+    );
   }
 
   async findOne(collegeId: string, id: string) {
@@ -567,6 +608,8 @@ export class StudentsService {
       phone: get('phone') || undefined,
       cgpa: num('cgpa', 'cgpa'),
       ugPercentage: num('ugpercentage', 'ugPercentage'),
+      tenthPercentage: num('tenthpercentage', 'tenthPercentage'),
+      twelfthPercentage: num('twelfthpercentage', 'twelfthPercentage'),
       activeBacklogs: num('activebacklogs', 'activeBacklogs'),
       totalBacklogs: num('totalbacklogs', 'totalBacklogs'),
     };

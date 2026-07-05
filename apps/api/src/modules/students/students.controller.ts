@@ -38,6 +38,12 @@ export class StudentsController {
     return { data: items, meta };
   }
 
+  // Declared before :id so "batches" isn't captured as an id param.
+  @Get('batches')
+  async batches(@CurrentUser() user: JwtPayload) {
+    return { data: await this.students.batches(this.collegeId(user)) };
+  }
+
   @Get(':id')
   async findOne(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return { data: await this.students.findOne(this.collegeId(user), id) };

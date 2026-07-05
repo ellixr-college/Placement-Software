@@ -186,6 +186,7 @@ export class GraduateBatchDto {
 export class ListStudentsQuery {
   @IsOptional() @IsString() search?: string;
   @IsOptional() @IsString() branch?: string;
+  @IsOptional() @IsString() course?: string;
 
   @IsOptional() @Type(() => Number) @IsInt() graduationYear?: number;
 
