@@ -338,7 +338,7 @@ function StudentsList() {
           )}
 
           <Card className="overflow-x-auto p-0">
-            <table className="w-full min-w-[820px] text-left text-sm">
+            <table className="w-full min-w-[680px] text-left text-sm [&_td]:whitespace-nowrap [&_th]:whitespace-nowrap">
               <thead className="border-b border-border bg-app text-xs uppercase text-subtle">
                 <tr>
                   <th className="px-4 py-3">
@@ -353,7 +353,6 @@ function StudentsList() {
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Reg No.</th>
                   <th className="px-4 py-3 font-medium">Branch</th>
-                  <th className="px-4 py-3 font-medium">Passout</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Details</th>
                   <th className="px-4 py-3 font-medium">Login</th>
@@ -363,13 +362,13 @@ function StudentsList() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-subtle">
+                    <td colSpan={8} className="px-4 py-8 text-center text-subtle">
                       Loading…
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-subtle">
+                    <td colSpan={8} className="px-4 py-8 text-center text-subtle">
                       No students match your search.
                     </td>
                   </tr>
@@ -398,7 +397,6 @@ function StudentsList() {
                       </td>
                       <td className="px-4 py-3 text-strong">{s.rollNumber}</td>
                       <td className="px-4 py-3">{s.branch || '—'}</td>
-                      <td className="px-4 py-3">{s.graduationYear}</td>
                       <td className="px-4 py-3">
                         <Badge tint={STATUS_TINT[s.status] ?? 'primary'}>{s.status}</Badge>
                       </td>

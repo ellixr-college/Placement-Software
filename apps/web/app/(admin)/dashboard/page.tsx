@@ -41,9 +41,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-2xl font-semibold text-strong">Welcome, {firstName}</h1>
-        <p className="text-sm text-subtle">Placement overview for {user?.college?.name ?? 'your college'}</p>
+      <header className="rounded-2xl bg-gradient-primary p-6 text-white shadow-nav">
+        <h1 className="text-2xl font-semibold">Welcome, {firstName}</h1>
+        <p className="text-sm text-white/80">Placement overview for {user?.college?.name ?? 'your college'}</p>
       </header>
 
       {error && <p className="text-sm text-danger">{error}</p>}

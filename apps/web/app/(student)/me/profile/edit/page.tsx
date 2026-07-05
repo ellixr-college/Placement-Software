@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
+import { resumeReadiness } from '@ellixr/shared';
 import { useSession } from '../../../../../lib/session';
+import { getMyResume } from '../../../../../lib/resume';
 import {
   getOwnStudent,
   updateOwnProfile,
@@ -11,6 +13,9 @@ import {
   type Student,
   type UpdateOwnProfileInput,
 } from '../../../../../lib/students';
+
+// resumeReadiness checks 6 essentials; show progress as a % of those.
+const RESUME_CHECKS = 6;
 
 /**
  * Student self-profile editor (mobile). Students edit their own academic fields
@@ -26,6 +31,8 @@ export default function StudentProfilePage() {
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resumePct, setResumePct] = useState<number | null>(null);
+  const [resumeMissing, setResumeMissing] = useState<string[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -39,6 +46,14 @@ export default function StudentProfilePage() {
         setLoading(false);
       }
     })();
+    // Track resume completion (not profile fields — those are officer-managed).
+    getMyResume()
+      .then((r) => {
+        const { missing } = resumeReadiness(r.data);
+        setResumePct(Math.round(((RESUME_CHECKS - missing.length) / RESUME_CHECKS) * 100));
+        setResumeMissing(missing);
+      })
+      .catch(() => {});
   }, []);
 
   function patch(p: Partial<UpdateOwnProfileInput>) {
@@ -82,7 +97,7 @@ export default function StudentProfilePage() {
     student.verificationStatus === 'PENDING' || student.verificationStatus === 'REJECTED';
 
   return (
-    <div className="space-y-5 pb-4">
+    <div className="space-y-5 pb-28">
       <header className="space-y-1">
         <Link href="/me/profile" className="text-sm text-primary-600">
           ← Profile
@@ -100,17 +115,26 @@ export default function StudentProfilePage() {
           <StatusBadge status={student.verificationStatus} />
         </div>
 
+        {/* Resume completion (the only thing students need to complete themselves —
+            academic/personal details are managed by the placement office). */}
         <div>
           <div className="flex items-center justify-between text-xs text-subtle">
-            <span>Profile completion</span>
-            <span>{student.profileCompletion}%</span>
+            <span>Resume completion</span>
+            <span>{resumePct != null ? `${resumePct}%` : '—'}</span>
           </div>
           <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-app">
             <div
-              className="h-full rounded-full bg-gradient-primary"
-              style={{ width: `${student.profileCompletion}%` }}
+              className="h-full rounded-full bg-gradient-primary transition-all"
+              style={{ width: `${resumePct ?? 0}%` }}
             />
           </div>
+          {resumeMissing.length > 0 ? (
+            <Link href="/me/resume" className="mt-2 inline-block text-xs font-medium text-primary-600 hover:underline">
+              Finish your resume — still needed: {resumeMissing.join(', ')} →
+            </Link>
+          ) : (
+            resumePct === 100 && <p className="mt-2 text-xs text-success">Resume complete ✓</p>
+          )}
         </div>
 
         {student.verificationStatus === 'REJECTED' && student.rejectionReason && (
@@ -247,18 +271,24 @@ export default function StudentProfilePage() {
         </p>
       )}
 
-      {/* Sticky save bar */}
-      <div className="sticky bottom-24 z-10 flex items-center gap-3 rounded-pill bg-white/95 p-2 shadow-nav backdrop-blur">
-        <Button className="flex-1" onClick={onSave} disabled={saving}>
-          {saving ? 'Saving…' : 'Save profile'}
-        </Button>
-        {saved && <span className="pr-2 text-sm text-success">Saved ✓</span>}
-      </div>
-
       {/* Account */}
       <Button variant="outline" className="w-full" onClick={signOut}>
         Sign out
       </Button>
+
+      {/* Fixed save footer (contextual — this sub-screen hides the bottom nav) */}
+      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md border-t border-border bg-white/95 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onSave}
+            disabled={saving}
+            className="press flex-1 rounded-pill bg-gradient-primary py-3 text-sm font-semibold text-white shadow-nav disabled:opacity-60"
+          >
+            {saving ? 'Saving…' : 'Save profile'}
+          </button>
+          {saved && <span className="pr-1 text-sm font-medium text-success">Saved ✓</span>}
+        </div>
+      </div>
     </div>
   );
 }

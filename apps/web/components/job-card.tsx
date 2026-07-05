@@ -61,6 +61,8 @@ export function JobCard({
   ]
     .filter(Boolean)
     .join(' · ');
+  const ctc = formatCtc(job.ctcMin, job.ctcMax);
+  const ctcDisclosed = ctc !== 'Not disclosed';
 
   return (
     <div
@@ -119,7 +121,11 @@ export function JobCard({
       {/* footer: pay + location + CTA (CTA isolated from the card click) */}
       <div className="relative mt-auto flex items-end justify-between gap-3 border-t border-border pt-4">
         <div className="min-w-0">
-          <p className="text-sm font-bold text-strong">{formatCtc(job.ctcMin, job.ctcMax)}</p>
+          {ctcDisclosed ? (
+            <p className="text-sm font-bold text-strong">{ctc}</p>
+          ) : (
+            <p className="text-sm font-medium text-subtle">CTC not disclosed</p>
+          )}
           {meta && <p className="truncate text-xs text-subtle">{meta}</p>}
         </div>
         {footer && <div onClick={(e) => e.stopPropagation()}>{footer}</div>}

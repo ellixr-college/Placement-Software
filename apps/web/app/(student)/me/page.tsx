@@ -99,20 +99,20 @@ export default function StudentHome() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="animate-rise flex items-center justify-between rounded-2xl bg-gradient-primary p-5 text-white shadow-nav">
         <div>
-          <p className="text-sm text-subtle">Welcome back</p>
-          <h1 className="text-2xl font-semibold text-strong">Hi, {firstName}</h1>
+          <p className="text-sm text-white/80">Welcome back</p>
+          <h1 className="text-2xl font-semibold">Hi, {firstName}</h1>
         </div>
         <div className="flex items-center gap-2">
           <NotificationBell
             href="/me/notifications"
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-card"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white"
           />
           <button
             onClick={signOut}
             aria-label="Sign out"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-subtle shadow-card transition hover:text-danger"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
               <path d="M15 12H3m0 0 4-4m-4 4 4 4" strokeLinecap="round" strokeLinejoin="round" />

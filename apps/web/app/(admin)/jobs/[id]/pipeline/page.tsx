@@ -136,6 +136,29 @@ export default function FunnelPage({ params }: { params: Promise<{ id: string }>
     }
   }
 
+  // Place several finalists at once (mark selected/placed; offer letters can be
+  // added per-student afterwards from the Selected tab).
+  async function bulkPlace() {
+    const ids = [...picked];
+    if (ids.length === 0) return;
+    const ok = await confirm({
+      title: `Select ${ids.length} student${ids.length === 1 ? '' : 's'}?`,
+      message: 'They will be marked selected/placed. You can add offer letters afterwards.',
+      confirmLabel: `Select ${ids.length}`,
+    });
+    if (!ok) return;
+    setBusy(true);
+    setError(null);
+    try {
+      for (const appId of ids) await placeApplicant(id, appId, {});
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not place students');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -204,15 +227,14 @@ export default function FunnelPage({ params }: { params: Promise<{ id: string }>
           isLast={activeRound.id === lastRound?.id}
         />
       ) : tab === 'finalists' ? (
-        <PeopleList
+        <FinalistsTable
           people={funnel.finalists}
-          empty="No finalists yet."
-          action={(s) => (
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => setPlacing(s)}>Select / place</Button>
-              <Button size="sm" variant="ghost" onClick={() => reject(s)}>Reject</Button>
-            </div>
-          )}
+          picked={picked}
+          setPicked={setPicked}
+          busy={busy}
+          onBulkPlace={bulkPlace}
+          onPlace={(s) => setPlacing(s)}
+          onReject={reject}
         />
       ) : tab === 'selected' ? (
         <PeopleList
@@ -398,6 +420,112 @@ function RoundView({
           </span>
           <Button onClick={onDecide} loading={busy}>
             {isLast ? 'Advance & close' : 'Advance & close round'}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Finalists as a selectable table — multi-select rows and place them in bulk. */
+function FinalistsTable({
+  people,
+  picked,
+  setPicked,
+  busy,
+  onBulkPlace,
+  onPlace,
+  onReject,
+}: {
+  people: FunnelStudent[];
+  picked: Set<string>;
+  setPicked: (s: Set<string>) => void;
+  busy: boolean;
+  onBulkPlace: () => void;
+  onPlace: (s: FunnelStudent) => void;
+  onReject: (s: FunnelStudent) => void;
+}) {
+  if (people.length === 0)
+    return <Card className="p-8 text-center text-sm text-subtle">No finalists yet.</Card>;
+
+  const allPicked = people.length > 0 && picked.size === people.length;
+  const toggle = (appId: string) => {
+    const next = new Set(picked);
+    if (next.has(appId)) next.delete(appId);
+    else next.add(appId);
+    setPicked(next);
+  };
+
+  return (
+    <div className="space-y-3">
+      <Card className="overflow-x-auto p-0">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead className="border-b border-border bg-app text-xs uppercase text-subtle">
+            <tr>
+              <th className="px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={allPicked}
+                  onChange={() => setPicked(allPicked ? new Set() : new Set(people.map((p) => p.applicationId)))}
+                  className="h-4 w-4 cursor-pointer accent-primary-600"
+                  aria-label="Select all"
+                />
+              </th>
+              <th className="px-4 py-3 font-medium">Name</th>
+              <th className="px-4 py-3 font-medium">Reg No.</th>
+              <th className="px-4 py-3 font-medium">Branch</th>
+              <th className="px-4 py-3 font-medium">Resume</th>
+              <th className="px-4 py-3 text-right font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {people.map((s) => (
+              <tr
+                key={s.applicationId}
+                className={`border-b border-border last:border-0 hover:bg-app/60 ${
+                  picked.has(s.applicationId) ? 'bg-primary-50/50' : ''
+                }`}
+              >
+                <td className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={picked.has(s.applicationId)}
+                    onChange={() => toggle(s.applicationId)}
+                    className="h-4 w-4 cursor-pointer accent-primary-600"
+                    aria-label={`Select ${s.fullName}`}
+                  />
+                </td>
+                <td className="px-4 py-3 font-medium text-strong">{s.fullName}</td>
+                <td className="px-4 py-3">{s.rollNumber}</td>
+                <td className="px-4 py-3">{s.branch}</td>
+                <td className="px-4 py-3">
+                  {s.resumeSlug ? (
+                    <a href={`/students/${s.studentId}/resume`} target="_blank" rel="noreferrer" className="text-xs text-primary-600 hover:underline">
+                      View
+                    </a>
+                  ) : (
+                    <span className="text-xs text-subtle">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex justify-end gap-2">
+                    <Button size="sm" onClick={() => onPlace(s)}>Select / place</Button>
+                    <Button size="sm" variant="ghost" onClick={() => onReject(s)}>Reject</Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      {picked.size > 0 && (
+        <div className="sticky bottom-4 flex items-center justify-between gap-3 rounded-pill border border-border bg-white/95 p-2 pl-4 shadow-nav backdrop-blur">
+          <span className="text-sm text-body">
+            <span className="font-semibold text-strong">{picked.size}</span> selected
+          </span>
+          <Button onClick={onBulkPlace} loading={busy}>
+            Place {picked.size} selected
           </Button>
         </div>
       )}
