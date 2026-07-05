@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card } from '@ellixr/ui';
-import { applyToJob, formatCtc, getJobFeed, getJobPdfObjectUrl, type ApplicationField, type Job } from '../../../../lib/jobs';
+import { applyToJob, getJobFeed, getJobPdfObjectUrl, type ApplicationField, type Job } from '../../../../lib/jobs';
 import { PdfModal } from '../../../../components/pdf-modal';
+import { JobCard } from '../../../../components/job-card';
 
 /**
  * Student job feed (mobile). Shows only PUBLISHED jobs the authenticated student
@@ -90,66 +91,66 @@ export default function StudentJobsPage() {
           No jobs posted at your college yet. Check back soon.
         </Card>
       ) : (
-        jobs.map((j) => {
-          const notEligible = j.eligible === false;
-          const expired = !!j.applicationDeadline && new Date(j.applicationDeadline).getTime() < Date.now();
-          return (
-            <Card key={j.id} className="space-y-3 p-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="font-semibold text-strong">{j.title}</h2>
-                  <p className="text-sm text-subtle">{j.companyName ?? j.company?.name} · {j.jobType.replace('_', ' ')}{j.workMode ? ` · ${j.workMode === 'ONSITE' ? 'Work from office' : j.workMode.charAt(0) + j.workMode.slice(1).toLowerCase()}` : ''}{j.location ? ` · ${j.location}` : ''}</p>
-                </div>
-                {j.applied && <Badge tint="mint">{j.myStage ?? 'Applied'}</Badge>}
-              </div>
-              {j.description && <p className="line-clamp-3 text-sm text-body">{j.description}</p>}
-              {j.pdfUrl && (
-                <button
-                  onClick={async () => {
-                    setError(null);
-                    try {
-                      setPdfView({ url: await getJobPdfObjectUrl(j.id), name: j.pdfName });
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : 'Could not open PDF');
-                    }
-                  }}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:underline"
-                >
-                  📄 View job description (PDF)
-                </button>
-              )}
-
-              {notEligible && !j.applied && (
-                <div className="rounded-md border border-cream/60 bg-tint-cream/40 px-3 py-2 text-xs text-tint-cream-fg">
-                  <span className="font-medium">You can&apos;t apply to this one yet.</span>{' '}
-                  {(j.eligibilityReasons ?? []).filter((r) => r !== 'Profile not verified').join(' · ') ||
-                    'You don&apos;t meet the criteria.'}
-                </div>
-              )}
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-strong">{formatCtc(j.ctcMin, j.ctcMax)}</span>
-                {j.applied ? (
-                  <Button size="sm" variant="ghost" disabled>Applied</Button>
-                ) : expired ? (
-                  <Button size="sm" variant="ghost" disabled>Closed</Button>
-                ) : notEligible ? (
-                  <Button size="sm" variant="ghost" disabled>Not eligible</Button>
-                ) : (
-                  <Button size="sm" disabled={applyingId === j.id} onClick={() => onApplyClick(j)}>
-                    {applyingId === j.id ? 'Applying…' : 'Apply'}
-                  </Button>
+        <div className="space-y-4">
+          {jobs.map((j) => {
+            const notEligible = j.eligible === false;
+            const expired = !!j.applicationDeadline && new Date(j.applicationDeadline).getTime() < Date.now();
+            return (
+              <JobCard
+                key={j.id}
+                job={j}
+                topRight={j.applied ? <Badge tint="mint">{j.myStage ?? 'Applied'}</Badge> : undefined}
+                footer={
+                  j.applied ? (
+                    <button disabled className="rounded-full bg-white/70 px-4 py-2 text-xs font-semibold text-subtle">
+                      Applied
+                    </button>
+                  ) : expired ? (
+                    <button disabled className="rounded-full bg-white/70 px-4 py-2 text-xs font-semibold text-subtle">
+                      Closed
+                    </button>
+                  ) : notEligible ? (
+                    <button disabled className="rounded-full bg-white/70 px-4 py-2 text-xs font-semibold text-subtle">
+                      Not eligible
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onApplyClick(j)}
+                      disabled={applyingId === j.id}
+                      className="rounded-full bg-strong px-5 py-2 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                    >
+                      {applyingId === j.id ? 'Applying…' : 'Apply'}
+                    </button>
+                  )
+                }
+              >
+                {j.description && <p className="line-clamp-2 text-sm text-body/90">{j.description}</p>}
+                {j.pdfUrl && (
+                  <button
+                    onClick={async () => {
+                      setError(null);
+                      try {
+                        setPdfView({ url: await getJobPdfObjectUrl(j.id), name: j.pdfName });
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : 'Could not open PDF');
+                      }
+                    }}
+                    className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-primary-700 hover:underline"
+                  >
+                    📄 View job description (PDF)
+                  </button>
                 )}
-              </div>
-              {j.applicationDeadline && (
-                <p className={`text-xs ${expired ? 'font-medium text-danger' : 'text-subtle'}`}>
-                  {expired ? 'Applications closed' : 'Apply by'}{' '}
-                  {new Date(j.applicationDeadline).toLocaleDateString()}
-                </p>
-              )}
-            </Card>
-          );
-        })
+                {notEligible && !j.applied && (
+                  <div className="rounded-md bg-white/60 px-3 py-2 text-xs text-body">
+                    <span className="font-medium">You can&apos;t apply yet.</span>{' '}
+                    {(j.eligibilityReasons ?? []).filter((r) => r !== 'Profile not verified').join(' · ') ||
+                      'You don&apos;t meet the criteria.'}
+                  </div>
+                )}
+              </JobCard>
+            );
+          })}
+        </div>
       )}
     </div>
   );

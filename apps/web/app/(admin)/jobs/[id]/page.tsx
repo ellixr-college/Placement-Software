@@ -157,151 +157,175 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   if (!job) return <p className="text-danger">{error ?? 'Job not found'}</p>;
 
   const ctc = formatCtc(job.ctcMin, job.ctcMax);
-
   const workModeLabel = job.workMode
     ? job.workMode === 'ONSITE'
       ? 'Work from office'
       : job.workMode.charAt(0) + job.workMode.slice(1).toLowerCase()
-    : '—';
-
-  const experience =
-    job.experienceMin != null && job.experienceMax != null
-      ? `${job.experienceMin}–${job.experienceMax} yrs`
-      : job.experienceMin != null
-        ? `${job.experienceMin}+ yrs`
-        : job.experienceMax != null
-          ? `Up to ${job.experienceMax} yrs`
-          : '—';
-
-  // Platform jobs are owned by the Platform Admin — officers can manage their own
-  // applicants via the pipeline but cannot edit, publish, or close the posting.
+    : null;
+  const company = job.companyName ?? job.company?.name ?? 'Company';
+  const chips = [job.jobType.replace(/_/g, ' '), workModeLabel, job.location].filter(Boolean) as string[];
+  // Platform jobs are owned by the Platform Admin — officers manage their own
+  // applicants via the funnel but cannot edit, publish, or close the posting.
   const isPlatform = !!job.isPlatform;
+  const deadline = job.applicationDeadline ? new Date(job.applicationDeadline) : null;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-5">
       <div className="flex items-center justify-between">
         <Link href="/jobs" className="text-sm text-primary-600 hover:underline">← Jobs</Link>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           {!isPlatform && job.status !== 'CLOSED' && (
             <Link href={`/jobs/${id}/edit`}>
-              <Button variant="outline">Edit</Button>
+              <Button variant="outline" size="sm">Edit</Button>
             </Link>
           )}
-          {!isPlatform && job.status === 'DRAFT' && <Button onClick={onPublish} disabled={busy}>Publish</Button>}
-          {!isPlatform && job.status !== 'DRAFT' && (
-            <Button variant="outline" onClick={exportApplicants} disabled={busy}>
-              Export applicants
-            </Button>
+          {!isPlatform && job.status === 'DRAFT' && (
+            <Button size="sm" onClick={onPublish} disabled={busy}>Publish</Button>
           )}
-          {job.status !== 'DRAFT' && (
-            <Link href={`/jobs/${id}/pipeline`}><Button variant="ghost">View applicants →</Button></Link>
+          {!isPlatform && job.status !== 'DRAFT' && (
+            <Button variant="outline" size="sm" onClick={exportApplicants} disabled={busy}>Export</Button>
           )}
           {!isPlatform && (
-            <JobMenu
-              canClose={job.status !== 'CLOSED'}
-              onClose={onClose}
-              onDelete={onDelete}
-              disabled={busy}
-            />
+            <JobMenu canClose={job.status !== 'CLOSED'} onClose={onClose} onDelete={onDelete} disabled={busy} />
           )}
         </div>
       </div>
 
-      <header className="flex items-start gap-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-2xl font-bold text-primary-700">
-          {(job.companyName ?? job.company?.name ?? '·').trim().charAt(0).toUpperCase()}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <h1 className="text-2xl font-semibold text-strong">{job.title}</h1>
-            <div className="flex shrink-0 items-center gap-2">
+      {error && <p className="text-sm text-danger">{error}</p>}
+
+      {/* Hero */}
+      <Card className="overflow-hidden p-0">
+        <div className="flex items-start gap-4 p-6">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-2xl font-bold text-primary-700">
+            {company.trim().charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-semibold text-strong">{job.title}</h1>
               {isPlatform && <Badge tint="lavender">Platform</Badge>}
               <Badge tint={STATUS_TINT[job.status] ?? 'primary'}>{job.status}</Badge>
             </div>
+            <p className="mt-0.5 text-sm font-medium text-body">{company}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {chips.map((c) => (
+                <span key={c} className="rounded-full bg-app px-3 py-1 text-xs font-medium text-body">{c}</span>
+              ))}
+            </div>
           </div>
-          <p className="text-sm font-medium text-body">{job.companyName ?? job.company?.name}</p>
-          <p className="mt-0.5 text-xs text-subtle">
-            {[job.jobType.replace(/_/g, ' '), job.workMode ? workModeLabel : null, job.location]
-              .filter(Boolean)
-              .join(' · ')}
-            {job.publishedAt
-              ? ` · Posted ${new Date(job.publishedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
-              : ''}
-          </p>
         </div>
-      </header>
+
+        {/* Stat strip + primary CTA */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border bg-app/40 px-6 py-4">
+          <div className="flex flex-wrap gap-6">
+            <Stat label="Applicants" value={String(job.applicationCount ?? 0)} />
+            <Stat label="CTC" value={ctc} />
+            <Stat label="Deadline" value={deadline ? deadline.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—'} />
+          </div>
+          {job.status !== 'DRAFT' && (
+            <Link href={`/jobs/${id}/pipeline`}>
+              <Button>Manage applicants &amp; rounds →</Button>
+            </Link>
+          )}
+        </div>
+      </Card>
 
       {isPlatform && (
         <p className="rounded-md bg-tint-lavender px-3 py-2 text-xs text-body">
-          This is a platform-broadcast job. You manage your own applicants in the pipeline, but the
-          posting is owned by the platform team.
+          This is a platform-broadcast job. You manage your own applicants, but the posting is owned by
+          the platform team.
         </p>
       )}
 
-      {error && <p className="text-sm text-danger">{error}</p>}
-      {job.pdfUrl && (
-        <Card className="flex items-center justify-between gap-3 p-5">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-danger/10 text-xs font-bold text-danger">
-              PDF
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-strong">Job description</p>
-              <p className="text-xs text-subtle">{job.pdfName ?? 'Attached PDF'}</p>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" onClick={openPdf} loading={loadingPdf}>
-            View PDF
-          </Button>
-        </Card>
-      )}
-      {pdfObjectUrl && (
-        <PdfModal url={pdfObjectUrl} name={job.pdfName} onClose={closePdf} />
-      )}
-      {job.description && (
-        <Card className="space-y-2 p-5">
-          <h2 className="text-sm font-semibold text-strong">About the job</h2>
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">{job.description}</p>
-        </Card>
-      )}
+      {pdfObjectUrl && <PdfModal url={pdfObjectUrl} name={job.pdfName} onClose={closePdf} />}
 
-      <Card className="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3">
-        <Detail label="CTC" value={ctc} />
-        <Detail label="Work mode" value={workModeLabel} />
-        <Detail label="Experience" value={experience} />
-        <Detail label="Applicants" value={String(job.applicationCount ?? 0)} />
-        <Detail label="Deadline" value={job.applicationDeadline ? new Date(job.applicationDeadline).toLocaleDateString() : '—'} />
-        <Detail label="Courses" value={job.eligibleCourses.join(', ') || '—'} />
-        <Detail label="Branches" value={job.eligibleBranches.join(', ') || '—'} />
-        <Detail label="Grad years" value={job.graduationYears.join(', ') || '—'} />
-        <Detail label="Min UG %" value={job.minUgPercentage != null ? `${job.minUgPercentage}%` : '—'} />
-        <Detail label="Min PG %" value={job.minCgpa != null ? `${job.minCgpa}%` : '—'} />
-        <Detail label="Max active backlogs" value={job.maxActiveBacklogs != null ? String(job.maxActiveBacklogs) : '—'} />
-        <Detail label="Max total backlogs" value={job.maxTotalBacklogs != null ? String(job.maxTotalBacklogs) : '—'} />
-      </Card>
+      <div className="grid gap-5 lg:grid-cols-3">
+        {/* About + JD */}
+        <div className="space-y-5 lg:col-span-2">
+          <Card className="space-y-3 p-5">
+            <h2 className="text-sm font-semibold text-strong">About this job</h2>
+            {job.description ? (
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">{job.description}</p>
+            ) : (
+              <p className="text-sm text-subtle">No typed description — see the attached JD.</p>
+            )}
+            {job.pdfUrl && (
+              <button
+                onClick={openPdf}
+                disabled={loadingPdf}
+                className="inline-flex w-fit items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-body transition hover:border-primary-400"
+              >
+                <span className="flex h-6 w-6 items-center justify-center rounded bg-danger/10 text-[10px] font-bold text-danger">PDF</span>
+                {loadingPdf ? 'Opening…' : job.pdfName ?? 'View job description'}
+              </button>
+            )}
+          </Card>
 
-      {!isPlatform && (
-      <Card className="space-y-3 p-5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-strong">Eligible students</h2>
-          <Button size="sm" variant="ghost" onClick={loadEligible}>Preview</Button>
-        </div>
-        {eligible == null ? (
-          <p className="text-xs text-subtle">Click preview to compute the eligible set.</p>
-        ) : eligible.length === 0 ? (
-          <p className="text-xs text-subtle">No verified students currently match this criteria.</p>
-        ) : (
-          <div className="space-y-1">
-            {eligible.map((s) => (
-              <div key={s.id} className="flex items-center justify-between text-sm">
-                <span className="text-strong">{s.fullName} <span className="text-subtle">· {s.rollNumber}</span></span>
-                <span className="text-xs text-subtle">{s.branch} · {s.cgpa != null ? `${s.cgpa}%` : '—'}</span>
+          {!isPlatform && (
+            <Card className="space-y-3 p-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-strong">Eligible students</h2>
+                <Button size="sm" variant="ghost" onClick={loadEligible}>Preview</Button>
               </div>
-            ))}
-          </div>
-        )}
-      </Card>
-      )}
+              {eligible == null ? (
+                <p className="text-xs text-subtle">Click preview to compute who matches this criteria.</p>
+              ) : eligible.length === 0 ? (
+                <p className="text-xs text-subtle">No verified students currently match this criteria.</p>
+              ) : (
+                <div className="space-y-1">
+                  {eligible.map((s) => (
+                    <div key={s.id} className="flex items-center justify-between text-sm">
+                      <span className="text-strong">{s.fullName} <span className="text-subtle">· {s.rollNumber}</span></span>
+                      <span className="text-xs text-subtle">{s.branch} · {s.cgpa != null ? `${s.cgpa}%` : '—'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          )}
+        </div>
+
+        {/* Who can apply */}
+        <div className="space-y-5">
+          <Card className="space-y-3 p-5">
+            <h2 className="text-sm font-semibold text-strong">Who can apply</h2>
+            <dl className="space-y-2.5">
+              <Criteria label="Courses" value={job.eligibleCourses.join(', ') || 'Any'} />
+              <Criteria label="Branches" value={job.eligibleBranches.join(', ') || 'Any'} />
+              <Criteria label="Batch" value={job.graduationYears.join(', ') || 'Any'} />
+              <Criteria label="Min UG %" value={job.minUgPercentage != null ? `${job.minUgPercentage}%` : 'Any'} />
+              <Criteria label="Min PG %" value={job.minCgpa != null ? `${job.minCgpa}%` : 'Any'} />
+              <Criteria label="Max active backlogs" value={job.maxActiveBacklogs != null ? String(job.maxActiveBacklogs) : 'Any'} />
+              <Criteria label="Max total backlogs" value={job.maxTotalBacklogs != null ? String(job.maxTotalBacklogs) : 'Any'} />
+            </dl>
+          </Card>
+
+          <Card className="space-y-3 p-5">
+            <h2 className="text-sm font-semibold text-strong">Hiring period</h2>
+            <dl className="space-y-2.5">
+              <Criteria label="Posted" value={job.publishedAt ? new Date(job.publishedAt).toLocaleDateString() : 'Not published'} />
+              <Criteria label="Apply by" value={deadline ? deadline.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'No deadline'} />
+            </dl>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[11px] font-medium uppercase tracking-wide text-subtle">{label}</p>
+      <p className="text-base font-semibold text-strong">{value}</p>
+    </div>
+  );
+}
+
+function Criteria({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <dt className="text-xs text-subtle">{label}</dt>
+      <dd className="text-right text-sm font-medium text-strong">{value}</dd>
     </div>
   );
 }
@@ -370,15 +394,6 @@ function JobMenu({
           </button>
         </div>
       )}
-    </div>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs uppercase text-subtle">{label}</p>
-      <p className="text-sm font-medium text-strong">{value}</p>
     </div>
   );
 }
