@@ -163,7 +163,7 @@ export default function ImportStudentsPage() {
           <p className="text-sm font-medium text-strong">CSV rows</p>
           <p className="text-xs text-subtle">
             First row is the header. Required columns: <b>regNo, name, email</b>. Optional:
-            <b> phone, cgpa, ugPercentage, tenthPercentage, twelfthPercentage, activeBacklogs, totalBacklogs</b>.
+            <b> enrollmentNumber, phone, cgpa, ugPercentage, tenthPercentage, twelfthPercentage, activeBacklogs, totalBacklogs</b>.
             Everyone is created
             with the password <b>password123</b> — students can change it later.
           </p>

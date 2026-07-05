@@ -8,6 +8,9 @@ import { createStudent, type CreateStudentInput } from '../../../../lib/students
 import { listMyCourses, type CollegeCourse } from '../../../../lib/courses';
 import { CopyButton } from '../../../../components/copy-button';
 
+// Field set intentionally mirrors the bulk CSV import (students/import) so both
+// paths capture the same data. Extras (DOB, gender, personal email, LinkedIn) are
+// filled by the student on their own profile.
 const EMPTY = {
   fullName: '',
   email: '',
@@ -21,16 +24,10 @@ const EMPTY = {
   cgpa: '',
   activeBacklogs: '',
   totalBacklogs: '',
-  dateOfBirth: '',
-  gender: '',
-  personalEmail: '',
-  linkedinUrl: '',
   tenthPercentage: '',
   twelfthPercentage: '',
   ugPercentage: '',
 };
-
-const GENDERS = ['MALE', 'FEMALE', 'OTHER'];
 
 export default function NewStudentPage() {
   const router = useRouter();
@@ -69,10 +66,6 @@ export default function NewStudentPage() {
         cgpa: form.cgpa === '' ? undefined : Number(form.cgpa),
         activeBacklogs: form.activeBacklogs === '' ? undefined : Number(form.activeBacklogs),
         totalBacklogs: form.totalBacklogs === '' ? undefined : Number(form.totalBacklogs),
-        dateOfBirth: form.dateOfBirth || undefined,
-        gender: form.gender || undefined,
-        personalEmail: form.personalEmail.trim() || undefined,
-        linkedinUrl: form.linkedinUrl.trim() || undefined,
         tenthPercentage: form.tenthPercentage === '' ? undefined : Number(form.tenthPercentage),
         twelfthPercentage: form.twelfthPercentage === '' ? undefined : Number(form.twelfthPercentage),
         ugPercentage: form.ugPercentage === '' ? undefined : Number(form.ugPercentage),
@@ -188,10 +181,6 @@ export default function NewStudentPage() {
             value={form.totalBacklogs}
             onChange={set('totalBacklogs')}
           />
-          <Field label="Date of birth" type="date" value={form.dateOfBirth} onChange={set('dateOfBirth')} />
-          <SelectField label="Gender" value={form.gender} onChange={set('gender')} options={GENDERS} placeholder="Not specified" />
-          <Field label="Personal email" type="email" value={form.personalEmail} onChange={set('personalEmail')} />
-          <Field label="LinkedIn" value={form.linkedinUrl} onChange={set('linkedinUrl')} placeholder="https://linkedin.com/in/…" />
           <Field label="10th %" type="number" value={form.tenthPercentage} onChange={set('tenthPercentage')} placeholder="85" />
           <Field label="12th %" type="number" value={form.twelfthPercentage} onChange={set('twelfthPercentage')} placeholder="82" />
           <Field label="UG %" type="number" value={form.ugPercentage} onChange={set('ugPercentage')} placeholder="70" />
