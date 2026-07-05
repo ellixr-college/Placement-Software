@@ -177,20 +177,12 @@ export default function StudentProfilePage() {
           onChange={(v) => patch({ linkedinUrl: v })}
           placeholder="https://linkedin.com/in/…"
         />
-        <div className="grid grid-cols-2 gap-2">
-          <Text
-            label="Date of birth"
-            type="date"
-            value={form.dateOfBirth ?? ''}
-            onChange={(v) => patch({ dateOfBirth: v })}
-          />
-          <Select
-            label="Gender"
-            value={form.gender ?? ''}
-            onChange={(v) => patch({ gender: v })}
-            options={GENDERS}
-          />
-        </div>
+        <Text
+          label="Date of birth"
+          type="date"
+          value={form.dateOfBirth ?? ''}
+          onChange={(v) => patch({ dateOfBirth: v })}
+        />
       </Section>
 
       {/* Academic */}
@@ -369,38 +361,6 @@ function StatusBadge({ status }: { status: string }) {
     >
       {status}
     </span>
-  );
-}
-
-const GENDERS = ['MALE', 'FEMALE', 'OTHER'];
-
-function Select({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-subtle">{label}</label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
-      >
-        <option value="">Select…</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o.charAt(0) + o.slice(1).toLowerCase()}
-          </option>
-        ))}
-      </select>
-    </div>
   );
 }
 

@@ -120,6 +120,7 @@ export default function PlatformJobsPage() {
                 key={j.id}
                 job={j as unknown as Job}
                 delay={i * 60}
+                hideCtc
                 topRight={<Badge tint={STATUS_TINT[j.status] ?? 'primary'}>{j.status}</Badge>}
                 footer={
                   <div className="flex gap-2">

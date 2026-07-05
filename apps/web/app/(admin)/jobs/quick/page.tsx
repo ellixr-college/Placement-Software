@@ -48,8 +48,6 @@ export default function QuickPostPage() {
     ctc: '',
     minUg: '', // min UG %  (undergrad)
     minPg: '', // min PG %  (current/postgrad — student's Percentage)
-    maxActiveBacklogs: '',
-    maxTotalBacklogs: '',
   });
   const setD =
     (k: keyof typeof details) =>
@@ -88,7 +86,7 @@ export default function QuickPostPage() {
   const eligibleCourses = hasCatalog ? pickedCourses : splitList(coursesText);
   const eligibleBranches = hasCatalog ? pickedBranches : splitList(branchesText);
 
-  const valid = title.trim() && eligibleCourses.length && gradYears.length > 0;
+  const valid = title.trim() && eligibleCourses.length && gradYears.length > 0 && details.ctc.trim() !== '';
 
   async function submit(publish: boolean) {
     setSaving(publish ? 'publish' : 'draft');
@@ -119,8 +117,6 @@ export default function QuickPostPage() {
         ctcMax: num(details.ctc),
         minCgpa: num(details.minPg), // PG/current % → student.cgpa (their Percentage)
         minUgPercentage: num(details.minUg), // UG % → student.ugPercentage
-        maxActiveBacklogs: num(details.maxActiveBacklogs),
-        maxTotalBacklogs: num(details.maxTotalBacklogs),
         applicationFormFields: formFields.length > 0 ? cleanFields(formFields) : undefined,
         // Optional time; defaults to end of that day (23:59) if left blank.
         applicationDeadline: deadline
@@ -232,13 +228,11 @@ export default function QuickPostPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Location"><input className={inputCls} value={details.location} onChange={setD('location')} placeholder="Bangalore" /></Field>
-              <Field label="CTC (₹/yr)"><input className={inputCls} type="number" value={details.ctc} onChange={setD('ctc')} placeholder="600000" /></Field>
+              <Field label="CTC (₹/yr) *"><input className={inputCls} type="number" value={details.ctc} onChange={setD('ctc')} placeholder="600000" /></Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Min UG %"><input className={inputCls} type="number" value={details.minUg} onChange={setD('minUg')} placeholder="60" /></Field>
               <Field label="Min PG %"><input className={inputCls} type="number" value={details.minPg} onChange={setD('minPg')} placeholder="60" /></Field>
-              <Field label="Max active backlogs"><input className={inputCls} type="number" value={details.maxActiveBacklogs} onChange={setD('maxActiveBacklogs')} /></Field>
-              <Field label="Max total backlogs"><input className={inputCls} type="number" value={details.maxTotalBacklogs} onChange={setD('maxTotalBacklogs')} /></Field>
             </div>
           </div>
         </div>

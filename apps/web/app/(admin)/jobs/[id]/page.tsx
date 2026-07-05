@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import {
   closeJob,
   deleteJob,
-  formatCtc,
   getEligibleStudents,
   getJob,
   getJobApplicants,
@@ -156,7 +155,6 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   if (loading) return <p className="text-subtle">Loading…</p>;
   if (!job) return <p className="text-danger">{error ?? 'Job not found'}</p>;
 
-  const ctc = formatCtc(job.ctcMin, job.ctcMax);
   const workModeLabel = job.workMode
     ? job.workMode === 'ONSITE'
       ? 'Work from office'
@@ -218,7 +216,6 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border bg-app/40 px-6 py-4">
           <div className="flex flex-wrap gap-6">
             <Stat label="Applicants" value={String(job.applicationCount ?? 0)} />
-            <Stat label="CTC" value={ctc} />
             <Stat label="Deadline" value={deadline ? deadline.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—'} />
           </div>
           {job.status !== 'DRAFT' && (
@@ -294,8 +291,6 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               <Criteria label="Batch" value={job.graduationYears.join(', ') || 'Any'} />
               <Criteria label="Min UG %" value={job.minUgPercentage != null ? `${job.minUgPercentage}%` : 'Any'} />
               <Criteria label="Min PG %" value={job.minCgpa != null ? `${job.minCgpa}%` : 'Any'} />
-              <Criteria label="Max active backlogs" value={job.maxActiveBacklogs != null ? String(job.maxActiveBacklogs) : 'Any'} />
-              <Criteria label="Max total backlogs" value={job.maxTotalBacklogs != null ? String(job.maxTotalBacklogs) : 'Any'} />
             </dl>
           </Card>
 

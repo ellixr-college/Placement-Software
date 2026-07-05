@@ -75,6 +75,7 @@ export default function JobsPage() {
                 key={j.id}
                 job={j}
                 delay={i * 60}
+                hideCtc
                 onOpen={() => router.push(`/jobs/${j.id}`)}
                 topRight={
                   <div className="flex items-center gap-1.5">

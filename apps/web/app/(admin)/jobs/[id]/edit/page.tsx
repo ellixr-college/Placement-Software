@@ -53,8 +53,6 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
     ctc: '',
     minUg: '', // min UG %  (undergrad)
     minPg: '', // min PG %  (current/postgrad — student's Percentage)
-    maxActiveBacklogs: '',
-    maxTotalBacklogs: '',
   });
   const setD =
     (k: keyof typeof details) =>
@@ -99,8 +97,6 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
           ctc: numStr(j.ctcMin ?? j.ctcMax),
           minUg: numStr(j.minUgPercentage),
           minPg: numStr(j.minCgpa),
-          maxActiveBacklogs: numStr(j.maxActiveBacklogs),
-          maxTotalBacklogs: numStr(j.maxTotalBacklogs),
         });
         setFormFields(j.applicationFormFields ?? []);
         setPickedCourses(j.eligibleCourses);
@@ -147,7 +143,7 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
   const eligibleCourses = hasCatalog ? pickedCourses : splitList(coursesText);
   const eligibleBranches = hasCatalog ? pickedBranches : splitList(branchesText);
 
-  const valid = title.trim() && eligibleCourses.length && gradYears.length > 0;
+  const valid = title.trim() && eligibleCourses.length && gradYears.length > 0 && details.ctc.trim() !== '';
 
   async function submit() {
     setSaving(true);
@@ -180,8 +176,6 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
         ctcMax: num(details.ctc),
         minCgpa: num(details.minPg), // PG/current % → student.cgpa (their Percentage)
         minUgPercentage: num(details.minUg), // UG % → student.ugPercentage
-        maxActiveBacklogs: num(details.maxActiveBacklogs),
-        maxTotalBacklogs: num(details.maxTotalBacklogs),
         applicationFormFields: cleanFields(formFields),
         applicationDeadline: deadline
           ? new Date(`${deadline}T${deadlineTime || '23:59'}:00`).toISOString()
@@ -328,13 +322,11 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Location"><input className={inputCls} value={details.location} onChange={setD('location')} placeholder="Bangalore" /></Field>
-              <Field label="CTC (₹/yr)"><input className={inputCls} type="number" value={details.ctc} onChange={setD('ctc')} placeholder="600000" /></Field>
+              <Field label="CTC (₹/yr) *"><input className={inputCls} type="number" value={details.ctc} onChange={setD('ctc')} placeholder="600000" /></Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Min UG %"><input className={inputCls} type="number" value={details.minUg} onChange={setD('minUg')} placeholder="60" /></Field>
               <Field label="Min PG %"><input className={inputCls} type="number" value={details.minPg} onChange={setD('minPg')} placeholder="60" /></Field>
-              <Field label="Max active backlogs"><input className={inputCls} type="number" value={details.maxActiveBacklogs} onChange={setD('maxActiveBacklogs')} /></Field>
-              <Field label="Max total backlogs"><input className={inputCls} type="number" value={details.maxTotalBacklogs} onChange={setD('maxTotalBacklogs')} /></Field>
             </div>
           </div>
         </div>
