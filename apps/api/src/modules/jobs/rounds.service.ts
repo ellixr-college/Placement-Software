@@ -40,11 +40,15 @@ export class RoundsService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  // Rounds are managed only on a college's OWN jobs (not platform broadcasts, which
-  // would otherwise need per-college round numbering).
-  private async ownJob(collegeId: string, jobId: string) {
+  // A job the officer's college can run rounds on: its own college job, OR a
+  // PLATFORM-broadcast job targeted to the college. Each college keeps its own
+  // round numbering (JobRound is unique per [jobId, collegeId, seq]).
+  private async resolveJob(collegeId: string, jobId: string) {
     const job = await this.prisma.job.findFirst({
-      where: { id: jobId, collegeId },
+      where: {
+        id: jobId,
+        OR: [{ collegeId }, { scope: 'PLATFORM', targetCollegeIds: { has: collegeId } }],
+      },
       select: { id: true, title: true, companyName: true, company: { select: { name: true } } },
     });
     if (!job) throw new NotFoundException('Job not found');
@@ -57,11 +61,11 @@ export class RoundsService {
 
   // ─────────────── The whole funnel for the officer screen ───────────────
   async funnel(collegeId: string, jobId: string) {
-    await this.ownJob(collegeId, jobId);
+    await this.resolveJob(collegeId, jobId);
 
     const [rounds, apps] = await Promise.all([
       this.prisma.jobRound.findMany({
-        where: { jobId },
+        where: { jobId, collegeId },
         orderBy: { seq: 'asc' },
         include: {
           participants: {
@@ -118,10 +122,10 @@ export class RoundsService {
 
   // ─────────────── Round lifecycle ───────────────
   async createRound(collegeId: string, jobId: string, createdById: string, dto: CreateRoundDto) {
-    await this.ownJob(collegeId, jobId);
+    await this.resolveJob(collegeId, jobId);
 
     const last = await this.prisma.jobRound.findFirst({
-      where: { jobId },
+      where: { jobId, collegeId },
       orderBy: { seq: 'desc' },
     });
     const seq = (last?.seq ?? 0) + 1;
@@ -153,7 +157,7 @@ export class RoundsService {
     } else {
       const rows = await this.prisma.applicationRound.findMany({
         where: {
-          round: { jobId, seq: seq - 1 },
+          round: { jobId, collegeId, seq: seq - 1 },
           outcome: 'ADVANCED',
           application: { status: 'IN_PROGRESS' },
         },
@@ -179,7 +183,7 @@ export class RoundsService {
   }
 
   async updateRound(collegeId: string, jobId: string, roundId: string, dto: UpdateRoundDto) {
-    await this.ownJob(collegeId, jobId);
+    await this.resolveJob(collegeId, jobId);
     const round = await this.prisma.jobRound.findFirst({ where: { id: roundId, jobId, collegeId } });
     if (!round) throw new NotFoundException('Round not found');
     return this.prisma.jobRound.update({
@@ -196,14 +200,14 @@ export class RoundsService {
   // Only the latest round can be removed (and only while OPEN) — an undo for a
   // round added by mistake. Participation rows cascade.
   async deleteRound(collegeId: string, jobId: string, roundId: string) {
-    await this.ownJob(collegeId, jobId);
+    await this.resolveJob(collegeId, jobId);
     const round = await this.prisma.jobRound.findFirst({ where: { id: roundId, jobId, collegeId } });
     if (!round) throw new NotFoundException('Round not found');
     if (round.status === 'DECIDED') {
       throw new BadRequestException('A decided round cannot be deleted.');
     }
     const latest = await this.prisma.jobRound.findFirst({
-      where: { jobId },
+      where: { jobId, collegeId },
       orderBy: { seq: 'desc' },
       select: { id: true },
     });
@@ -221,7 +225,7 @@ export class RoundsService {
     roundId: string,
     advanceIds: string[],
   ) {
-    const job = await this.ownJob(collegeId, jobId);
+    const job = await this.resolveJob(collegeId, jobId);
     const round = await this.prisma.jobRound.findFirst({ where: { id: roundId, jobId, collegeId } });
     if (!round) throw new NotFoundException('Round not found');
     if (round.status === 'DECIDED') throw new BadRequestException('This round is already decided.');
@@ -297,7 +301,7 @@ export class RoundsService {
     applicationId: string,
     dto: PlaceApplicantDto,
   ) {
-    const job = await this.ownJob(collegeId, jobId);
+    const job = await this.resolveJob(collegeId, jobId);
     const app = await this.prisma.application.findFirst({
       where: { id: applicationId, jobId, collegeId },
       include: { student: { select: { userId: true } } },
@@ -335,7 +339,7 @@ export class RoundsService {
 
   // Manual reject (outside a round decision).
   async reject(collegeId: string, jobId: string, applicationId: string, reason?: string) {
-    const job = await this.ownJob(collegeId, jobId);
+    const job = await this.resolveJob(collegeId, jobId);
     const app = await this.prisma.application.findFirst({
       where: { id: applicationId, jobId, collegeId },
       include: { student: { select: { userId: true } } },

@@ -488,7 +488,9 @@ model JobRound {
   job          Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
   participants ApplicationRound[]
 
-  @@unique([jobId, seq])
+  // Scoped by college so each college runs its own round numbering on a shared
+  // PLATFORM-broadcast job (as well as its own college jobs).
+  @@unique([jobId, collegeId, seq])
   @@index([collegeId, status])
   @@map("job_rounds")
 }
