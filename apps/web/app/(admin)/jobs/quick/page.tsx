@@ -171,6 +171,11 @@ export default function QuickPostPage() {
           <textarea className={areaCls} rows={5} value={details.description} onChange={setD('description')} placeholder="Paste or type the job description here…" />
         </Field>
 
+        <Field label="CTC (₹/yr) *">
+          <input className={inputCls} type="number" value={details.ctc} onChange={setD('ctc')} placeholder="600000" />
+          <span className="text-xs text-subtle">Shown to students on the job — required.</span>
+        </Field>
+
         <div className="border-t border-border pt-4">
           <p className="mb-1 text-sm font-semibold text-strong">Who can apply</p>
           <p className="mb-3 text-xs text-subtle">Only students in the selected courses/branches can apply.</p>
@@ -226,10 +231,7 @@ export default function QuickPostPage() {
                 </select>
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Location"><input className={inputCls} value={details.location} onChange={setD('location')} placeholder="Bangalore" /></Field>
-              <Field label="CTC (₹/yr) *"><input className={inputCls} type="number" value={details.ctc} onChange={setD('ctc')} placeholder="600000" /></Field>
-            </div>
+            <Field label="Location"><input className={inputCls} value={details.location} onChange={setD('location')} placeholder="Bangalore" /></Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Min UG %"><input className={inputCls} type="number" value={details.minUg} onChange={setD('minUg')} placeholder="60" /></Field>
               <Field label="Min PG %"><input className={inputCls} type="number" value={details.minPg} onChange={setD('minPg')} placeholder="60" /></Field>
