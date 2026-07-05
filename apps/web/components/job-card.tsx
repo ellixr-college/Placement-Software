@@ -63,6 +63,12 @@ export function JobCard({
     workModeLabel(job.workMode),
     job.eligibleCourses?.[0],
   ].filter(Boolean) as string[];
+  const meta = [
+    job.location,
+    deadline ? `apply by ${deadline.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <div
@@ -109,10 +115,7 @@ export function JobCard({
       <div className="mt-auto flex items-end justify-between gap-3 border-t border-black/5 pt-4">
         <div className="min-w-0">
           <p className="text-sm font-bold text-strong">{formatCtc(job.ctcMin, job.ctcMax)}</p>
-          <p className="truncate text-xs text-subtle">
-            {job.location || 'Location N/A'}
-            {deadline ? ` · apply by ${deadline.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : ''}
-          </p>
+          {meta && <p className="truncate text-xs text-subtle">{meta}</p>}
         </div>
         {footer && <div onClick={(e) => e.stopPropagation()}>{footer}</div>}
       </div>
