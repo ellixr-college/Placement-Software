@@ -20,7 +20,6 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AlumniModule } from './modules/alumni/alumni.module';
-import { TrainingModule } from './modules/training/training.module';
 import { InternshipsModule } from './modules/internships/internships.module';
 import { HealthController } from './modules/health/health.controller';
 
@@ -54,7 +53,6 @@ import { HealthController } from './modules/health/health.controller';
     ReportsModule,
     NotificationsModule,
     AlumniModule,
-    TrainingModule,
     InternshipsModule,
   ],
   controllers: [HealthController],

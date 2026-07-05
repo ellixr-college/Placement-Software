@@ -216,11 +216,6 @@ model Student {
   ugPercentage       Decimal?           @db.Decimal(5, 2) @map("ug_percentage")
   // Semester-wise marks: [{ label, score }] as JSON for flexibility.
   semesterMarks      Json?              @map("semester_marks")
-  // Employability assessment scores (0–100); readiness is derived from these
-  // plus training completion.
-  aptitudeScore      Decimal?           @db.Decimal(5, 2) @map("aptitude_score")
-  communicationScore Decimal?           @db.Decimal(5, 2) @map("communication_score")
-  interviewScore     Decimal?           @db.Decimal(5, 2) @map("interview_score")
   status             StudentStatus      @default(REGISTERED)
   verificationStatus VerificationStatus @default(PENDING) @map("verification_status")
   verifiedById       String?            @map("verified_by_id")
@@ -238,7 +233,6 @@ model Student {
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   resume          Resume?
   applications    Application[]
-  trainingRecords TrainingRecord[]
   internships     Internship[]
 
   @@unique([collegeId, rollNumber])
@@ -591,63 +585,6 @@ model AuditLog {
   @@index([collegeId, createdAt])
   @@index([actorId, createdAt])
   @@map("audit_logs")
-}
-
-// ─────────────────────── Training & Employability ───────────────────────
-
-enum TrainingCategory {
-  SOFT_SKILLS
-  APTITUDE
-  TECHNICAL
-  MOCK_INTERVIEW
-  GROUP_DISCUSSION
-  OTHER
-}
-
-enum CompletionStatus {
-  NOT_STARTED
-  IN_PROGRESS
-  COMPLETED
-}
-
-// A training program run by the placement cell (soft skills, aptitude, …).
-model TrainingProgram {
-  id          String           @id @default(uuid())
-  collegeId   String           @map("college_id")
-  name        String
-  category    TrainingCategory @default(OTHER)
-  description String?
-  startDate   DateTime?        @map("start_date")
-  endDate     DateTime?        @map("end_date")
-  createdById String           @map("created_by_id")
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
-
-  records TrainingRecord[]
-
-  @@index([collegeId])
-  @@map("training_programs")
-}
-
-// A student's participation in a training program: attendance, completion, score.
-model TrainingRecord {
-  id                String           @id @default(uuid())
-  collegeId         String           @map("college_id")
-  programId         String           @map("program_id")
-  studentId         String           @map("student_id")
-  attendancePercent Decimal?         @db.Decimal(5, 2) @map("attendance_percent")
-  completionStatus  CompletionStatus @default(NOT_STARTED) @map("completion_status")
-  score             Decimal?         @db.Decimal(5, 2)
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-
-  program TrainingProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
-  student Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@unique([programId, studentId])
-  @@index([collegeId])
-  @@index([studentId])
-  @@map("training_records")
 }
 
 // ─────────────────────────── Internships ───────────────────────────

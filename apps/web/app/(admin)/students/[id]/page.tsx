@@ -4,7 +4,6 @@ import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Badge, Button, Card } from '@ellixr/ui';
-import { EmployabilityCard } from '../../../../components/employability-card';
 import { useConfirm } from '../../../../components/confirm-provider';
 import {
   deleteStudent,
@@ -243,7 +242,6 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
         )}
       </Card>
 
-      <EmployabilityCard studentId={student.id} />
     </div>
   );
 }

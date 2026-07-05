@@ -28,7 +28,6 @@ const COLLEGE_NAV: NavItem[] = [
   { href: '/jobs', label: 'Jobs' },
   { href: '/alumni', label: 'Alumni' },
   { href: '/internships', label: 'Internships' },
-  { href: '/training', label: 'Training' },
   { href: '/analytics', label: 'Analytics' },
   { href: '/reports', label: 'Reports' },
 ];
@@ -52,7 +51,7 @@ export function AdminSidebar() {
   const ready = !loading && !!user;
   const nav = ready ? navFor(user.role) : [];
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-white px-4 py-6 md:flex">
+    <aside className="hidden w-64 shrink-0 flex-col overflow-y-auto border-r border-border bg-white px-4 py-6 md:flex">
       <div className="px-3 pb-8">
         <span className="bg-gradient-primary bg-clip-text text-2xl font-bold text-transparent">
           Ellixr

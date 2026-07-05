@@ -90,7 +90,6 @@ export default function ProfileMenuPage() {
         <Row href="/me/jobs" title="Jobs" sub="Browse & apply" icon={<BriefcaseIcon />} />
         <Row href="/me/applications" title="My applications" sub="Track your status" icon={<ListIcon />} />
         <Row href="/me/internships" title="Internships" sub="Add internships you found" icon={<StarIcon />} />
-        <Row href="/me/training" title="Readiness & training" sub="Scores & programs" icon={<ChartIcon />} />
         <Row href="/me/notifications" title="Notifications" sub="Alerts on your account" icon={<BellIcon />} />
         <Row href="/me/change-password" title="Change password" sub="Update your login password" icon={<LockIcon />} />
       </Card>

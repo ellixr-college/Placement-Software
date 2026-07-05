@@ -8,11 +8,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <SessionProvider>
       <ConfirmProvider>
-        <div className="flex min-h-screen bg-app">
+        <div className="flex h-screen overflow-hidden bg-app">
           <AdminSidebar />
           <div className="flex min-w-0 flex-1 flex-col">
             <AdminTopbar />
-            <main className="flex-1 p-8">{children}</main>
+            {/* Only the content scrolls; the sidebar + topbar stay fixed. */}
+            <main className="flex-1 overflow-y-auto p-8">{children}</main>
           </div>
         </div>
       </ConfirmProvider>
