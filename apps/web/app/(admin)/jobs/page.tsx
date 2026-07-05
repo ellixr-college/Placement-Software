@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { listJobs, type Job } from '../../../lib/jobs';
 import { JobCard } from '../../../components/job-card';
@@ -13,6 +14,7 @@ const STATUS_TINT: Record<string, 'lavender' | 'mint' | 'cream' | 'primary'> = {
 };
 
 export default function JobsPage() {
+  const router = useRouter();
   const [items, setItems] = useState<Job[]>([]);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
@@ -66,13 +68,14 @@ export default function JobsPage() {
         <Card className="p-8 text-center text-sm text-subtle">No jobs yet. Post one to get started.</Card>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {items.map((j) => {
+          {items.map((j, i) => {
             const applicants = j.applicationCount ?? 0;
             return (
               <JobCard
                 key={j.id}
                 job={j}
-                href={`/jobs/${j.id}`}
+                delay={i * 60}
+                onOpen={() => router.push(`/jobs/${j.id}`)}
                 topRight={
                   <div className="flex items-center gap-1.5">
                     {j.isPlatform && <Badge tint="lavender">Platform</Badge>}
@@ -81,9 +84,9 @@ export default function JobsPage() {
                 }
                 footer={
                   <Link href={`/jobs/${j.id}`}>
-                    <button className="rounded-full bg-strong px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90">
+                    <span className="inline-block rounded-full bg-strong px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90">
                       Details
-                    </button>
+                    </span>
                   </Link>
                 }
               >

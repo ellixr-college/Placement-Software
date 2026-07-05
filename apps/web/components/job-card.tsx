@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { formatCtc, type Job } from '../lib/jobs';
 
 // Soft pastel backgrounds, picked deterministically per job (like the reference).
@@ -37,22 +36,24 @@ function Chip({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Colourful job card used on both the officer Jobs list and the student feed.
- * `topRight` (status / applied badge) and `footer` (Details / Apply CTA) are
- * provided by each screen; the visual shell + core data are shared.
+ * Colourful job card used on the officer Jobs list, platform list and student
+ * feed. The whole card is clickable via `onOpen` (natural flow → detail); the
+ * `footer` slot is isolated from that click so its buttons (Apply/Details) work.
  */
 export function JobCard({
   job,
-  href,
+  onOpen,
   topRight,
   footer,
   children,
+  delay = 0,
 }: {
   job: Job;
-  href?: string;
+  onOpen?: () => void;
   topRight?: React.ReactNode;
   footer?: React.ReactNode;
   children?: React.ReactNode;
+  delay?: number;
 }) {
   const company = job.companyName ?? job.company?.name ?? 'Company';
   const accent = ACCENTS[hash(job.id) % ACCENTS.length];
@@ -63,16 +64,17 @@ export function JobCard({
     job.eligibleCourses?.[0],
   ].filter(Boolean) as string[];
 
-  const Title = href ? (
-    <Link href={href} className="hover:underline">
-      {job.title}
-    </Link>
-  ) : (
-    job.title
-  );
-
   return (
-    <div className={`flex flex-col gap-4 rounded-2xl ${accent} p-5 shadow-card`}>
+    <div
+      onClick={onOpen}
+      role={onOpen ? 'button' : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      onKeyDown={onOpen ? (e) => (e.key === 'Enter' || e.key === ' ') && onOpen() : undefined}
+      style={delay ? { animationDelay: `${delay}ms` } : undefined}
+      className={`animate-rise flex flex-col gap-4 rounded-2xl ${accent} p-5 shadow-card ${
+        onOpen ? 'press cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary-400' : ''
+      }`}
+    >
       {/* top: posted pill + status/badge slot */}
       <div className="flex items-start justify-between">
         <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-body">
@@ -85,7 +87,7 @@ export function JobCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-medium text-body">{company}</p>
-          <h3 className="mt-0.5 text-lg font-bold leading-snug text-strong">{Title}</h3>
+          <h3 className="mt-0.5 text-lg font-bold leading-snug text-strong">{job.title}</h3>
         </div>
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-lg font-bold text-strong shadow-sm">
           {company.trim().charAt(0).toUpperCase() || '·'}
@@ -103,7 +105,7 @@ export function JobCard({
 
       {children}
 
-      {/* footer: pay + location + CTA */}
+      {/* footer: pay + location + CTA (CTA isolated from the card click) */}
       <div className="mt-auto flex items-end justify-between gap-3 border-t border-black/5 pt-4">
         <div className="min-w-0">
           <p className="text-sm font-bold text-strong">{formatCtc(job.ctcMin, job.ctcMax)}</p>
@@ -112,7 +114,7 @@ export function JobCard({
             {deadline ? ` · apply by ${deadline.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : ''}
           </p>
         </div>
-        {footer}
+        {footer && <div onClick={(e) => e.stopPropagation()}>{footer}</div>}
       </div>
     </div>
   );

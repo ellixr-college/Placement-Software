@@ -52,8 +52,12 @@ export function NotificationBell({ href, className }: { href: string; className?
     >
       🔔
       {unread > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-500 px-1 text-[10px] font-semibold text-white">
-          {unread > 9 ? '9+' : unread}
+        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center">
+          {/* pulsing red "LED" so new notifications stand out */}
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-danger/60" />
+          <span className="relative inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
+            {unread > 9 ? '9+' : unread}
+          </span>
         </span>
       )}
     </Link>

@@ -11,8 +11,13 @@ const items = [
   { href: '/me/profile', label: 'Profile', icon: UserIcon },
 ];
 
+// Main tabs only. Sub-screens (job detail, applications, edit profile, …) hide the
+// global nav and show their own contextual sticky action instead.
+const MAIN_ROUTES = new Set(items.map((i) => i.href));
+
 export function MobileBottomNav() {
   const pathname = usePathname();
+  if (!MAIN_ROUTES.has(pathname)) return null;
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md px-5 pb-5">
       <div className="flex items-center justify-around rounded-pill bg-gradient-primary px-2 py-3 shadow-nav">

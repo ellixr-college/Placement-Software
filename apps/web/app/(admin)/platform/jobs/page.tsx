@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { listColleges, type College } from '../../../../lib/colleges';
+import { JobCard } from '../../../../components/job-card';
+import type { Job } from '../../../../lib/jobs';
 import {
   listPlatformJobs,
   createPlatformJob,
@@ -105,56 +107,44 @@ export default function PlatformJobsPage() {
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
-      <Card className="overflow-hidden p-0">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-border bg-app text-xs uppercase text-subtle">
-            <tr>
-              <th className="px-4 py-3 font-medium">Title</th>
-              <th className="px-4 py-3 font-medium">Company</th>
-              <th className="px-4 py-3 font-medium">Colleges</th>
-              <th className="px-4 py-3 font-medium">Applicants</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-subtle">Loading…</td></tr>
-            ) : items.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-subtle">No platform jobs yet.</td></tr>
-            ) : (
-              items.map((j) => (
-                <tr key={j.id} className="border-b border-border last:border-0 hover:bg-app/60">
-                  <td className="px-4 py-3 font-medium text-strong">{j.title}</td>
-                  <td className="px-4 py-3">{j.companyName ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <span title={(j.targetCollegeIds ?? []).map(collegeName).join(', ')}>
-                      {(j.targetCollegeIds ?? []).length} college
-                      {(j.targetCollegeIds ?? []).length === 1 ? '' : 's'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">{j.applicationCount ?? 0}</td>
-                  <td className="px-4 py-3"><Badge tint={STATUS_TINT[j.status] ?? 'primary'}>{j.status}</Badge></td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2">
-                      {j.status === 'DRAFT' && (
-                        <Button size="sm" loading={busyId === j.id} onClick={() => act(j.id, publishPlatformJob)}>
-                          Publish
-                        </Button>
-                      )}
-                      {j.status !== 'CLOSED' && (
-                        <Button size="sm" variant="outline" loading={busyId === j.id} onClick={() => act(j.id, closePlatformJob)}>
-                          Close
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </Card>
+      {loading ? (
+        <p className="text-subtle">Loading…</p>
+      ) : items.length === 0 ? (
+        <Card className="p-8 text-center text-sm text-subtle">No platform jobs yet.</Card>
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {items.map((j, i) => {
+            const colleges = j.targetCollegeIds ?? [];
+            return (
+              <JobCard
+                key={j.id}
+                job={j as unknown as Job}
+                delay={i * 60}
+                topRight={<Badge tint={STATUS_TINT[j.status] ?? 'primary'}>{j.status}</Badge>}
+                footer={
+                  <div className="flex gap-2">
+                    {j.status === 'DRAFT' && (
+                      <Button size="sm" loading={busyId === j.id} onClick={() => act(j.id, publishPlatformJob)}>
+                        Publish
+                      </Button>
+                    )}
+                    {j.status !== 'CLOSED' && (
+                      <Button size="sm" variant="outline" loading={busyId === j.id} onClick={() => act(j.id, closePlatformJob)}>
+                        Close
+                      </Button>
+                    )}
+                  </div>
+                }
+              >
+                <p className="text-xs text-subtle" title={colleges.map(collegeName).join(', ')}>
+                  {colleges.length} college{colleges.length === 1 ? '' : 's'} · {j.applicationCount ?? 0} applicant
+                  {(j.applicationCount ?? 0) === 1 ? '' : 's'}
+                </p>
+              </JobCard>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

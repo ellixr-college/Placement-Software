@@ -1,16 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Badge, Button, Card } from '@ellixr/ui';
-import { applyToJob, getJobFeed, getJobPdfObjectUrl, type ApplicationField, type Job } from '../../../../lib/jobs';
+import { useRouter } from 'next/navigation';
+import { Badge, Card } from '@ellixr/ui';
+import { applyToJob, getJobFeed, getJobPdfObjectUrl, type Job } from '../../../../lib/jobs';
 import { PdfModal } from '../../../../components/pdf-modal';
 import { JobCard } from '../../../../components/job-card';
+import { ApplyModal } from '../../../../components/apply-modal';
 
 /**
  * Student job feed (mobile). Shows only PUBLISHED jobs the authenticated student
  * is eligible for — eligibility is enforced server-side; this is just the view.
  */
 export default function StudentJobsPage() {
+  const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,13 +95,15 @@ export default function StudentJobsPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {jobs.map((j) => {
+          {jobs.map((j, i) => {
             const notEligible = j.eligible === false;
             const expired = !!j.applicationDeadline && new Date(j.applicationDeadline).getTime() < Date.now();
             return (
               <JobCard
                 key={j.id}
                 job={j}
+                delay={i * 60}
+                onOpen={() => router.push(`/me/jobs/${j.id}`)}
                 topRight={j.applied ? <Badge tint="mint">{j.myStage ?? 'Applied'}</Badge> : undefined}
                 footer={
                   j.applied ? (
@@ -127,7 +132,8 @@ export default function StudentJobsPage() {
                 {j.description && <p className="line-clamp-2 text-sm text-body/90">{j.description}</p>}
                 {j.pdfUrl && (
                   <button
-                    onClick={async () => {
+                    onClick={async (e) => {
+                      e.stopPropagation();
                       setError(null);
                       try {
                         setPdfView({ url: await getJobPdfObjectUrl(j.id), name: j.pdfName });
@@ -152,105 +158,6 @@ export default function StudentJobsPage() {
           })}
         </div>
       )}
-    </div>
-  );
-}
-
-const fieldCls =
-  'w-full rounded-md border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary-400';
-
-function ApplyModal({
-  job,
-  submitting,
-  onCancel,
-  onSubmit,
-}: {
-  job: Job;
-  submitting: boolean;
-  onCancel: () => void;
-  onSubmit: (responses: Record<string, string>) => void;
-}) {
-  const fields = job.applicationFormFields ?? [];
-  const [responses, setResponses] = useState<Record<string, string>>({});
-  const [error, setError] = useState<string | null>(null);
-
-  function set(id: string, value: string) {
-    setResponses((r) => ({ ...r, [id]: value }));
-  }
-
-  function submit() {
-    for (const f of fields) {
-      if (f.required && !(responses[f.id] ?? '').trim()) {
-        setError(`"${f.label}" is required`);
-        return;
-      }
-    }
-    setError(null);
-    onSubmit(responses);
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
-      role="dialog"
-      aria-modal="true"
-    >
-      <Card className="max-h-[85vh] w-full max-w-md space-y-4 overflow-y-auto p-5">
-        <div>
-          <h2 className="text-lg font-semibold text-strong">Apply to {job.title}</h2>
-          <p className="text-sm text-subtle">
-            {job.companyName ?? job.company?.name} · a few questions before you apply
-          </p>
-        </div>
-
-        {fields.map((f: ApplicationField) => (
-          <label key={f.id} className="block space-y-1">
-            <span className="text-xs font-medium text-subtle">
-              {f.label}
-              {f.required && <span className="text-danger"> *</span>}
-            </span>
-            {f.type === 'textarea' ? (
-              <textarea
-                rows={3}
-                className={fieldCls}
-                value={responses[f.id] ?? ''}
-                onChange={(e) => set(f.id, e.target.value)}
-              />
-            ) : f.type === 'select' ? (
-              <select
-                className={fieldCls}
-                value={responses[f.id] ?? ''}
-                onChange={(e) => set(f.id, e.target.value)}
-              >
-                <option value="">Select…</option>
-                {(f.options ?? []).map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type={f.type === 'number' ? 'number' : 'text'}
-                className={fieldCls}
-                value={responses[f.id] ?? ''}
-                onChange={(e) => set(f.id, e.target.value)}
-              />
-            )}
-          </label>
-        ))}
-
-        {error && <p className="text-sm text-danger">{error}</p>}
-
-        <div className="flex gap-2">
-          <Button className="flex-1" onClick={submit} loading={submitting}>
-            {submitting ? 'Applying…' : 'Submit application'}
-          </Button>
-          <Button variant="ghost" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
-      </Card>
     </div>
   );
 }
