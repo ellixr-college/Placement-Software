@@ -94,7 +94,7 @@ export default function AlumniPage() {
             {stats ? `${stats.total} graduates` : `${items.length} graduates`}
           </p>
         </div>
-        <Button onClick={() => setShowForm((s) => !s)}>{showForm ? 'Cancel' : 'Add alumnus'}</Button>
+        <Button onClick={() => setShowForm(true)}>Add alumnus</Button>
       </header>
 
       {/* Stat strip */}
@@ -145,13 +145,23 @@ export default function AlumniPage() {
       )}
 
       {showForm && (
-        <NewAlumniForm
-          onCreated={() => {
-            setShowForm(false);
-            load();
-            loadStats();
-          }}
-        />
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowForm(false)}
+        >
+          <div className="my-8 w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <NewAlumniForm
+              onCancel={() => setShowForm(false)}
+              onCreated={() => {
+                setShowForm(false);
+                load();
+                loadStats();
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {/* Search */}
@@ -372,7 +382,7 @@ function BreakdownCard({
   );
 }
 
-function NewAlumniForm({ onCreated }: { onCreated: () => void }) {
+function NewAlumniForm({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -440,7 +450,16 @@ function NewAlumniForm({ onCreated }: { onCreated: () => void }) {
     phoneOk;
 
   return (
-    <Card className="space-y-3 p-5">
+    <Card className="animate-pop space-y-3 p-5 shadow-nav">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-strong">Add alumnus</h2>
+          <p className="text-sm text-subtle">Only name, email, batch and branch are required.</p>
+        </div>
+        <button onClick={onCancel} aria-label="Close" className="rounded-md px-2 py-1 text-subtle transition hover:bg-app hover:text-strong">
+          ✕
+        </button>
+      </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Full name *">
           <input className={inputCls} value={form.fullName} onChange={set('fullName')} />
@@ -517,9 +536,14 @@ function NewAlumniForm({ onCreated }: { onCreated: () => void }) {
         </label>
       </div>
       {error && <p className="text-sm text-danger">{error}</p>}
-      <Button onClick={submit} loading={saving} disabled={!ready}>
-        {saving ? 'Saving…' : 'Add alumnus'}
-      </Button>
+      <div className="flex gap-2">
+        <Button onClick={submit} loading={saving} disabled={!ready}>
+          {saving ? 'Saving…' : 'Add alumnus'}
+        </Button>
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
     </Card>
   );
 }
