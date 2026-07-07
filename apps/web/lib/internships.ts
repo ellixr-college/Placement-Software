@@ -11,7 +11,7 @@ export interface Internship {
   companyName: string;
   role: string;
   workMode: WorkMode | null;
-  location: string | null;
+  location: string;
   isPaid: boolean;
   stipend: number | null;
   startDate: string | null;
@@ -19,9 +19,9 @@ export interface Internship {
   isPpo: boolean;
   description: string | null;
   // Point-of-contact at the company.
-  pocName: string | null;
-  pocEmail: string | null;
-  pocPhone: string | null;
+  pocName: string;
+  pocEmail: string;
+  pocPhone: string;
   certificateUrl: string | null;
   createdAt: string;
   // Present only on the officer list (used to group batch by batch).
@@ -35,16 +35,16 @@ export interface InternshipInput {
   companyName: string;
   role: string;
   workMode?: WorkMode;
-  location?: string;
+  location: string;
   isPaid?: boolean;
   stipend?: number;
   startDate?: string;
   endDate?: string;
   isPpo?: boolean;
   description?: string;
-  pocName?: string;
-  pocEmail?: string;
-  pocPhone?: string;
+  pocName: string;
+  pocEmail: string;
+  pocPhone: string;
   certificateUrl?: string;
 }
 

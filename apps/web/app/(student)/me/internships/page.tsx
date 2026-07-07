@@ -140,8 +140,9 @@ function InternshipForm({
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set =
+    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   async function submit() {
     setSaving(true);
@@ -150,11 +151,11 @@ function InternshipForm({
       const input: InternshipInput = {
         role: form.role.trim(),
         companyName: form.companyName.trim(),
-        location: form.location.trim() || undefined,
+        location: form.location.trim(),
         description: form.description.trim() || undefined,
-        pocName: form.pocName.trim() || undefined,
-        pocEmail: form.pocEmail.trim() || undefined,
-        pocPhone: form.pocPhone.trim() || undefined,
+        pocName: form.pocName.trim(),
+        pocEmail: form.pocEmail.trim(),
+        pocPhone: form.pocPhone.trim(),
       };
       if (internship) await updateMyInternship(internship.id, input);
       else await createMyInternship(input);
@@ -166,7 +167,13 @@ function InternshipForm({
     }
   }
 
-  const ready = form.companyName.trim().length >= 2 && form.role.trim().length >= 2;
+  const ready =
+    form.companyName.trim().length >= 2 &&
+    form.role.trim().length >= 2 &&
+    form.location.trim().length >= 1 &&
+    form.pocName.trim().length >= 1 &&
+    form.pocEmail.trim().length >= 1 &&
+    form.pocPhone.trim().length >= 1;
 
   return (
     <Card className="space-y-3 p-4">
@@ -184,8 +191,13 @@ function InternshipForm({
       <Labeled label="Company *">
         <input className={inputCls} value={form.companyName} onChange={set('companyName')} />
       </Labeled>
-      <Labeled label="Location">
-        <input className={inputCls} value={form.location} onChange={set('location')} placeholder="Bangalore / Remote" />
+      <Labeled label="Location *">
+        <input
+          className={inputCls}
+          value={form.location}
+          onChange={set('location')}
+          placeholder="Bangalore / Remote"
+        />
       </Labeled>
       <Labeled label="Short description">
         <textarea
@@ -198,17 +210,33 @@ function InternshipForm({
       </Labeled>
 
       <div className="border-t border-border pt-3">
-        <p className="mb-2 text-xs font-semibold text-strong">Point of contact (optional)</p>
+        <p className="mb-2 text-xs font-semibold text-strong">Point of contact *</p>
         <div className="space-y-3">
-          <Labeled label="Contact person">
-            <input className={inputCls} value={form.pocName} onChange={set('pocName')} placeholder="Name / designation" />
+          <Labeled label="Contact person *">
+            <input
+              className={inputCls}
+              value={form.pocName}
+              onChange={set('pocName')}
+              placeholder="Name / designation"
+            />
           </Labeled>
           <div className="grid grid-cols-2 gap-2">
-            <Labeled label="Email">
-              <input className={inputCls} type="email" value={form.pocEmail} onChange={set('pocEmail')} placeholder="hr@company.com" />
+            <Labeled label="Email *">
+              <input
+                className={inputCls}
+                type="email"
+                value={form.pocEmail}
+                onChange={set('pocEmail')}
+                placeholder="hr@company.com"
+              />
             </Labeled>
-            <Labeled label="Phone">
-              <input className={inputCls} value={form.pocPhone} onChange={set('pocPhone')} placeholder="Optional" />
+            <Labeled label="Phone *">
+              <input
+                className={inputCls}
+                value={form.pocPhone}
+                onChange={set('pocPhone')}
+                placeholder="+91 98765 43210"
+              />
             </Labeled>
           </div>
         </div>

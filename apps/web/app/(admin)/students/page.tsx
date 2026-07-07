@@ -1,9 +1,10 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Badge, Button, Card } from '@ellixr/ui';
+import { Breadcrumbs } from '../../../components/breadcrumbs';
 import { useConfirm } from '../../../components/confirm-provider';
 import { BatchCards } from '../../../components/batch-cards';
 import {
@@ -33,9 +34,27 @@ export default function StudentsPage() {
   );
 }
 
-interface SelectedBatch {
-  graduationYear: number;
+type ViewState =
+  | { mode: 'years' }
+  | { mode: 'courses'; year: number }
+  | { mode: 'table'; year: number; course: string };
+
+interface Year {
+  key: string;
+  year: number;
+  count: number;
+  loggedIn: number;
+  detailsComplete: number;
+  courses: number;
+}
+
+interface Course {
+  key: string;
+  year: number;
   course: string;
+  count: number;
+  loggedIn: number;
+  detailsComplete: number;
 }
 
 function StudentsList() {
@@ -48,7 +67,7 @@ function StudentsList() {
 
   const [batches, setBatches] = useState<StudentBatch[]>([]);
   const [batchesLoading, setBatchesLoading] = useState(true);
-  const [batch, setBatch] = useState<SelectedBatch | null>(null);
+  const [view, setView] = useState<ViewState>({ mode: 'years' });
 
   const [items, setItems] = useState<Student[]>([]);
   const [meta, setMeta] = useState<ListMeta | undefined>();
@@ -87,14 +106,14 @@ function StudentsList() {
   }, [search]);
 
   const load = useCallback(async () => {
-    if (!batch) return;
+    if (view.mode !== 'table') return;
     setLoading(true);
     setError(null);
     try {
       const res = await listStudents({
         search: debouncedSearch || undefined,
-        course: batch.course,
-        graduationYear: batch.graduationYear,
+        course: view.course,
+        graduationYear: view.year,
         detailsComplete: detailsFilter === '' ? undefined : detailsFilter === 'complete',
         page,
         limit: 10,
@@ -107,19 +126,56 @@ function StudentsList() {
     } finally {
       setLoading(false);
     }
-  }, [batch, debouncedSearch, detailsFilter, page]);
+  }, [view, debouncedSearch, detailsFilter, page]);
 
   useEffect(() => {
-    if (batch) load();
-  }, [batch, load]);
+    if (view.mode === 'table') load();
+  }, [view, load]);
 
   useEffect(() => {
     if (importedCount) setShowImported(true);
   }, [importedCount]);
 
-  function openBatch(key: string) {
-    const [year, ...rest] = key.split('|');
-    setBatch({ graduationYear: Number(year), course: rest.join('|') });
+  const years = useMemo<Year[]>(() => {
+    const map = new Map<number, Year>();
+    for (const b of batches) {
+      const existing = map.get(b.graduationYear);
+      if (existing) {
+        existing.count += b.count;
+        existing.loggedIn += b.loggedIn;
+        existing.detailsComplete += b.detailsComplete;
+        existing.courses += 1;
+      } else {
+        map.set(b.graduationYear, {
+          key: String(b.graduationYear),
+          year: b.graduationYear,
+          count: b.count,
+          loggedIn: b.loggedIn,
+          detailsComplete: b.detailsComplete,
+          courses: 1,
+        });
+      }
+    }
+    return [...map.values()].sort((a, b) => b.year - a.year);
+  }, [batches]);
+
+  const coursesForYear = useMemo<Course[]>(() => {
+    if (view.mode === 'years') return [];
+    return batches
+      .filter((b) => b.graduationYear === view.year)
+      .map((b) => ({
+        key: `${b.graduationYear}|${b.course}`,
+        year: b.graduationYear,
+        course: b.course,
+        count: b.count,
+        loggedIn: b.loggedIn,
+        detailsComplete: b.detailsComplete,
+      }))
+      .sort((a, b) => a.course.localeCompare(b.course));
+  }, [batches, view]);
+
+  function selectYear(year: number) {
+    setView({ mode: 'courses', year });
     setSearch('');
     setDebouncedSearch('');
     setDetailsFilter('');
@@ -128,10 +184,26 @@ function StudentsList() {
     setMeta(undefined);
   }
 
-  function backToBatches() {
-    setBatch(null);
+  function selectCourse(year: number, course: string) {
+    setView({ mode: 'table', year, course });
+    setSearch('');
+    setDebouncedSearch('');
+    setDetailsFilter('');
+    setPage(1);
+    setItems([]);
+    setMeta(undefined);
+  }
+
+  function backToYears() {
+    setView({ mode: 'years' });
     setSelected(new Set());
     loadBatches();
+  }
+
+  function backToCourses() {
+    if (view.mode !== 'table') return;
+    setView({ mode: 'courses', year: view.year });
+    setSelected(new Set());
   }
 
   function dismissImported() {
@@ -159,7 +231,9 @@ function StudentsList() {
   }
 
   function toggleSelectAll() {
-    setSelected((prev) => (prev.size === items.length ? new Set() : new Set(items.map((s) => s.id))));
+    setSelected((prev) =>
+      prev.size === items.length ? new Set() : new Set(items.map((s) => s.id)),
+    );
   }
 
   async function removeOne(s: Student) {
@@ -184,7 +258,8 @@ function StudentsList() {
     if (selected.size === 0) return;
     const ok = await confirm({
       title: `Delete ${selected.size} student${selected.size === 1 ? '' : 's'}?`,
-      message: 'This permanently removes the selected students and their logins. This cannot be undone.',
+      message:
+        'This permanently removes the selected students and their logins. This cannot be undone.',
       confirmLabel: `Delete ${selected.size}`,
       destructive: true,
       acknowledgement: 'I understand this is permanent.',
@@ -205,28 +280,46 @@ function StudentsList() {
   const allSelected = items.length > 0 && selected.size === items.length;
   const totalStudents = batches.reduce((n, b) => n + b.count, 0);
 
-  const batchItems = batches.map((b) => ({
-    key: `${b.graduationYear}|${b.course}`,
-    title: `${b.graduationYear} ${b.course}`,
-    stats: [
-      { label: 'students', value: b.count },
-      {
-        label: 'logged in',
-        value: `${b.loggedIn}/${b.count}`,
-        tint: (b.loggedIn === b.count ? 'success' : 'default') as 'success' | 'default',
-      },
-      {
-        label: 'details done',
-        value: `${b.detailsComplete}/${b.count}`,
-        tint: (b.detailsComplete === b.count ? 'success' : 'warn') as 'success' | 'warn',
-      },
-    ],
-  }));
+  const title = useMemo(() => {
+    if (view.mode === 'years') return 'Students';
+    if (view.mode === 'courses') return `Students · ${view.year}`;
+    return `Students · ${view.year} · ${view.course}`;
+  }, [view]);
+
+  const subtitle = useMemo(() => {
+    if (view.mode === 'years') {
+      return `${totalStudents} registered · ${years.length} ${years.length === 1 ? 'year' : 'years'}`;
+    }
+    if (view.mode === 'courses') {
+      const yearTotal = coursesForYear.reduce((n, c) => n + c.count, 0);
+      return `${yearTotal} students · ${coursesForYear.length} ${coursesForYear.length === 1 ? 'course' : 'courses'} in ${view.year}`;
+    }
+    return meta
+      ? `${meta.total} students · ${meta.detailsCompleteCount ?? 0} details complete`
+      : `${view.year} ${view.course}`;
+  }, [view, years, coursesForYear, totalStudents, meta]);
+
+  const breadcrumbCrumbs = useMemo(() => {
+    const crumbs: Array<{ label: string; onClick?: () => void }> = [
+      { label: 'Students', onClick: backToYears },
+    ];
+    if (view.mode === 'courses') {
+      crumbs.push({ label: String(view.year) });
+    } else if (view.mode === 'table') {
+      crumbs.push({ label: String(view.year), onClick: backToCourses });
+      crumbs.push({ label: view.course });
+    }
+    return crumbs;
+  }, [view]);
 
   return (
     <div className="space-y-6">
       {showImported && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
           <Card className="w-full max-w-sm space-y-4 p-6 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success/15 text-2xl text-success">
               ✓
@@ -247,18 +340,13 @@ function StudentsList() {
         </div>
       )}
 
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-strong">Students</h1>
-          <p className="text-sm text-subtle">
-            {batch
-              ? meta
-                ? `${meta.total} in ${batch.graduationYear} ${batch.course} · ${meta.detailsCompleteCount ?? 0} details complete`
-                : `${batch.graduationYear} ${batch.course}`
-              : `${totalStudents} registered · ${batches.length} ${batches.length === 1 ? 'batch' : 'batches'}`}
-          </p>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <Breadcrumbs crumbs={breadcrumbCrumbs} />
+          <h1 className="text-2xl font-semibold text-strong">{title}</h1>
+          <p className="text-sm text-subtle">{subtitle}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="ghost" onClick={() => setShowGraduate(true)}>
             Graduate batch
           </Button>
@@ -276,29 +364,93 @@ function StudentsList() {
           onClose={() => setShowGraduate(false)}
           onDone={() => {
             setShowGraduate(false);
-            backToBatches();
+            backToYears();
           }}
         />
       )}
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
-      {/* ── Batch picker ── */}
-      {!batch ? (
-        batchesLoading ? (
-          <p className="text-subtle">Loading batches…</p>
-        ) : batches.length === 0 ? (
-          <Card className="p-8 text-center text-sm text-subtle">
-            No students yet. Add one or import a CSV to activate student logins.
-          </Card>
-        ) : (
-          <BatchCards items={batchItems} onSelect={openBatch} />
-        )
-      ) : (
+      {/* ── Year picker ── */}
+      {view.mode === 'years' && (
+        <>
+          {batchesLoading ? (
+            <p className="text-subtle">Loading years…</p>
+          ) : years.length === 0 ? (
+            <Card className="p-8 text-center text-sm text-subtle">
+              No students yet. Add one or import a CSV to activate student logins.
+            </Card>
+          ) : (
+            <BatchCards
+              items={years.map((y) => ({
+                key: y.key,
+                title: String(y.year),
+                category: 'Graduation Year',
+                stats: [
+                  { label: y.count === 1 ? 'student' : 'students', value: y.count },
+                  {
+                    label: 'logged in',
+                    value: `${y.loggedIn}/${y.count}`,
+                    tint: (y.loggedIn === y.count ? 'success' : 'default') as 'success' | 'default',
+                  },
+                  {
+                    label: 'details done',
+                    value: `${y.detailsComplete}/${y.count}`,
+                    tint: (y.detailsComplete === y.count ? 'success' : 'warn') as
+                      | 'success'
+                      | 'warn',
+                  },
+                  { label: y.courses === 1 ? 'course' : 'courses', value: y.courses },
+                ],
+              }))}
+              onSelect={(key) => {
+                const year = years.find((y) => y.key === key)?.year ?? 0;
+                selectYear(year);
+              }}
+            />
+          )}
+        </>
+      )}
+
+      {/* ── Course picker ── */}
+      {view.mode === 'courses' && (
+        <>
+          <BatchCards
+            items={coursesForYear.map((c) => ({
+              key: c.key,
+              title: c.course,
+              category: `${c.year} · Course`,
+              stats: [
+                { label: c.count === 1 ? 'student' : 'students', value: c.count },
+                {
+                  label: 'logged in',
+                  value: `${c.loggedIn}/${c.count}`,
+                  tint: (c.loggedIn === c.count ? 'success' : 'default') as 'success' | 'default',
+                },
+                {
+                  label: 'details done',
+                  value: `${c.detailsComplete}/${c.count}`,
+                  tint: (c.detailsComplete === c.count ? 'success' : 'warn') as 'success' | 'warn',
+                },
+              ],
+            }))}
+            onSelect={(key) => {
+              const course = coursesForYear.find((c) => c.key === key)?.course ?? '';
+              selectCourse(view.year, course);
+            }}
+          />
+        </>
+      )}
+
+      {/* ── Student table ── */}
+      {view.mode === 'table' && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <button onClick={backToBatches} className="text-sm font-medium text-primary-600 hover:underline">
-              ← All batches
+            <button
+              onClick={backToCourses}
+              className="text-sm font-medium text-primary-600 hover:underline"
+            >
+              ← All courses in {view.year}
             </button>
             <div className="flex flex-wrap items-center gap-2">
               <select
@@ -327,7 +479,10 @@ function StudentsList() {
             <div className="flex items-center justify-between rounded-md border border-primary-200 bg-primary-50 px-4 py-2">
               <span className="text-sm font-medium text-primary-700">{selected.size} selected</span>
               <div className="flex items-center gap-3">
-                <button onClick={() => setSelected(new Set())} className="text-xs text-subtle hover:underline">
+                <button
+                  onClick={() => setSelected(new Set())}
+                  className="text-xs text-subtle hover:underline"
+                >
                   Clear
                 </button>
                 <Button variant="danger" size="sm" onClick={deleteSelected} loading={deleting}>
@@ -390,7 +545,10 @@ function StudentsList() {
                         />
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/students/${s.id}`} className="font-medium text-strong hover:underline">
+                        <Link
+                          href={`/students/${s.id}`}
+                          className="font-medium text-strong hover:underline"
+                        >
                           {s.user.fullName}
                         </Link>
                         <p className="text-xs text-subtle">{s.user.email}</p>
@@ -405,7 +563,11 @@ function StudentsList() {
                           <Badge tint="mint">Complete</Badge>
                         ) : (
                           <DetailsIncomplete
-                            missing={s.detailsMissing?.length ? s.detailsMissing : ['10th %', '12th %', 'Degree %']}
+                            missing={
+                              s.detailsMissing?.length
+                                ? s.detailsMissing
+                                : ['10th %', '12th %', 'Degree %']
+                            }
                           />
                         )}
                       </td>
@@ -414,7 +576,11 @@ function StudentsList() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end">
-                          <RowMenu student={s} onToggle={() => toggleActive(s)} onDelete={() => removeOne(s)} />
+                          <RowMenu
+                            student={s}
+                            onToggle={() => toggleActive(s)}
+                            onDelete={() => removeOne(s)}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -427,14 +593,25 @@ function StudentsList() {
           {meta && meta.total > 0 && (
             <div className="flex items-center justify-between text-sm">
               <span className="text-subtle">
-                Showing {(meta.page - 1) * meta.limit + 1}–{Math.min(meta.page * meta.limit, meta.total)} of{' '}
-                {meta.total} · page {meta.page} of {meta.pages}
+                Showing {(meta.page - 1) * meta.limit + 1}–
+                {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} · page {meta.page} of{' '}
+                {meta.pages}
               </span>
               <div className="flex gap-2">
-                <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
                   Previous
                 </Button>
-                <Button variant="ghost" size="sm" disabled={page >= meta.pages} onClick={() => setPage((p) => p + 1)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={page >= meta.pages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
                   Next
                 </Button>
               </div>
@@ -451,7 +628,10 @@ function LoginCell({ student }: { student: Student }) {
   if (!student.isActive) return <span className="text-xs text-subtle">Disabled</span>;
   if (student.user.lastLoginAt) {
     return (
-      <span className="text-xs text-success" title={new Date(student.user.lastLoginAt).toLocaleString()}>
+      <span
+        className="text-xs text-success"
+        title={new Date(student.user.lastLoginAt).toLocaleString()}
+      >
         Logged in
       </span>
     );
@@ -480,7 +660,11 @@ function GraduateBatchModal({ onClose, onDone }: { onClose: () => void; onDone: 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      role="dialog"
+      aria-modal="true"
+    >
       <Card className="w-full max-w-md space-y-4 p-6">
         {result ? (
           <>
@@ -488,7 +672,9 @@ function GraduateBatchModal({ onClose, onDone }: { onClose: () => void; onDone: 
               ✓
             </div>
             <div className="text-center">
-              <h2 className="text-lg font-semibold text-strong">Batch {result.graduationYear} graduated</h2>
+              <h2 className="text-lg font-semibold text-strong">
+                Batch {result.graduationYear} graduated
+              </h2>
               <p className="mt-1 text-sm text-subtle">
                 {result.alumniCreated} added to Alumni
                 {result.alreadyAlumni > 0 ? ` (${result.alreadyAlumni} already there)` : ''} ·{' '}
@@ -504,8 +690,8 @@ function GraduateBatchModal({ onClose, onDone }: { onClose: () => void; onDone: 
             <div>
               <h2 className="text-lg font-semibold text-strong">Graduate a batch</h2>
               <p className="mt-1 text-sm text-subtle">
-                Copies every student of this passout year into the Alumni directory and disables their
-                student logins. Their records are kept.
+                Copies every student of this passout year into the Alumni directory and disables
+                their student logins. Their records are kept.
               </p>
             </div>
             <label className="block space-y-1">
@@ -518,7 +704,12 @@ function GraduateBatchModal({ onClose, onDone }: { onClose: () => void; onDone: 
               />
             </label>
             <label className="flex items-start gap-2 text-xs text-body">
-              <input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} className="mt-0.5" />
+              <input
+                type="checkbox"
+                checked={ack}
+                onChange={(e) => setAck(e.target.checked)}
+                className="mt-0.5"
+              />
               I understand the {year} students&apos; logins will be disabled.
             </label>
             {error && <p className="text-sm text-danger">{error}</p>}
@@ -575,7 +766,7 @@ function DetailsIncomplete({ missing }: { missing: string[] }) {
 
 /**
  * Per-row "⋮" actions menu. The dropdown is fixed-positioned (computed from the
- * button) so it isn't clipped by the table card's `overflow-hidden`.
+ * button) so it isn't clipped by the table card's overflow-hidden.
  */
 function RowMenu({
   student,

@@ -605,7 +605,7 @@ model Internship {
   companyName     String           @map("company_name")
   role            String
   workMode        WorkMode?        @map("work_mode")
-  location        String?
+  location        String
   isPaid          Boolean          @default(false) @map("is_paid")
   stipend         Decimal?         @db.Decimal(12, 2)
   startDate       DateTime?        @map("start_date")
@@ -614,9 +614,9 @@ model Internship {
   isPpo           Boolean          @default(false) @map("is_ppo")
   description     String?
   // Point-of-contact at the company (students self-report internships they found).
-  pocName         String?          @map("poc_name")
-  pocEmail        String?          @map("poc_email")
-  pocPhone        String?          @map("poc_phone")
+  pocName         String           @map("poc_name")
+  pocEmail        String           @map("poc_email")
+  pocPhone        String           @map("poc_phone")
   certificateUrl  String?          @map("certificate_url")
   status          InternshipStatus @default(PENDING)
   verifiedById    String?          @map("verified_by_id")
