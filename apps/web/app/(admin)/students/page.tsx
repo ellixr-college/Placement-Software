@@ -19,13 +19,6 @@ import {
   type StudentBatch,
 } from '../../../lib/students';
 
-const STATUS_TINT: Record<string, 'lavender' | 'mint' | 'cream' | 'primary'> = {
-  REGISTERED: 'cream',
-  VERIFIED: 'mint',
-  PLACED: 'lavender',
-  NOT_PLACED: 'primary',
-};
-
 export default function StudentsPage() {
   return (
     <Suspense fallback={<p className="text-subtle">Loading…</p>}>
@@ -508,7 +501,6 @@ function StudentsList() {
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Reg No.</th>
                   <th className="px-4 py-3 font-medium">Branch</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Details</th>
                   <th className="px-4 py-3 font-medium">Login</th>
                   <th className="px-4 py-3 text-right font-medium">Actions</th>
@@ -517,13 +509,13 @@ function StudentsList() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-subtle">
+                    <td colSpan={7} className="px-4 py-8 text-center text-subtle">
                       Loading…
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-subtle">
+                    <td colSpan={7} className="px-4 py-8 text-center text-subtle">
                       No students match your search.
                     </td>
                   </tr>
@@ -555,9 +547,6 @@ function StudentsList() {
                       </td>
                       <td className="px-4 py-3 text-strong">{s.rollNumber}</td>
                       <td className="px-4 py-3">{s.branch || '—'}</td>
-                      <td className="px-4 py-3">
-                        <Badge tint={STATUS_TINT[s.status] ?? 'primary'}>{s.status}</Badge>
-                      </td>
                       <td className="px-4 py-3">
                         {s.detailsComplete ? (
                           <Badge tint="mint">Complete</Badge>

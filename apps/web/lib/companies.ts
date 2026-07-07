@@ -35,10 +35,11 @@ export interface HiringHistoryItem {
   hiredCount: number;
 }
 
-export async function listCompanies(search = ''): Promise<Company[]> {
-  const { data } = await apiList<Company[]>(
-    `/companies${search ? `?search=${encodeURIComponent(search)}` : ''}`,
-  );
+export async function listCompanies(search = '', limit = 25): Promise<Company[]> {
+  const qs = new URLSearchParams();
+  if (search) qs.set('search', search);
+  qs.set('limit', String(limit));
+  const { data } = await apiList<Company[]>(`/companies?${qs.toString()}`);
   return data;
 }
 

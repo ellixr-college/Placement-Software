@@ -150,6 +150,7 @@ model Alumni {
   email              String
   phone              String?
   registerNumber     String?  @map("register_number")
+  joiningYear        Int?     @map("joining_year")
   graduationYear     Int      @map("graduation_year")
   course             String?
   branch             String
@@ -174,13 +175,6 @@ model Alumni {
   @@index([collegeId, graduationYear])
   @@index([collegeId, branch])
   @@map("alumni")
-}
-
-enum StudentStatus {
-  REGISTERED
-  VERIFIED
-  PLACED
-  NOT_PLACED
 }
 
 enum VerificationStatus {
@@ -216,7 +210,6 @@ model Student {
   ugPercentage       Decimal?           @db.Decimal(5, 2) @map("ug_percentage")
   // Semester-wise marks: [{ label, score }] as JSON for flexibility.
   semesterMarks      Json?              @map("semester_marks")
-  status             StudentStatus      @default(REGISTERED)
   verificationStatus VerificationStatus @default(PENDING) @map("verification_status")
   verifiedById       String?            @map("verified_by_id")
   verifiedAt         DateTime?          @map("verified_at")
@@ -236,7 +229,6 @@ model Student {
   internships     Internship[]
 
   @@unique([collegeId, rollNumber])
-  @@index([collegeId, status])
   @@index([collegeId, branch, graduationYear])
   @@map("students")
 }

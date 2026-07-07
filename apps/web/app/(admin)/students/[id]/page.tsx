@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Badge, Button, Card } from '@ellixr/ui';
+import { Button, Card } from '@ellixr/ui';
 import { useConfirm } from '../../../../components/confirm-provider';
 import {
   deleteStudent,
@@ -121,7 +121,6 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge tint="primary">{student.status}</Badge>
           {student.isActive ? (
             <span className="text-xs text-success">Login active</span>
           ) : (

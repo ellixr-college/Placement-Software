@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
+import { listCompanies, type Company } from '../../../../lib/companies';
 import { listMyCourses, type CollegeCourse } from '../../../../lib/courses';
 import {
   createJob,
@@ -163,12 +164,7 @@ export default function QuickPostPage() {
           />
         </Field>
         <Field label="Company name">
-          <input
-            className={inputCls}
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-            placeholder="e.g. Infosys (optional)"
-          />
+          <CompanyAutocomplete value={companyName} onChange={setCompanyName} />
         </Field>
 
         <Field label="Job description PDF">
@@ -520,6 +516,99 @@ function ChipPicker({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function CompanyAutocomplete({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [suggestions, setSuggestions] = useState<Company[]>([]);
+  const [show, setShow] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const q = value.trim();
+    if (!q) {
+      setSuggestions([]);
+      setShow(false);
+      return;
+    }
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const list = await listCompanies(q, 50);
+        setSuggestions(list);
+        setHighlight(0);
+        setShow(list.length > 0);
+      } catch {
+        setSuggestions([]);
+        setShow(false);
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [value]);
+
+  return (
+    <div className="relative">
+      <input
+        className={inputCls}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setShow(true);
+        }}
+        onFocus={() => value.trim() && suggestions.length > 0 && setShow(true)}
+        onBlur={() => setTimeout(() => setShow(false), 150)}
+        onKeyDown={(e) => {
+          if (!show || suggestions.length === 0) return;
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setHighlight((highlight + 1) % suggestions.length);
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setHighlight((highlight - 1 + suggestions.length) % suggestions.length);
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const pick = suggestions[highlight];
+            if (pick) {
+              onChange(pick.name);
+              setShow(false);
+            }
+          } else if (e.key === 'Escape') {
+            setShow(false);
+          }
+        }}
+        placeholder="Start typing a company name…"
+      />
+      {loading && (
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-subtle">…</span>
+      )}
+      {show && suggestions.length > 0 && (
+        <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border border-border bg-white py-1 shadow-card">
+          {suggestions.map((c, i) => (
+            <li
+              key={c.id}
+              onMouseDown={() => {
+                onChange(c.name);
+                setShow(false);
+              }}
+              className={`cursor-pointer px-3 py-2 text-sm ${
+                i === highlight ? 'bg-primary-50 text-strong' : 'text-body hover:bg-app'
+              }`}
+            >
+              {c.name}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

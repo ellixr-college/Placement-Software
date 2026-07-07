@@ -78,7 +78,6 @@ export class ReportsService {
         cgpa: true,
         activeBacklogs: true,
         totalBacklogs: true,
-        status: true,
         verificationStatus: true,
         profileCompletion: true,
         isActive: true,
@@ -101,7 +100,6 @@ export class ReportsService {
         { key: 'cgpa', label: 'Percentage' },
         { key: 'activeBacklogs', label: 'Active Backlogs' },
         { key: 'totalBacklogs', label: 'Total Backlogs' },
-        { key: 'status', label: 'Status' },
         { key: 'verificationStatus', label: 'Verification' },
         { key: 'profileCompletion', label: 'Profile %' },
         { key: 'isActive', label: 'Active' },
@@ -118,7 +116,6 @@ export class ReportsService {
         cgpa: dec(s.cgpa),
         activeBacklogs: s.activeBacklogs,
         totalBacklogs: s.totalBacklogs,
-        status: s.status,
         verificationStatus: s.verificationStatus,
         profileCompletion: s.profileCompletion,
         isActive: s.isActive ? 'Yes' : 'No',
@@ -286,12 +283,17 @@ export class ReportsService {
   private async branch(collegeId: string): Promise<ReportDataset> {
     const students = await this.prisma.student.findMany({
       where: { collegeId, isActive: true },
-      select: { branch: true, graduationYear: true, status: true },
+      select: { branch: true, graduationYear: true },
     });
     // Placing-stage applications give us hire counts + packages per branch.
     const placed = await this.prisma.application.findMany({
       where: { collegeId, stage: { in: [...PLACING_STAGES] } },
-      select: { offerCtc: true, student: { select: { branch: true } } },
+      select: {
+        offerCtc: true,
+        studentId: true,
+        student: { select: { branch: true } },
+      },
+      distinct: ['studentId'],
     });
 
     const map = new Map<
@@ -309,10 +311,10 @@ export class ReportsService {
     for (const s of students) {
       const row = get(s.branch);
       row.total++;
-      if (s.status === 'PLACED') row.placed++;
     }
     for (const a of placed) {
       const row = get(a.student.branch);
+      row.placed++;
       row.offers++;
       const ctc = dec(a.offerCtc);
       if (ctc != null) row.packages.push(ctc);

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PRISMA } from '../../common/prisma.module';
 import { Prisma } from '@ellixr/database';
-import type { PrismaClient, Student } from '@ellixr/database';
+import type { PrismaClient, Student, ApplicationStage } from '@ellixr/database';
 import {
   CreateJobDto,
   CreatePlatformJobDto,
@@ -17,6 +17,8 @@ import {
 } from './dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { checkEligibility, type EligibilityJob, type EligibilityStudent } from './eligibility';
+
+const PLACING_STAGES: ApplicationStage[] = ['OFFER_ACCEPTED', 'JOINED'];
 
 // A custom application question stored on Job.applicationFormFields (as JSON).
 interface ApplicationField {
@@ -218,6 +220,22 @@ export class JobsService {
     return this.publicJob(updated);
   }
 
+  private async placedStudentIds(collegeId: string) {
+    const apps = await this.prisma.application.findMany({
+      where: { collegeId, stage: { in: [...PLACING_STAGES] } },
+      select: { studentId: true },
+      distinct: ['studentId'],
+    });
+    return new Set(apps.map((a) => a.studentId));
+  }
+
+  private async isStudentPlaced(studentId: string) {
+    const count = await this.prisma.application.count({
+      where: { studentId, stage: { in: [...PLACING_STAGES] } },
+    });
+    return count > 0;
+  }
+
   // Officer preview: every active, verified, non-placed student who matches.
   async eligibleStudents(collegeId: string, jobId: string) {
     const job = await this.prisma.job.findFirst({ where: { id: jobId, collegeId } });
@@ -228,14 +246,17 @@ export class JobsService {
         collegeId,
         isActive: true,
         verificationStatus: 'VERIFIED',
-        status: { not: 'PLACED' },
       },
       include: { user: true },
     });
 
+    const placedStudentIds = await this.placedStudentIds(collegeId);
     const criteria = toEligibilityJob(job);
     return students
-      .filter((s) => checkEligibility(toEligibilityStudent(s), criteria).eligible)
+      .filter(
+        (s) =>
+          checkEligibility(toEligibilityStudent(s, placedStudentIds.has(s.id)), criteria).eligible,
+      )
       .map((s) => ({
         id: s.id,
         rollNumber: s.rollNumber,
@@ -406,7 +427,7 @@ export class JobsService {
       orderBy: { publishedAt: 'desc' },
     });
 
-    const me = toEligibilityStudent(student);
+    const me = toEligibilityStudent(student, await this.isStudentPlaced(student.id));
 
     const myApps = await this.prisma.application.findMany({
       where: { studentId: student.id, jobId: { in: jobs.map((j) => j.id) } },
@@ -437,7 +458,7 @@ export class JobsService {
     if (!job || job.status !== 'PUBLISHED') throw new NotFoundException('Job not found');
 
     const { eligible, reasons } = checkEligibility(
-      toEligibilityStudent(student),
+      toEligibilityStudent(student, await this.isStudentPlaced(student.id)),
       toEligibilityJob(job),
     );
 
@@ -467,7 +488,7 @@ export class JobsService {
 
     // Re-validate eligibility server-side — the feed is not the authority.
     const { eligible, reasons } = checkEligibility(
-      toEligibilityStudent(student),
+      toEligibilityStudent(student, await this.isStudentPlaced(student.id)),
       toEligibilityJob(job),
     );
     if (!eligible) throw new ForbiddenException(`Not eligible: ${reasons.join(', ')}`);
@@ -607,23 +628,25 @@ export class JobsService {
   }
 }
 
-function toEligibilityStudent(s: {
-  verificationStatus: string;
-  status: string;
-  course: string;
-  branch: string;
-  graduationYear: number;
-  cgpa: Prisma.Decimal | null;
-  tenthPercentage: Prisma.Decimal | null;
-  twelfthPercentage: Prisma.Decimal | null;
-  ugPercentage: Prisma.Decimal | null;
-  gender: string | null;
-  activeBacklogs: number;
-  totalBacklogs: number;
-}): EligibilityStudent {
+function toEligibilityStudent(
+  s: {
+    verificationStatus: string;
+    course: string;
+    branch: string;
+    graduationYear: number;
+    cgpa: Prisma.Decimal | null;
+    tenthPercentage: Prisma.Decimal | null;
+    twelfthPercentage: Prisma.Decimal | null;
+    ugPercentage: Prisma.Decimal | null;
+    gender: string | null;
+    activeBacklogs: number;
+    totalBacklogs: number;
+  },
+  isPlaced: boolean,
+): EligibilityStudent {
   return {
     verificationStatus: s.verificationStatus,
-    status: s.status,
+    isPlaced,
     course: s.course,
     branch: s.branch,
     graduationYear: s.graduationYear,

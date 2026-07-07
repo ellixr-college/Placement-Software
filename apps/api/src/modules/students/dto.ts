@@ -16,7 +16,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { StudentStatus, VerificationStatus } from '@ellixr/database';
+import { VerificationStatus } from '@ellixr/database';
 import { PHONE_REGEX } from '@ellixr/shared';
 import { EmptyToUndefined } from '../../common/transforms';
 
@@ -219,8 +219,6 @@ export class ListStudentsQuery {
   @IsOptional() @IsString() course?: string;
 
   @IsOptional() @Type(() => Number) @IsInt() graduationYear?: number;
-
-  @IsOptional() @IsIn(Object.values(StudentStatus)) status?: StudentStatus;
 
   @IsOptional()
   @IsIn(Object.values(VerificationStatus))

@@ -89,6 +89,7 @@ export default function AlumniDetailPage({ params }: { params: Promise<{ id: str
           </h1>
           <p className="text-sm text-subtle">
             {alumni.branch} · Batch {alumni.graduationYear}
+            {alumni.joiningYear ? ` · Joined ${alumni.joiningYear}` : ''}
             {alumni.course ? ` · ${alumni.course}` : ''}
           </p>
           <div className="mt-2 flex flex-wrap gap-1">
@@ -177,6 +178,7 @@ function EditAlumniForm({
     fullName: alumni.fullName,
     email: alumni.email,
     graduationYear: String(alumni.graduationYear),
+    joiningYear: alumni.joiningYear ? String(alumni.joiningYear) : '',
     branch: alumni.branch,
     phone: alumni.phone ?? '',
     course: alumni.course ?? '',
@@ -205,6 +207,7 @@ function EditAlumniForm({
         fullName: form.fullName,
         email: form.email,
         graduationYear: Number(form.graduationYear),
+        joiningYear: form.joiningYear ? Number(form.joiningYear) : undefined,
         branch: form.branch,
         phone: form.phone || undefined,
         course: form.course || undefined,
@@ -239,7 +242,16 @@ function EditAlumniForm({
         <Field label="Email *">
           <input className={inputCls} value={form.email} onChange={set('email')} />
         </Field>
-        <Field label="Graduation year *">
+        <Field label="Joining year / Course year">
+          <input
+            type="number"
+            className={inputCls}
+            value={form.joiningYear}
+            onChange={set('joiningYear')}
+            placeholder="Year they joined the course"
+          />
+        </Field>
+        <Field label="Passout year *">
           <input
             type="number"
             className={inputCls}

@@ -4,7 +4,7 @@
 
 export interface EligibilityStudent {
   verificationStatus: string;
-  status: string;
+  isPlaced: boolean;
   course: string;
   branch: string;
   graduationYear: number;
@@ -42,7 +42,7 @@ export function checkEligibility(
   const reasons: string[] = [];
 
   if (student.verificationStatus !== 'VERIFIED') reasons.push('Profile not verified');
-  if (student.status === 'PLACED') reasons.push('Already placed');
+  if (student.isPlaced) reasons.push('Already placed');
   if (!job.eligibleCourses.includes(student.course)) reasons.push('Course not eligible');
   // Empty eligibleBranches = branch is not a filter (e.g. courses with no branches).
   if (job.eligibleBranches.length > 0 && !job.eligibleBranches.includes(student.branch)) {

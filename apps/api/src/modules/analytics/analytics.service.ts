@@ -30,7 +30,13 @@ export class AnalyticsService {
       this.prisma.student.count({
         where: { collegeId, isActive: true, verificationStatus: 'VERIFIED' },
       }),
-      this.prisma.student.count({ where: { collegeId, isActive: true, status: 'PLACED' } }),
+      this.prisma.application
+        .groupBy({
+          by: ['studentId'],
+          where: { collegeId, stage: { in: [...PLACING_STAGES] } },
+          _count: { _all: true },
+        })
+        .then((g) => g.length),
       this.prisma.application.findMany({
         where: { collegeId, stage: { in: [...PLACING_STAGES] }, offerCtc: { not: null } },
         select: { offerCtc: true },
@@ -94,7 +100,13 @@ export class AnalyticsService {
     const [total, active, placed, internships, completions] = await Promise.all([
       this.prisma.student.count({ where: { collegeId } }),
       this.prisma.student.count({ where: { collegeId, isActive: true } }),
-      this.prisma.student.count({ where: { collegeId, status: 'PLACED' } }),
+      this.prisma.application
+        .groupBy({
+          by: ['studentId'],
+          where: { collegeId, stage: { in: [...PLACING_STAGES] } },
+          _count: { _all: true },
+        })
+        .then((g) => g.length),
       this.prisma.internship.count({ where: { collegeId } }),
       this.prisma.student.findMany({ where: { collegeId }, select: { profileCompletion: true } }),
     ]);
@@ -230,7 +242,13 @@ export class AnalyticsService {
       this.prisma.college.count({ where: { isActive: true } }),
       this.prisma.student.count(),
       this.prisma.student.count({ where: { verificationStatus: 'VERIFIED' } }),
-      this.prisma.student.count({ where: { status: 'PLACED' } }),
+      this.prisma.application
+        .groupBy({
+          by: ['studentId'],
+          where: { stage: { in: [...PLACING_STAGES] } },
+          _count: { _all: true },
+        })
+        .then((g) => g.length),
       this.prisma.job.count(),
       this.prisma.job.count({ where: { scope: 'PLATFORM' } }),
       this.prisma.application.count(),
@@ -293,14 +311,30 @@ export class AnalyticsService {
   private async branchBreakdown(collegeId: string) {
     const students = await this.prisma.student.findMany({
       where: { collegeId, isActive: true },
-      select: { branch: true, status: true },
+      select: { branch: true },
     });
+    const placed = await this.prisma.application.findMany({
+      where: { collegeId, stage: { in: [...PLACING_STAGES] } },
+      select: { studentId: true, student: { select: { branch: true } } },
+      distinct: ['studentId'],
+    });
+    const placedByBranch = new Map<string, Set<string>>();
+    for (const a of placed) {
+      const b = a.student.branch;
+      const set = placedByBranch.get(b) ?? new Set<string>();
+      set.add(a.studentId);
+      placedByBranch.set(b, set);
+    }
     const map = new Map<string, { total: number; placed: number }>();
     for (const s of students) {
       const row = map.get(s.branch) ?? { total: 0, placed: 0 };
       row.total++;
-      if (s.status === 'PLACED') row.placed++;
       map.set(s.branch, row);
+    }
+    for (const [branch, set] of placedByBranch) {
+      const row = map.get(branch) ?? { total: 0, placed: 0 };
+      row.placed = set.size;
+      map.set(branch, row);
     }
     return [...map.entries()].map(([branch, { total, placed }]) => ({
       branch,
@@ -313,14 +347,30 @@ export class AnalyticsService {
   private async batchBreakdown(collegeId: string) {
     const students = await this.prisma.student.findMany({
       where: { collegeId, isActive: true },
-      select: { graduationYear: true, status: true },
+      select: { graduationYear: true },
     });
+    const placed = await this.prisma.application.findMany({
+      where: { collegeId, stage: { in: [...PLACING_STAGES] } },
+      select: { studentId: true, student: { select: { graduationYear: true } } },
+      distinct: ['studentId'],
+    });
+    const placedByYear = new Map<number, Set<string>>();
+    for (const a of placed) {
+      const y = a.student.graduationYear;
+      const set = placedByYear.get(y) ?? new Set<string>();
+      set.add(a.studentId);
+      placedByYear.set(y, set);
+    }
     const map = new Map<number, { total: number; placed: number }>();
     for (const s of students) {
       const row = map.get(s.graduationYear) ?? { total: 0, placed: 0 };
       row.total++;
-      if (s.status === 'PLACED') row.placed++;
       map.set(s.graduationYear, row);
+    }
+    for (const [year, set] of placedByYear) {
+      const row = map.get(year) ?? { total: 0, placed: 0 };
+      row.placed = set.size;
+      map.set(year, row);
     }
     return [...map.entries()]
       .sort((a, b) => a[0] - b[0])

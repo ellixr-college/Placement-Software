@@ -35,7 +35,6 @@ export interface Student {
   twelfthPercentage: number | null;
   ugPercentage: number | null;
   semesterMarks: SemesterMark[] | null;
-  status: string;
   verificationStatus: string;
   verifiedAt: string | null;
   rejectionReason: string | null;
@@ -113,7 +112,6 @@ export interface ListParams {
   branch?: string;
   course?: string;
   graduationYear?: number;
-  status?: string;
   resumeComplete?: boolean;
   detailsComplete?: boolean;
   active?: boolean;

@@ -28,6 +28,7 @@ export class CreateAlumniDto {
   @Matches(PHONE_REGEX, { message: PHONE_MESSAGE })
   phone?: string;
   @IsOptional() @IsString() registerNumber?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1950) @Max(2100) joiningYear?: number;
   @Type(() => Number) @IsInt() @Min(1950) @Max(2100) graduationYear!: number;
   @IsString() @MinLength(1) branch!: string;
   @IsOptional() @IsString() course?: string;
@@ -51,6 +52,7 @@ export class SelfRegisterAlumniDto {
   @Matches(PHONE_REGEX, { message: PHONE_MESSAGE })
   phone?: string;
   @IsOptional() @IsString() registerNumber?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1950) @Max(2100) joiningYear?: number;
   @Type(() => Number) @IsInt() @Min(1950) @Max(2100) graduationYear!: number;
   @IsString() @MinLength(1) branch!: string;
   @IsOptional() @IsString() course?: string;
@@ -68,6 +70,7 @@ export class UpdateAlumniDto {
   @Matches(PHONE_REGEX, { message: PHONE_MESSAGE })
   phone?: string;
   @IsOptional() @IsString() registerNumber?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1950) @Max(2100) joiningYear?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1950) @Max(2100) graduationYear?: number;
   @IsOptional() @IsString() @MinLength(1) branch?: string;
   @IsOptional() @IsString() course?: string;

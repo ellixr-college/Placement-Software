@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Badge, Button, Card, SectionCard, StatTile } from '@ellixr/ui';
+import { Badge, Button, Card, SectionCard } from '@ellixr/ui';
 import { isValidEmail, isValidPhone, toTitleCase } from '@ellixr/shared';
 import { useSession } from '../../../lib/session';
 import { Breadcrumbs } from '../../../components/breadcrumbs';
@@ -181,15 +181,6 @@ export default function AlumniPage() {
         </div>
         <Button onClick={() => setShowForm(true)}>Add alumnus</Button>
       </header>
-
-      {/* Stat strip */}
-      {stats && view.mode === 'years' && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <StatTile gradient="ocean" value={stats.total} label="Total alumni" />
-          <StatTile gradient="violet" value={stats.mentors} label="Mentors" />
-          <StatTile gradient="sunset" value={stats.hiring} label="Hiring now" />
-        </div>
-      )}
 
       {/* Year picker */}
       {view.mode === 'years' && (
@@ -531,6 +522,7 @@ function NewAlumniForm({ onCreated, onCancel }: { onCreated: () => void; onCance
     branch: '',
     phone: '',
     registerNumber: '',
+    joiningYear: '',
     course: '',
     currentCompany: '',
     currentDesignation: '',
@@ -559,6 +551,7 @@ function NewAlumniForm({ onCreated, onCancel }: { onCreated: () => void; onCance
         branch: form.branch.trim(),
         phone: form.phone.trim() || undefined,
         registerNumber: form.registerNumber.trim() || undefined,
+        joiningYear: form.joiningYear ? Number(form.joiningYear) : undefined,
         course: form.course || undefined,
         currentCompany: form.currentCompany || undefined,
         currentDesignation: form.currentDesignation || undefined,
@@ -617,7 +610,16 @@ function NewAlumniForm({ onCreated, onCancel }: { onCreated: () => void; onCance
           <input className={inputCls} value={form.email} onChange={set('email')} />
           {!emailOk && <span className="text-xs text-danger">Enter a valid email address.</span>}
         </Field>
-        <Field label="Graduation year *">
+        <Field label="Joining year / Course year">
+          <input
+            type="number"
+            className={inputCls}
+            value={form.joiningYear}
+            onChange={set('joiningYear')}
+            placeholder="Year they joined the course"
+          />
+        </Field>
+        <Field label="Passout year *">
           <input
             type="number"
             className={inputCls}

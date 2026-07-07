@@ -97,7 +97,6 @@ export class StudentsService {
           linkedinUrl: dto.linkedinUrl,
           // Officer-registered students come from official college rolls — trust
           // them so they immediately see eligible jobs (no separate verify step).
-          status: 'VERIFIED',
           verificationStatus: 'VERIFIED',
           verifiedAt: new Date(),
           ...this.extendedData(dto),
@@ -201,7 +200,6 @@ export class StudentsService {
         gender: d.gender,
         personalEmail: d.personalEmail,
         // Imported from official rolls → trusted/verified so jobs reach them.
-        status: 'VERIFIED',
         verificationStatus: 'VERIFIED',
         verifiedAt: new Date(),
       });
@@ -290,7 +288,6 @@ export class StudentsService {
       ...(q.branch ? { branch: q.branch } : {}),
       ...(q.course ? { course: q.course } : {}),
       ...(q.graduationYear ? { graduationYear: q.graduationYear } : {}),
-      ...(q.status ? { status: q.status } : {}),
       ...(q.verificationStatus ? { verificationStatus: q.verificationStatus } : {}),
       ...(q.active !== undefined ? { isActive: q.active } : {}),
       ...(q.search
@@ -471,7 +468,6 @@ export class StudentsService {
       dto.action === 'verify'
         ? {
             verificationStatus: 'VERIFIED',
-            status: 'VERIFIED',
             verifiedById: verifierId,
             verifiedAt: new Date(),
             rejectionReason: null,
@@ -756,7 +752,6 @@ export class StudentsService {
     twelfthPercentage: Prisma.Decimal | null;
     ugPercentage: Prisma.Decimal | null;
     semesterMarks: Prisma.JsonValue;
-    status: string;
     verificationStatus: string;
     verifiedAt: Date | null;
     rejectionReason: string | null;
@@ -792,7 +787,6 @@ export class StudentsService {
       twelfthPercentage: s.twelfthPercentage != null ? Number(s.twelfthPercentage) : null,
       ugPercentage: s.ugPercentage != null ? Number(s.ugPercentage) : null,
       semesterMarks: s.semesterMarks,
-      status: s.status,
       verificationStatus: s.verificationStatus,
       verifiedAt: s.verifiedAt,
       rejectionReason: s.rejectionReason,

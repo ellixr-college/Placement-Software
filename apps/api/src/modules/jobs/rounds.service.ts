@@ -304,21 +304,16 @@ export class RoundsService {
       throw new BadRequestException('This applicant is no longer in the running.');
     }
 
-    await this.prisma.$transaction([
-      this.prisma.application.update({
-        where: { id: applicationId },
-        data: {
-          status: 'SELECTED',
-          // Legacy bridge so analytics/reports keep counting placements.
-          stage: 'OFFER_ACCEPTED',
-          ...(dto.offerCtc != null ? { offerCtc: new Prisma.Decimal(dto.offerCtc) } : {}),
-          ...(dto.offerLetterUrl !== undefined
-            ? { offerLetterUrl: dto.offerLetterUrl || null }
-            : {}),
-        },
-      }),
-      this.prisma.student.update({ where: { id: app.studentId }, data: { status: 'PLACED' } }),
-    ]);
+    await this.prisma.application.update({
+      where: { id: applicationId },
+      data: {
+        status: 'SELECTED',
+        // Legacy bridge so analytics/reports keep counting placements.
+        stage: 'OFFER_ACCEPTED',
+        ...(dto.offerCtc != null ? { offerCtc: new Prisma.Decimal(dto.offerCtc) } : {}),
+        ...(dto.offerLetterUrl !== undefined ? { offerLetterUrl: dto.offerLetterUrl || null } : {}),
+      },
+    });
 
     await this.notifications.notify({
       userId: app.student.userId,

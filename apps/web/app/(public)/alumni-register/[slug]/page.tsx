@@ -67,6 +67,7 @@ function RegisterForm({
     graduationYear: String(new Date().getFullYear()),
     branch: '',
     registerNumber: '',
+    joiningYear: '',
     course: '',
     currentCompany: '',
     currentDesignation: '',
@@ -99,6 +100,7 @@ function RegisterForm({
         branch: form.branch.trim(),
         phone: form.phone.trim() || undefined,
         registerNumber: form.registerNumber.trim() || undefined,
+        joiningYear: form.joiningYear ? Number(form.joiningYear) : undefined,
         course: form.course.trim() || undefined,
         currentCompany: form.currentCompany.trim() || undefined,
         currentDesignation: form.currentDesignation.trim() || undefined,
@@ -135,7 +137,16 @@ function RegisterForm({
         {!emailOk && <span className="text-xs text-danger">Enter a valid email address.</span>}
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Graduation year *">
+        <Field label="Joining year / Course year">
+          <input
+            type="number"
+            className={inputCls}
+            value={form.joiningYear}
+            onChange={set('joiningYear')}
+            placeholder="Year you joined the course"
+          />
+        </Field>
+        <Field label="Passout year *">
           <input
             type="number"
             className={inputCls}

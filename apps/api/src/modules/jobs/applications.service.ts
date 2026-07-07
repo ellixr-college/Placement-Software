@@ -214,14 +214,6 @@ export class ApplicationsService {
         },
       });
 
-      // Reaching OFFER_ACCEPTED / JOINED marks the student PLACED.
-      if (isPlacing) {
-        await tx.student.update({
-          where: { id: app.studentId },
-          data: { status: 'PLACED' },
-        });
-      }
-
       return next;
     });
 
