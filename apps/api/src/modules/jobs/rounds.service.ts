@@ -44,7 +44,13 @@ export class RoundsService {
         id: jobId,
         OR: [{ collegeId }, { scope: 'PLATFORM', targetCollegeIds: { has: collegeId } }],
       },
-      select: { id: true, title: true, companyName: true, company: { select: { name: true } } },
+      select: {
+        id: true,
+        title: true,
+        companyName: true,
+        applicationDeadline: true,
+        company: { select: { name: true } },
+      },
     });
     if (!job) throw new NotFoundException('Job not found');
     return job;
@@ -115,7 +121,13 @@ export class RoundsService {
 
   // ─────────────── Round lifecycle ───────────────
   async createRound(collegeId: string, jobId: string, createdById: string, dto: CreateRoundDto) {
-    await this.resolveJob(collegeId, jobId);
+    const job = await this.resolveJob(collegeId, jobId);
+
+    if (job.applicationDeadline && job.applicationDeadline.getTime() > Date.now()) {
+      throw new BadRequestException(
+        `Applications are still open until ${job.applicationDeadline.toLocaleString()}. Close the deadline before adding rounds.`,
+      );
+    }
 
     const last = await this.prisma.jobRound.findFirst({
       where: { jobId, collegeId },
