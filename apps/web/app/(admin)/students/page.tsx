@@ -340,14 +340,6 @@ function StudentsList() {
           <p className="text-sm text-subtle">{subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="ghost"
-            disabled={totalStudents === 0}
-            title={totalStudents === 0 ? 'Add students before graduating a batch' : undefined}
-            onClick={() => setShowGraduate(true)}
-          >
-            Graduate batch
-          </Button>
           <Link href="/students/import">
             <Button variant="ghost">Import CSV</Button>
           </Link>
@@ -470,6 +462,9 @@ function StudentsList() {
                 placeholder="Search this batch by name, email, or roll…"
                 className="h-10 w-full max-w-sm rounded-md border border-border bg-white px-4 text-sm outline-none focus:border-primary-400"
               />
+              <Button variant="ghost" onClick={() => setShowGraduate(true)}>
+                Graduate batch
+              </Button>
             </div>
           </div>
 
