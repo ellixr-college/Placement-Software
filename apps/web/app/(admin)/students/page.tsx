@@ -340,7 +340,12 @@ function StudentsList() {
           <p className="text-sm text-subtle">{subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" onClick={() => setShowGraduate(true)}>
+          <Button
+            variant="ghost"
+            disabled={totalStudents === 0}
+            title={totalStudents === 0 ? 'Add students before graduating a batch' : undefined}
+            onClick={() => setShowGraduate(true)}
+          >
             Graduate batch
           </Button>
           <Link href="/students/import">
