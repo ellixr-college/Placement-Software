@@ -94,6 +94,8 @@ export default function StudentHome() {
   const offers = apps.filter((a) => PLACING.includes(a.stage) || a.offerCtc != null);
   const nextInterview = findNextInterview(apps);
   const completion = student?.profileCompletion ?? 0;
+  const incompleteSteps = student?.profileSteps?.filter((s) => s.percentage < 100) ?? [];
+  const nextStepLabel = incompleteSteps[0]?.label;
   const showProfileNudge =
     !!student && (completion < 100 || student.verificationStatus !== 'VERIFIED');
 
@@ -163,7 +165,9 @@ export default function StudentHome() {
             </div>
             <p className="text-xs text-subtle">
               {student!.verificationStatus === 'VERIFIED'
-                ? 'A complete profile makes you eligible for more roles.'
+                ? nextStepLabel
+                  ? `Next up: ${nextStepLabel}`
+                  : 'A complete profile makes you eligible for more roles.'
                 : 'Verified students unlock the job feed. Tap to review your details.'}
             </p>
           </Card>

@@ -131,6 +131,36 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
+      <Card className="space-y-3 p-5">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-strong">Profile completion</p>
+          <span className="text-sm font-semibold text-primary-600">
+            {student.profileCompletion}%
+          </span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-pill bg-app">
+          <div
+            className="h-full rounded-pill bg-gradient-primary transition-all"
+            style={{ width: `${student.profileCompletion}%` }}
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {student.profileSteps.map((s) => (
+            <div
+              key={s.key}
+              className="flex items-center justify-between rounded-md bg-app px-3 py-2 text-sm"
+            >
+              <span className="text-body">{s.label}</span>
+              <span
+                className={`text-xs font-medium ${s.percentage >= 100 ? 'text-success' : 'text-subtle'}`}
+              >
+                {s.percentage >= 100 ? '✓' : `${s.completed}/${s.total}`}
+              </span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
       <Card className="space-y-4 p-6">
         <div className="flex items-center justify-between">
           <div>

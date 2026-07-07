@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
+import { PROFILE_STEPS, computeProfileCompletion, isProfileFieldFilled } from '@ellixr/shared';
 import { useSession } from '../../../../../lib/session';
 import { getMyResume } from '../../../../../lib/resume';
 import {
@@ -14,42 +15,66 @@ import {
 } from '../../../../../lib/students';
 
 /**
- * Student self-profile editor (mobile). Students edit their own academic fields
- * and submit the profile for placement-officer verification. rollNumber is
- * read-only — it is the officer-assigned identity.
+ * Student profile completion wizard. The compulsory fields from the college's
+ * profile data sheet are grouped into 5 steps. Students can save progress at
+ * any time and submit for verification once every required field is filled.
  */
 export default function StudentProfilePage() {
   const { signOut } = useSession();
   const [student, setStudent] = useState<Student | null>(null);
   const [form, setForm] = useState<UpdateOwnProfileInput>({});
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [resumeUploaded, setResumeUploaded] = useState<boolean | null>(null);
+  const [touched, setTouched] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     (async () => {
       try {
         const s = await getOwnStudent();
         setStudent(s);
-        setForm(toForm(s));
+        const f = toForm(s);
+        setForm(f);
+        // Open the first incomplete step.
+        const { steps } = computeProfileCompletion(f as Record<string, unknown>);
+        const firstIncomplete = steps.findIndex((st) => st.percentage < 100);
+        setStep(firstIncomplete === -1 ? 0 : firstIncomplete);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load profile');
       } finally {
         setLoading(false);
       }
     })();
-    // Track whether a résumé PDF has been uploaded.
     getMyResume()
       .then((r) => setResumeUploaded(!!r.fileUrl))
       .catch(() => setResumeUploaded(false));
   }, []);
 
+  const completion = useMemo(
+    () => computeProfileCompletion(form as Record<string, unknown>),
+    [form],
+  );
+
+  const currentStep = PROFILE_STEPS[step]!;
+  const isLastStep = step === PROFILE_STEPS.length - 1;
+
   function patch(p: Partial<UpdateOwnProfileInput>) {
     setForm((f) => ({ ...f, ...p }));
+    Object.keys(p).forEach((k) => touched.add(k));
+    setTouched(new Set(touched));
     setSaved(false);
+  }
+
+  function stepIsValid(idx = step) {
+    const s = PROFILE_STEPS[idx];
+    if (!s) return false;
+    return s.fields
+      .filter((f) => f.required)
+      .every((f) => isProfileFieldFilled(form[f.key as keyof UpdateOwnProfileInput], f.type));
   }
 
   async function onSave() {
@@ -60,6 +85,7 @@ export default function StudentProfilePage() {
       setStudent(s);
       setForm(toForm(s));
       setSaved(true);
+      setTouched(new Set());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save');
     } finally {
@@ -80,24 +106,76 @@ export default function StudentProfilePage() {
     }
   }
 
+  function goNext() {
+    if (!stepIsValid()) {
+      setError('Please fill all required fields in this step before continuing.');
+      setTouched(new Set(PROFILE_STEPS[step]!.fields.map((f) => f.key)));
+      return;
+    }
+    setError(null);
+    if (!isLastStep) setStep((x) => x + 1);
+  }
+
+  function goPrev() {
+    setError(null);
+    setStep((x) => Math.max(0, x - 1));
+  }
+
   if (loading) return <p className="text-subtle">Loading…</p>;
   if (!student) return <p className="text-danger">{error ?? 'Profile not found'}</p>;
 
   const locked = student.verificationStatus === 'SUBMITTED';
   const canSubmit =
-    student.verificationStatus === 'PENDING' || student.verificationStatus === 'REJECTED';
+    (student.verificationStatus === 'PENDING' || student.verificationStatus === 'REJECTED') &&
+    completion.overall >= 100;
 
   return (
-    <div className="space-y-5 pb-28">
+    <div className="space-y-5 pb-32">
       <header className="space-y-1">
         <Link href="/me/profile" className="text-sm text-primary-600">
           ← Profile
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold text-strong">Edit details</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-strong">Complete your profile</h1>
         <p className="text-sm text-subtle">
           {student.user.fullName} · {student.rollNumber}
         </p>
       </header>
+
+      {/* Overall progress */}
+      <Card className="space-y-3 p-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-strong">Profile completion</p>
+          <span className="text-sm font-semibold text-primary-600">{completion.overall}%</span>
+        </div>
+        <div className="h-2.5 overflow-hidden rounded-pill bg-app">
+          <div
+            className="h-full rounded-pill bg-gradient-primary transition-all"
+            style={{ width: `${completion.overall}%` }}
+          />
+        </div>
+        <div className="flex justify-between text-[10px] font-medium uppercase text-subtle">
+          {PROFILE_STEPS.map((s, i) => (
+            <button
+              key={s.key}
+              onClick={() => setStep(i)}
+              className={`flex flex-col items-center gap-1 ${i === step ? 'text-primary-600' : ''}`}
+            >
+              <span
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
+                  completion.steps[i]!.percentage >= 100
+                    ? 'bg-success text-white'
+                    : i === step
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-app text-subtle'
+                }`}
+              >
+                {completion.steps[i]!.percentage >= 100 ? '✓' : i + 1}
+              </span>
+              <span className="hidden sm:inline">{s.label}</span>
+            </button>
+          ))}
+        </div>
+      </Card>
 
       {/* Verification status */}
       <Card className="space-y-3 p-4">
@@ -105,9 +183,6 @@ export default function StudentProfilePage() {
           <p className="text-sm font-medium text-strong">Verification</p>
           <StatusBadge status={student.verificationStatus} />
         </div>
-
-        {/* Résumé upload status (the only thing students upload themselves —
-            academic/personal details are managed by the placement office). */}
         <div>
           <div className="flex items-center justify-between text-xs text-subtle">
             <span>Résumé upload</span>
@@ -122,228 +197,297 @@ export default function StudentProfilePage() {
             {resumeUploaded ? 'Manage your résumé →' : 'Upload your résumé PDF →'}
           </Link>
         </div>
-
         {student.verificationStatus === 'REJECTED' && student.rejectionReason && (
           <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
             Officer feedback: {student.rejectionReason}
           </p>
         )}
-        {student.verificationStatus === 'SUBMITTED' && (
-          <p className="text-xs text-subtle">
-            Submitted for review — your officer will verify it shortly.
-          </p>
-        )}
-        {student.verificationStatus === 'VERIFIED' && (
-          <p className="text-xs text-success">
-            Verified ✓ — editing your details will send it back for re-verification.
-          </p>
-        )}
-
-        {canSubmit && (
-          <Button className="w-full" onClick={onSubmit} disabled={submitting}>
-            {submitting ? 'Submitting…' : 'Submit for verification'}
-          </Button>
-        )}
       </Card>
 
-      {/* Personal */}
-      <Section title="Personal">
-        <Text
-          label="Full name"
-          value={form.fullName ?? ''}
-          onChange={(v) => patch({ fullName: v })}
-        />
-        <Text label="Phone" value={form.phone ?? ''} onChange={(v) => patch({ phone: v })} />
-        <Text
-          label="Personal email"
-          type="email"
-          value={form.personalEmail ?? ''}
-          onChange={(v) => patch({ personalEmail: v })}
-          placeholder="you@gmail.com"
-        />
-        <Text
-          label="LinkedIn"
-          value={form.linkedinUrl ?? ''}
-          onChange={(v) => patch({ linkedinUrl: v })}
-          placeholder="https://linkedin.com/in/…"
-        />
-        <Text
-          label="Date of birth"
-          type="date"
-          value={form.dateOfBirth ?? ''}
-          onChange={(v) => patch({ dateOfBirth: v })}
-        />
-      </Section>
+      {/* Step form */}
+      <Card className="space-y-4 p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium uppercase text-subtle">
+              Step {step + 1} of {PROFILE_STEPS.length}
+            </p>
+            <h2 className="text-lg font-semibold text-strong">{currentStep.label}</h2>
+          </div>
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+              completion.steps[step]!.percentage >= 100
+                ? 'bg-success/15 text-success'
+                : 'bg-tint-cream text-tint-cream-fg'
+            }`}
+          >
+            {completion.steps[step]!.completed}/{completion.steps[step]!.total} done
+          </span>
+        </div>
 
-      {/* Academic */}
-      <Section title="Academic">
-        <Text
-          label="Course"
-          value={form.course ?? ''}
-          onChange={(v) => patch({ course: v })}
-          placeholder="B.Tech"
-        />
-        <Text
-          label="Branch"
-          value={form.branch ?? ''}
-          onChange={(v) => patch({ branch: v })}
-          placeholder="Computer Science"
-        />
-        <Text
-          label="Enrollment number"
-          value={form.enrollmentNumber ?? ''}
-          onChange={(v) => patch({ enrollmentNumber: v })}
-        />
-        <div className="grid grid-cols-2 gap-2">
-          <Text
-            label="Graduation year"
-            type="number"
-            value={numStr(form.graduationYear)}
-            onChange={(v) => patch({ graduationYear: toNum(v) })}
-          />
-          <Text
-            label="Percentage (%)"
-            type="number"
-            value={numStr(form.cgpa)}
-            onChange={(v) => patch({ cgpa: toNum(v) })}
-          />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {currentStep.fields.map((field) => (
+            <FieldInput
+              key={field.key}
+              field={field}
+              value={form[field.key as keyof UpdateOwnProfileInput]}
+              onChange={(v) => patch({ [field.key]: v } as Partial<UpdateOwnProfileInput>)}
+              showError={
+                touched.has(field.key) &&
+                field.required &&
+                !isProfileFieldFilled(form[field.key as keyof UpdateOwnProfileInput], field.type)
+              }
+            />
+          ))}
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Text
-            label="Active backlogs"
-            type="number"
-            value={numStr(form.activeBacklogs)}
-            onChange={(v) => patch({ activeBacklogs: toNum(v) })}
-          />
-          <Text
-            label="Total backlogs"
-            type="number"
-            value={numStr(form.totalBacklogs)}
-            onChange={(v) => patch({ totalBacklogs: toNum(v) })}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Text
-            label="10th %"
-            type="number"
-            value={numStr(form.tenthPercentage)}
-            onChange={(v) => patch({ tenthPercentage: toNum(v) })}
-          />
-          <Text
-            label="12th %"
-            type="number"
-            value={numStr(form.twelfthPercentage)}
-            onChange={(v) => patch({ twelfthPercentage: toNum(v) })}
-          />
-          <Text
-            label="UG %"
-            type="number"
-            value={numStr(form.ugPercentage)}
-            onChange={(v) => patch({ ugPercentage: toNum(v) })}
-          />
-        </div>
-      </Section>
-
-      {/* Semester marks */}
-      <Section title="Semester marks">
-        <p className="text-xs text-subtle">
-          Add your SGPA/percentage per semester. These show on your profile and resume.
-        </p>
-        <SemesterEditor
-          rows={form.semesterMarks ?? []}
-          onChange={(rows) => patch({ semesterMarks: rows })}
-        />
-      </Section>
+      </Card>
 
       {error && <p className="text-sm text-danger">{error}</p>}
-
+      {saved && <p className="text-sm text-success">Saved ✓</p>}
       {locked && (
         <p className="text-xs text-subtle">
           Your profile is awaiting review. You can still edit and re-save.
         </p>
       )}
 
-      {/* Account */}
+      {/* Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button variant="ghost" onClick={goPrev} disabled={step === 0}>
+          Previous
+        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onSave} loading={saving}>
+            {saving ? 'Saving…' : 'Save progress'}
+          </Button>
+          {!isLastStep ? (
+            <Button onClick={goNext}>Next step</Button>
+          ) : canSubmit ? (
+            <Button onClick={onSubmit} loading={submitting}>
+              {submitting ? 'Submitting…' : 'Submit for verification'}
+            </Button>
+          ) : (
+            <Button disabled>Complete all steps to submit</Button>
+          )}
+        </div>
+      </div>
+
       <Button variant="outline" className="w-full" onClick={signOut}>
         Sign out
       </Button>
-
-      {/* Fixed save footer (contextual — this sub-screen hides the bottom nav) */}
-      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md border-t border-border bg-white/95 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onSave}
-            disabled={saving}
-            className="press flex-1 rounded-pill bg-gradient-primary py-3 text-sm font-semibold text-white shadow-nav disabled:opacity-60"
-          >
-            {saving ? 'Saving…' : 'Save profile'}
-          </button>
-          {saved && <span className="pr-1 text-sm font-medium text-success">Saved ✓</span>}
-        </div>
-      </div>
     </div>
   );
 }
 
-// ── helpers ──
+function FieldInput({
+  field,
+  value,
+  onChange,
+  showError,
+}: {
+  field: (typeof PROFILE_STEPS)[number]['fields'][number];
+  value: unknown;
+  onChange: (v: unknown) => void;
+  showError?: boolean;
+}) {
+  const label = (
+    <span className="text-xs font-medium text-subtle">
+      {field.label}
+      {field.required && <span className="text-danger"> *</span>}
+    </span>
+  );
+
+  if (field.key === 'gender') {
+    return (
+      <label className="block space-y-1">
+        {label}
+        <select
+          value={(value as string) ?? ''}
+          onChange={(e) => onChange(e.target.value || undefined)}
+          className={inputCls(showError)}
+        >
+          <option value="">Select gender</option>
+          <option value="MALE">Male</option>
+          <option value="FEMALE">Female</option>
+          <option value="OTHER">Other</option>
+        </select>
+      </label>
+    );
+  }
+
+  if (field.type === 'boolean') {
+    return (
+      <label className="flex items-center gap-2 rounded-md border border-border bg-white p-3">
+        <input
+          type="checkbox"
+          checked={!!value}
+          onChange={(e) => onChange(e.target.checked)}
+          className="h-4 w-4 accent-primary-600"
+        />
+        <span className="text-sm text-body">
+          {field.label}
+          {field.required && <span className="text-danger"> *</span>}
+        </span>
+      </label>
+    );
+  }
+
+  const type =
+    field.type === 'number' || field.type === 'year'
+      ? 'number'
+      : field.key === 'dateOfBirth'
+        ? 'date'
+        : field.type === 'email'
+          ? 'email'
+          : field.type === 'phone'
+            ? 'tel'
+            : 'text';
+
+  return (
+    <label className="block space-y-1">
+      {label}
+      <input
+        type={type}
+        value={(value as string | number) ?? ''}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (type === 'number') {
+            onChange(v === '' ? undefined : Number(v));
+          } else {
+            onChange(v || undefined);
+          }
+        }}
+        placeholder={field.placeholder}
+        className={inputCls(showError)}
+      />
+    </label>
+  );
+}
+
+function inputCls(error?: boolean) {
+  return `h-10 w-full rounded-md border bg-white px-3 text-sm outline-none focus:border-primary-400 ${
+    error ? 'border-danger' : 'border-border'
+  }`;
+}
+
 function toForm(s: Student): UpdateOwnProfileInput {
+  const str = (v: string | null) => v ?? '';
+  const num = (v: number | null) => (v == null ? undefined : v);
+  const bool = (v: boolean | null) => (v == null ? undefined : v);
   return {
     fullName: s.user.fullName,
     phone: s.user.phone ?? '',
-    enrollmentNumber: s.enrollmentNumber ?? '',
+    enrollmentNumber: str(s.enrollmentNumber),
     course: s.course,
     branch: s.branch,
     graduationYear: s.graduationYear,
-    cgpa: s.cgpa ?? undefined,
+    cgpa: num(s.cgpa),
     activeBacklogs: s.activeBacklogs,
     totalBacklogs: s.totalBacklogs,
     dateOfBirth: s.dateOfBirth ? s.dateOfBirth.slice(0, 10) : '',
-    gender: s.gender ?? '',
-    personalEmail: s.personalEmail ?? '',
-    linkedinUrl: s.linkedinUrl ?? '',
-    tenthPercentage: s.tenthPercentage ?? undefined,
-    twelfthPercentage: s.twelfthPercentage ?? undefined,
-    ugPercentage: s.ugPercentage ?? undefined,
+    gender: str(s.gender),
+    personalEmail: str(s.personalEmail),
+    linkedinUrl: str(s.linkedinUrl),
+    tenthPercentage: num(s.tenthPercentage),
+    twelfthPercentage: num(s.twelfthPercentage),
+    ugPercentage: num(s.ugPercentage),
     semesterMarks: s.semesterMarks ?? [],
+    nationality: str(s.nationality),
+    panNumber: str(s.panNumber),
+    currentAddress: str(s.currentAddress),
+    permanentAddress: str(s.permanentAddress),
+    city: str(s.city),
+    state: str(s.state),
+    pinCode: str(s.pinCode),
+    fatherName: str(s.fatherName),
+    fatherOccupation: str(s.fatherOccupation),
+    fatherPhone: str(s.fatherPhone),
+    department: str(s.department),
+    specialization: str(s.specialization),
+    admissionYear: num(s.admissionYear),
+    currentSemester: num(s.currentSemester),
+    hasArrearHistory: bool(s.hasArrearHistory),
+    tenthBoard: str(s.tenthBoard),
+    tenthSchool: str(s.tenthSchool),
+    tenthPassingYear: num(s.tenthPassingYear),
+    twelfthBoard: str(s.twelfthBoard),
+    twelfthSchool: str(s.twelfthSchool),
+    twelfthStream: str(s.twelfthStream),
+    twelfthPassingYear: num(s.twelfthPassingYear),
+    ugCollege: str(s.ugCollege),
+    ugDegree: str(s.ugDegree),
+    ugSpecialization: str(s.ugSpecialization),
+    languagesKnown: str(s.languagesKnown),
+    communicationSkillRating: num(s.communicationSkillRating),
+    higherStudiesPlanned: bool(s.higherStudiesPlanned),
+    entrepreneurshipInterest: bool(s.entrepreneurshipInterest),
   };
 }
 
-// Only send fields with a meaningful value; strip empty strings so optional
-// fields aren't rejected by the API's string validators.
 function clean(form: UpdateOwnProfileInput): UpdateOwnProfileInput {
   const out: UpdateOwnProfileInput = {};
-  if (form.fullName?.trim()) out.fullName = form.fullName.trim();
-  if (form.phone?.trim()) out.phone = form.phone.trim();
-  if (form.enrollmentNumber?.trim()) out.enrollmentNumber = form.enrollmentNumber.trim();
-  if (form.course?.trim()) out.course = form.course.trim();
-  if (form.branch?.trim()) out.branch = form.branch.trim();
+  const str = (k: keyof UpdateOwnProfileInput) => {
+    const v = form[k];
+    if (typeof v === 'string' && v.trim()) (out[k] as unknown) = v.trim();
+  };
+  const num = (k: keyof UpdateOwnProfileInput) => {
+    const v = form[k];
+    if (v !== undefined && v !== '' && v !== null) (out[k] as unknown) = Number(v);
+  };
+  const bool = (k: keyof UpdateOwnProfileInput) => {
+    const v = form[k];
+    if (typeof v === 'boolean') (out[k] as unknown) = v;
+  };
+
+  str('fullName');
+  str('phone');
+  str('enrollmentNumber');
+  str('course');
+  str('branch');
   if (form.graduationYear != null) out.graduationYear = form.graduationYear;
-  if (form.cgpa != null) out.cgpa = form.cgpa;
+  num('cgpa');
   if (form.activeBacklogs != null) out.activeBacklogs = form.activeBacklogs;
   if (form.totalBacklogs != null) out.totalBacklogs = form.totalBacklogs;
-  if (form.dateOfBirth?.trim()) out.dateOfBirth = form.dateOfBirth.trim();
-  if (form.gender?.trim()) out.gender = form.gender.trim();
-  if (form.personalEmail?.trim()) out.personalEmail = form.personalEmail.trim();
-  if (form.linkedinUrl?.trim()) out.linkedinUrl = form.linkedinUrl.trim();
-  if (form.tenthPercentage != null) out.tenthPercentage = form.tenthPercentage;
-  if (form.twelfthPercentage != null) out.twelfthPercentage = form.twelfthPercentage;
-  if (form.ugPercentage != null) out.ugPercentage = form.ugPercentage;
+  str('dateOfBirth');
+  str('gender');
+  str('personalEmail');
+  str('linkedinUrl');
+  num('tenthPercentage');
+  num('twelfthPercentage');
+  num('ugPercentage');
   if (form.semesterMarks) {
-    // Keep only rows with both a label and a score.
-    const rows = form.semesterMarks.filter((m) => m.label.trim() && m.score.trim());
-    out.semesterMarks = rows;
+    out.semesterMarks = form.semesterMarks.filter((m) => m.label.trim() && m.score.trim());
   }
-  return out;
-}
 
-function numStr(n: number | undefined): string {
-  return n == null ? '' : String(n);
-}
-function toNum(v: string): number | undefined {
-  const t = v.trim();
-  if (t === '') return undefined;
-  const n = Number(t);
-  return Number.isNaN(n) ? undefined : n;
+  str('nationality');
+  str('panNumber');
+  str('currentAddress');
+  str('permanentAddress');
+  str('city');
+  str('state');
+  str('pinCode');
+  str('fatherName');
+  str('fatherOccupation');
+  str('fatherPhone');
+  str('department');
+  str('specialization');
+  num('admissionYear');
+  num('currentSemester');
+  bool('hasArrearHistory');
+  str('tenthBoard');
+  str('tenthSchool');
+  num('tenthPassingYear');
+  str('twelfthBoard');
+  str('twelfthSchool');
+  str('twelfthStream');
+  num('twelfthPassingYear');
+  str('ugCollege');
+  str('ugDegree');
+  str('ugSpecialization');
+  str('languagesKnown');
+  num('communicationSkillRating');
+  bool('higherStudiesPlanned');
+  bool('entrepreneurshipInterest');
+
+  return out;
 }
 
 const STATUS_CLASS: Record<string, string> = {
@@ -361,95 +505,5 @@ function StatusBadge({ status }: { status: string }) {
     >
       {status}
     </span>
-  );
-}
-
-function SemesterEditor({
-  rows,
-  onChange,
-}: {
-  rows: { label: string; score: string }[];
-  onChange: (rows: { label: string; score: string }[]) => void;
-}) {
-  function update(i: number, patch: Partial<{ label: string; score: string }>) {
-    onChange(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
-  }
-  function add() {
-    onChange([...rows, { label: `Semester ${rows.length + 1}`, score: '' }]);
-  }
-  function remove(i: number) {
-    onChange(rows.filter((_, idx) => idx !== i));
-  }
-  return (
-    <div className="space-y-2">
-      {rows.map((r, i) => (
-        <div key={i} className="flex items-end gap-2">
-          <div className="flex-1 space-y-1">
-            <label className="text-xs font-medium text-subtle">Label</label>
-            <input
-              value={r.label}
-              onChange={(e) => update(i, { label: e.target.value })}
-              placeholder="Semester 1"
-              className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
-            />
-          </div>
-          <div className="w-24 space-y-1">
-            <label className="text-xs font-medium text-subtle">Score</label>
-            <input
-              value={r.score}
-              onChange={(e) => update(i, { score: e.target.value })}
-              placeholder="8.4"
-              className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => remove(i)}
-            className="mb-2 text-xs text-danger hover:underline"
-          >
-            Remove
-          </button>
-        </div>
-      ))}
-      <Button type="button" size="sm" variant="outline" onClick={add}>
-        Add semester
-      </Button>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <Card className="space-y-3 p-4">
-      <p className="text-sm font-semibold text-strong">{title}</p>
-      {children}
-    </Card>
-  );
-}
-
-function Text({
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = 'text',
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  type?: string;
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-subtle">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
-      />
-    </div>
   );
 }

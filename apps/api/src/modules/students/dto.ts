@@ -134,6 +134,37 @@ export class UpdateStudentDto {
   @ValidateNested({ each: true })
   @Type(() => SemesterMarkDto)
   semesterMarks?: SemesterMarkDto[];
+
+  // Extended profile fields (also editable by officers).
+  @IsOptional() @IsString() nationality?: string;
+  @IsOptional() @IsString() panNumber?: string;
+  @IsOptional() @IsString() currentAddress?: string;
+  @IsOptional() @IsString() permanentAddress?: string;
+  @IsOptional() @IsString() city?: string;
+  @IsOptional() @IsString() state?: string;
+  @IsOptional() @IsString() pinCode?: string;
+  @IsOptional() @IsString() fatherName?: string;
+  @IsOptional() @IsString() fatherOccupation?: string;
+  @IsOptional() @IsString() fatherPhone?: string;
+  @IsOptional() @IsString() department?: string;
+  @IsOptional() @IsString() specialization?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1950) @Max(2100) admissionYear?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(20) currentSemester?: number;
+  @IsOptional() @IsBoolean() hasArrearHistory?: boolean;
+  @IsOptional() @IsString() tenthBoard?: string;
+  @IsOptional() @IsString() tenthSchool?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1950) @Max(2100) tenthPassingYear?: number;
+  @IsOptional() @IsString() twelfthBoard?: string;
+  @IsOptional() @IsString() twelfthSchool?: string;
+  @IsOptional() @IsString() twelfthStream?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1950) @Max(2100) twelfthPassingYear?: number;
+  @IsOptional() @IsString() ugCollege?: string;
+  @IsOptional() @IsString() ugDegree?: string;
+  @IsOptional() @IsString() ugSpecialization?: string;
+  @IsOptional() @IsString() languagesKnown?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(5) communicationSkillRating?: number;
+  @IsOptional() @IsBoolean() higherStudiesPlanned?: boolean;
+  @IsOptional() @IsBoolean() entrepreneurshipInterest?: boolean;
 }
 
 // Fields a student may edit on their own record. rollNumber is intentionally
@@ -170,6 +201,37 @@ export class UpdateOwnProfileDto {
   @ValidateNested({ each: true })
   @Type(() => SemesterMarkDto)
   semesterMarks?: SemesterMarkDto[];
+
+  // Extended profile fields (collected via the student step-form wizard).
+  @IsOptional() @IsString() nationality?: string;
+  @IsOptional() @IsString() panNumber?: string;
+  @IsOptional() @IsString() currentAddress?: string;
+  @IsOptional() @IsString() permanentAddress?: string;
+  @IsOptional() @IsString() city?: string;
+  @IsOptional() @IsString() state?: string;
+  @IsOptional() @IsString() pinCode?: string;
+  @IsOptional() @IsString() fatherName?: string;
+  @IsOptional() @IsString() fatherOccupation?: string;
+  @IsOptional() @IsString() fatherPhone?: string;
+  @IsOptional() @IsString() department?: string;
+  @IsOptional() @IsString() specialization?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1950) @Max(2100) admissionYear?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(20) currentSemester?: number;
+  @IsOptional() @IsBoolean() hasArrearHistory?: boolean;
+  @IsOptional() @IsString() tenthBoard?: string;
+  @IsOptional() @IsString() tenthSchool?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1950) @Max(2100) tenthPassingYear?: number;
+  @IsOptional() @IsString() twelfthBoard?: string;
+  @IsOptional() @IsString() twelfthSchool?: string;
+  @IsOptional() @IsString() twelfthStream?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1950) @Max(2100) twelfthPassingYear?: number;
+  @IsOptional() @IsString() ugCollege?: string;
+  @IsOptional() @IsString() ugDegree?: string;
+  @IsOptional() @IsString() ugSpecialization?: string;
+  @IsOptional() @IsString() languagesKnown?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(5) communicationSkillRating?: number;
+  @IsOptional() @IsBoolean() higherStudiesPlanned?: boolean;
+  @IsOptional() @IsBoolean() entrepreneurshipInterest?: boolean;
 }
 
 export class VerifyStudentDto {

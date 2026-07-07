@@ -210,6 +210,38 @@ model Student {
   ugPercentage       Decimal?           @db.Decimal(5, 2) @map("ug_percentage")
   // Semester-wise marks: [{ label, score }] as JSON for flexibility.
   semesterMarks      Json?              @map("semester_marks")
+
+  // Extended profile data collected through the student step-form wizard.
+  nationality              String?  @map("nationality")
+  panNumber                String?  @map("pan_number")
+  currentAddress           String?  @map("current_address")
+  permanentAddress         String?  @map("permanent_address")
+  city                     String?
+  state                    String?
+  pinCode                  String?  @map("pin_code")
+  fatherName               String?  @map("father_name")
+  fatherOccupation         String?  @map("father_occupation")
+  fatherPhone              String?  @map("father_phone")
+  department               String?
+  specialization           String?
+  admissionYear            Int?     @map("admission_year")
+  currentSemester          Int?     @map("current_semester")
+  hasArrearHistory         Boolean? @map("has_arrear_history")
+  tenthBoard               String?  @map("tenth_board")
+  tenthSchool              String?  @map("tenth_school")
+  tenthPassingYear         Int?     @map("tenth_passing_year")
+  twelfthBoard             String?  @map("twelfth_board")
+  twelfthSchool            String?  @map("twelfth_school")
+  twelfthStream            String?  @map("twelfth_stream")
+  twelfthPassingYear       Int?     @map("twelfth_passing_year")
+  ugCollege                String?  @map("ug_college")
+  ugDegree                 String?  @map("ug_degree")
+  ugSpecialization         String?  @map("ug_specialization")
+  languagesKnown           String?  @map("languages_known")
+  communicationSkillRating Int?     @map("communication_skill_rating")
+  higherStudiesPlanned     Boolean? @map("higher_studies_planned")
+  entrepreneurshipInterest Boolean? @map("entrepreneurship_interest")
+
   verificationStatus VerificationStatus @default(PENDING) @map("verification_status")
   verifiedById       String?            @map("verified_by_id")
   verifiedAt         DateTime?          @map("verified_at")

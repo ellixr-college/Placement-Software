@@ -1,5 +1,6 @@
 'use client';
 
+import type { StepCompletion } from '@ellixr/shared';
 import { api, apiList } from './api';
 
 export interface StudentUser {
@@ -35,10 +36,40 @@ export interface Student {
   twelfthPercentage: number | null;
   ugPercentage: number | null;
   semesterMarks: SemesterMark[] | null;
+  nationality: string | null;
+  panNumber: string | null;
+  currentAddress: string | null;
+  permanentAddress: string | null;
+  city: string | null;
+  state: string | null;
+  pinCode: string | null;
+  fatherName: string | null;
+  fatherOccupation: string | null;
+  fatherPhone: string | null;
+  department: string | null;
+  specialization: string | null;
+  admissionYear: number | null;
+  currentSemester: number | null;
+  hasArrearHistory: boolean | null;
+  tenthBoard: string | null;
+  tenthSchool: string | null;
+  tenthPassingYear: number | null;
+  twelfthBoard: string | null;
+  twelfthSchool: string | null;
+  twelfthStream: string | null;
+  twelfthPassingYear: number | null;
+  ugCollege: string | null;
+  ugDegree: string | null;
+  ugSpecialization: string | null;
+  languagesKnown: string | null;
+  communicationSkillRating: number | null;
+  higherStudiesPlanned: boolean | null;
+  entrepreneurshipInterest: boolean | null;
   verificationStatus: string;
   verifiedAt: string | null;
   rejectionReason: string | null;
   profileCompletion: number;
+  profileSteps: StepCompletion[];
   resumeComplete: boolean;
   resumeMissing?: string[];
   // Officer list: "details complete" = 10th, 12th and a degree % on record.
@@ -75,6 +106,35 @@ export interface ExtendedProfileFields {
   twelfthPercentage?: number;
   ugPercentage?: number;
   semesterMarks?: SemesterMark[];
+  nationality?: string;
+  panNumber?: string;
+  currentAddress?: string;
+  permanentAddress?: string;
+  city?: string;
+  state?: string;
+  pinCode?: string;
+  fatherName?: string;
+  fatherOccupation?: string;
+  fatherPhone?: string;
+  department?: string;
+  specialization?: string;
+  admissionYear?: number;
+  currentSemester?: number;
+  hasArrearHistory?: boolean;
+  tenthBoard?: string;
+  tenthSchool?: string;
+  tenthPassingYear?: number;
+  twelfthBoard?: string;
+  twelfthSchool?: string;
+  twelfthStream?: string;
+  twelfthPassingYear?: number;
+  ugCollege?: string;
+  ugDegree?: string;
+  ugSpecialization?: string;
+  languagesKnown?: string;
+  communicationSkillRating?: number;
+  higherStudiesPlanned?: boolean;
+  entrepreneurshipInterest?: boolean;
 }
 
 export interface CreateStudentInput extends ExtendedProfileFields {

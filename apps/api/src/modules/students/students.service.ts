@@ -40,6 +40,7 @@ import {
   UpdateStudentDto,
   VerifyStudentDto,
 } from './dto';
+import { computeProfileCompletion, type StepCompletion } from '@ellixr/shared';
 
 // Every student is created with this shared default password so officers can
 // hand it out in bulk (students change it later from their profile). Demo/V1
@@ -560,8 +561,7 @@ export class StudentsService {
         },
         include: { user: true },
       });
-      const resume = await tx.resume.findUnique({ where: { studentId: student.id } });
-      const completion = computeCompletion(next, resume?.fileUrl ?? null);
+      const { overall: completion } = computeCompletion(next);
       if (completion !== next.profileCompletion) {
         return tx.student.update({
           where: { id: student.id },
@@ -752,6 +752,35 @@ export class StudentsService {
     twelfthPercentage: Prisma.Decimal | null;
     ugPercentage: Prisma.Decimal | null;
     semesterMarks: Prisma.JsonValue;
+    nationality: string | null;
+    panNumber: string | null;
+    currentAddress: string | null;
+    permanentAddress: string | null;
+    city: string | null;
+    state: string | null;
+    pinCode: string | null;
+    fatherName: string | null;
+    fatherOccupation: string | null;
+    fatherPhone: string | null;
+    department: string | null;
+    specialization: string | null;
+    admissionYear: number | null;
+    currentSemester: number | null;
+    hasArrearHistory: boolean | null;
+    tenthBoard: string | null;
+    tenthSchool: string | null;
+    tenthPassingYear: number | null;
+    twelfthBoard: string | null;
+    twelfthSchool: string | null;
+    twelfthStream: string | null;
+    twelfthPassingYear: number | null;
+    ugCollege: string | null;
+    ugDegree: string | null;
+    ugSpecialization: string | null;
+    languagesKnown: string | null;
+    communicationSkillRating: number | null;
+    higherStudiesPlanned: boolean | null;
+    entrepreneurshipInterest: boolean | null;
     verificationStatus: string;
     verifiedAt: Date | null;
     rejectionReason: string | null;
@@ -768,6 +797,7 @@ export class StudentsService {
     };
     resume?: { fileUrl: string } | null;
   }) {
+    const { overall: profileCompletion, steps: profileSteps } = computeCompletion(s);
     return {
       id: s.id,
       rollNumber: s.rollNumber,
@@ -787,10 +817,40 @@ export class StudentsService {
       twelfthPercentage: s.twelfthPercentage != null ? Number(s.twelfthPercentage) : null,
       ugPercentage: s.ugPercentage != null ? Number(s.ugPercentage) : null,
       semesterMarks: s.semesterMarks,
+      nationality: s.nationality,
+      panNumber: s.panNumber,
+      currentAddress: s.currentAddress,
+      permanentAddress: s.permanentAddress,
+      city: s.city,
+      state: s.state,
+      pinCode: s.pinCode,
+      fatherName: s.fatherName,
+      fatherOccupation: s.fatherOccupation,
+      fatherPhone: s.fatherPhone,
+      department: s.department,
+      specialization: s.specialization,
+      admissionYear: s.admissionYear,
+      currentSemester: s.currentSemester,
+      hasArrearHistory: s.hasArrearHistory,
+      tenthBoard: s.tenthBoard,
+      tenthSchool: s.tenthSchool,
+      tenthPassingYear: s.tenthPassingYear,
+      twelfthBoard: s.twelfthBoard,
+      twelfthSchool: s.twelfthSchool,
+      twelfthStream: s.twelfthStream,
+      twelfthPassingYear: s.twelfthPassingYear,
+      ugCollege: s.ugCollege,
+      ugDegree: s.ugDegree,
+      ugSpecialization: s.ugSpecialization,
+      languagesKnown: s.languagesKnown,
+      communicationSkillRating: s.communicationSkillRating,
+      higherStudiesPlanned: s.higherStudiesPlanned,
+      entrepreneurshipInterest: s.entrepreneurshipInterest,
       verificationStatus: s.verificationStatus,
       verifiedAt: s.verifiedAt,
       rejectionReason: s.rejectionReason,
-      profileCompletion: s.profileCompletion,
+      profileCompletion,
+      profileSteps,
       isActive: s.isActive,
       createdAt: s.createdAt,
       resumeComplete: !!s.resume?.fileUrl,
@@ -806,27 +866,100 @@ export class StudentsService {
   }
 }
 
-// Weighted profile-completion checklist (0–100). Academic fields live on the
-// Student row; the résumé PDF upload contributes the remaining weight.
-function computeCompletion(
-  s: {
-    course: string;
-    branch: string;
-    graduationYear: number;
-    cgpa: Prisma.Decimal | null;
-    enrollmentNumber: string | null;
-    user: { phone: string | null };
-  },
-  resumeFileUrl: string | null,
-): number {
-  let score = 0;
-  if (s.user.phone) score += 15;
-  if (s.enrollmentNumber) score += 10;
-  if (s.course && s.branch && s.graduationYear) score += 20;
-  if (s.cgpa != null) score += 10;
-  if (resumeFileUrl) score += 45;
-
-  return Math.min(100, score);
+// Profile-completion checklist (0–100). Mirrors the student step-form wizard
+// fields in packages/shared/src/profile.ts.
+function computeCompletion(s: {
+  user: { fullName: string; phone: string | null };
+  personalEmail: string | null;
+  gender: string | null;
+  dateOfBirth: Date | null;
+  nationality: string | null;
+  panNumber: string | null;
+  linkedinUrl: string | null;
+  currentAddress: string | null;
+  permanentAddress: string | null;
+  city: string | null;
+  state: string | null;
+  pinCode: string | null;
+  fatherName: string | null;
+  fatherOccupation: string | null;
+  fatherPhone: string | null;
+  course: string;
+  branch: string;
+  department: string | null;
+  specialization: string | null;
+  admissionYear: number | null;
+  graduationYear: number;
+  currentSemester: number | null;
+  cgpa: Prisma.Decimal | null;
+  activeBacklogs: number;
+  totalBacklogs: number;
+  hasArrearHistory: boolean | null;
+  tenthBoard: string | null;
+  tenthSchool: string | null;
+  tenthPassingYear: number | null;
+  tenthPercentage: Prisma.Decimal | null;
+  twelfthBoard: string | null;
+  twelfthSchool: string | null;
+  twelfthStream: string | null;
+  twelfthPassingYear: number | null;
+  twelfthPercentage: Prisma.Decimal | null;
+  ugCollege: string | null;
+  ugDegree: string | null;
+  ugSpecialization: string | null;
+  ugPercentage: Prisma.Decimal | null;
+  languagesKnown: string | null;
+  communicationSkillRating: number | null;
+  higherStudiesPlanned: boolean | null;
+  entrepreneurshipInterest: boolean | null;
+}): { overall: number; steps: StepCompletion[] } {
+  const profile: Record<string, unknown> = {
+    fullName: s.user.fullName,
+    phone: s.user.phone,
+    personalEmail: s.personalEmail,
+    gender: s.gender,
+    dateOfBirth: s.dateOfBirth ? s.dateOfBirth.toISOString().slice(0, 10) : null,
+    nationality: s.nationality,
+    panNumber: s.panNumber,
+    linkedinUrl: s.linkedinUrl,
+    currentAddress: s.currentAddress,
+    permanentAddress: s.permanentAddress,
+    city: s.city,
+    state: s.state,
+    pinCode: s.pinCode,
+    fatherName: s.fatherName,
+    fatherOccupation: s.fatherOccupation,
+    fatherPhone: s.fatherPhone,
+    course: s.course,
+    branch: s.branch,
+    department: s.department,
+    specialization: s.specialization,
+    admissionYear: s.admissionYear,
+    graduationYear: s.graduationYear,
+    currentSemester: s.currentSemester,
+    cgpa: s.cgpa != null ? Number(s.cgpa) : null,
+    activeBacklogs: s.activeBacklogs,
+    totalBacklogs: s.totalBacklogs,
+    hasArrearHistory: s.hasArrearHistory,
+    tenthBoard: s.tenthBoard,
+    tenthSchool: s.tenthSchool,
+    tenthPassingYear: s.tenthPassingYear,
+    tenthPercentage: s.tenthPercentage != null ? Number(s.tenthPercentage) : null,
+    twelfthBoard: s.twelfthBoard,
+    twelfthSchool: s.twelfthSchool,
+    twelfthStream: s.twelfthStream,
+    twelfthPassingYear: s.twelfthPassingYear,
+    twelfthPercentage: s.twelfthPercentage != null ? Number(s.twelfthPercentage) : null,
+    ugCollege: s.ugCollege,
+    ugDegree: s.ugDegree,
+    ugSpecialization: s.ugSpecialization,
+    ugPercentage: s.ugPercentage != null ? Number(s.ugPercentage) : null,
+    languagesKnown: s.languagesKnown,
+    communicationSkillRating: s.communicationSkillRating,
+    higherStudiesPlanned: s.higherStudiesPlanned,
+    entrepreneurshipInterest: s.entrepreneurshipInterest,
+  };
+  return computeProfileCompletion(profile);
 }
 
 /** Minimal RFC-4180-ish CSV parser: handles quoted fields, commas, and CRLF. */

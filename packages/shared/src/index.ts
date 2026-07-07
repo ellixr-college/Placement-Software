@@ -2,3 +2,4 @@ export * from './enums';
 export * from './api';
 export * from './auth.schemas';
 export * from './validation';
+export * from './profile';
