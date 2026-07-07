@@ -59,7 +59,13 @@ export interface PipelineEntry {
   stage: string;
   appliedAt: string;
   offerCtc: number | null;
-  student: { id: string; rollNumber: string; fullName: string; branch: string; cgpa: number | null };
+  student: {
+    id: string;
+    rollNumber: string;
+    fullName: string;
+    branch: string;
+    cgpa: number | null;
+  };
 }
 
 export const ATS_STAGES = [
@@ -102,7 +108,14 @@ export function changeStage(
 
 export function addInterview(
   id: string,
-  input: { roundName: string; scheduledAt?: string; mode?: string; location?: string; result?: string; feedback?: string },
+  input: {
+    roundName: string;
+    scheduledAt?: string;
+    mode?: string;
+    location?: string;
+    result?: string;
+    feedback?: string;
+  },
 ): Promise<InterviewRound> {
   return api(`/applications/${id}/interviews`, { method: 'POST', body: JSON.stringify(input) });
 }
@@ -110,7 +123,16 @@ export function addInterview(
 export function updateInterview(
   id: string,
   roundId: string,
-  input: { result?: string; feedback?: string; scheduledAt?: string; mode?: string; location?: string },
+  input: {
+    result?: string;
+    feedback?: string;
+    scheduledAt?: string;
+    mode?: string;
+    location?: string;
+  },
 ): Promise<InterviewRound> {
-  return api(`/applications/${id}/interviews/${roundId}`, { method: 'PATCH', body: JSON.stringify(input) });
+  return api(`/applications/${id}/interviews/${roundId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
 }

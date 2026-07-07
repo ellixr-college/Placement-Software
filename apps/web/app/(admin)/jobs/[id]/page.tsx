@@ -108,17 +108,29 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         return;
       }
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const header = ['Reg No', 'Name', 'Email', 'Mobile', 'DOB', 'Resume link', 'Stage', 'Applied on'];
-      const csv = [header, ...rows.map((r) => [
-        r.rollNumber,
-        r.fullName,
-        r.email,
-        r.phone ?? '',
-        r.dateOfBirth ? new Date(r.dateOfBirth).toLocaleDateString() : '',
-        r.resumeSlug ? `${origin}/r/${r.resumeSlug}` : '',
-        r.stage,
-        new Date(r.appliedAt).toLocaleDateString(),
-      ])]
+      const header = [
+        'Reg No',
+        'Name',
+        'Email',
+        'Mobile',
+        'DOB',
+        'Resume link',
+        'Stage',
+        'Applied on',
+      ];
+      const csv = [
+        header,
+        ...rows.map((r) => [
+          r.rollNumber,
+          r.fullName,
+          r.email,
+          r.phone ?? '',
+          r.dateOfBirth ? new Date(r.dateOfBirth).toLocaleDateString() : '',
+          r.resumeSlug ? `${origin}/r/${r.resumeSlug}` : '',
+          r.stage,
+          new Date(r.appliedAt).toLocaleDateString(),
+        ]),
+      ]
         .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
         .join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -161,7 +173,9 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       : job.workMode.charAt(0) + job.workMode.slice(1).toLowerCase()
     : null;
   const company = job.companyName ?? job.company?.name ?? 'Company';
-  const chips = [job.jobType.replace(/_/g, ' '), workModeLabel, job.location].filter(Boolean) as string[];
+  const chips = [job.jobType.replace(/_/g, ' '), workModeLabel, job.location].filter(
+    Boolean,
+  ) as string[];
   // Platform jobs are owned by the Platform Admin — officers manage their own
   // applicants via the funnel but cannot edit, publish, or close the posting.
   const isPlatform = !!job.isPlatform;
@@ -170,21 +184,34 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <div className="flex items-center justify-between">
-        <Link href="/jobs" className="text-sm text-primary-600 hover:underline">← Jobs</Link>
+        <Link href="/jobs" className="text-sm text-primary-600 hover:underline">
+          ← Jobs
+        </Link>
         <div className="flex items-center gap-2">
           {!isPlatform && job.status !== 'CLOSED' && (
             <Link href={`/jobs/${id}/edit`}>
-              <Button variant="outline" size="sm">Edit</Button>
+              <Button variant="outline" size="sm">
+                Edit
+              </Button>
             </Link>
           )}
           {!isPlatform && job.status === 'DRAFT' && (
-            <Button size="sm" onClick={onPublish} disabled={busy}>Publish</Button>
+            <Button size="sm" onClick={onPublish} disabled={busy}>
+              Publish
+            </Button>
           )}
           {!isPlatform && job.status !== 'DRAFT' && (
-            <Button variant="outline" size="sm" onClick={exportApplicants} disabled={busy}>Export</Button>
+            <Button variant="outline" size="sm" onClick={exportApplicants} disabled={busy}>
+              Export
+            </Button>
           )}
           {!isPlatform && (
-            <JobMenu canClose={job.status !== 'CLOSED'} onClose={onClose} onDelete={onDelete} disabled={busy} />
+            <JobMenu
+              canClose={job.status !== 'CLOSED'}
+              onClose={onClose}
+              onDelete={onDelete}
+              disabled={busy}
+            />
           )}
         </div>
       </div>
@@ -206,7 +233,12 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
             <p className="mt-0.5 text-sm font-medium text-body">{company}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {chips.map((c) => (
-                <span key={c} className="rounded-full bg-app px-3 py-1 text-xs font-medium text-body">{c}</span>
+                <span
+                  key={c}
+                  className="rounded-full bg-app px-3 py-1 text-xs font-medium text-body"
+                >
+                  {c}
+                </span>
               ))}
             </div>
           </div>
@@ -216,7 +248,18 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border bg-app/40 px-6 py-4">
           <div className="flex flex-wrap gap-6">
             <Stat label="Applicants" value={String(job.applicationCount ?? 0)} />
-            <Stat label="Deadline" value={deadline ? deadline.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—'} />
+            <Stat
+              label="Deadline"
+              value={
+                deadline
+                  ? deadline.toLocaleDateString(undefined, {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })
+                  : '—'
+              }
+            />
           </div>
           {job.status !== 'DRAFT' && (
             <Link href={`/jobs/${id}/pipeline`}>
@@ -228,8 +271,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
       {isPlatform && (
         <p className="rounded-md bg-tint-lavender px-3 py-2 text-xs text-body">
-          This is a platform-broadcast job. You manage your own applicants, but the posting is owned by
-          the platform team.
+          This is a platform-broadcast job. You manage your own applicants, but the posting is owned
+          by the platform team.
         </p>
       )}
 
@@ -241,7 +284,9 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
           <Card className="space-y-3 p-5">
             <h2 className="text-sm font-semibold text-strong">About this job</h2>
             {job.description ? (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">{job.description}</p>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">
+                {job.description}
+              </p>
             ) : (
               <p className="text-sm text-subtle">No typed description — see the attached JD.</p>
             )}
@@ -251,8 +296,10 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 disabled={loadingPdf}
                 className="inline-flex w-fit items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-body transition hover:border-primary-400"
               >
-                <span className="flex h-6 w-6 items-center justify-center rounded bg-danger/10 text-[10px] font-bold text-danger">PDF</span>
-                {loadingPdf ? 'Opening…' : job.pdfName ?? 'View job description'}
+                <span className="flex h-6 w-6 items-center justify-center rounded bg-danger/10 text-[10px] font-bold text-danger">
+                  PDF
+                </span>
+                {loadingPdf ? 'Opening…' : (job.pdfName ?? 'View job description')}
               </button>
             )}
           </Card>
@@ -261,18 +308,28 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
             <Card className="space-y-3 p-5">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-strong">Eligible students</h2>
-                <Button size="sm" variant="ghost" onClick={loadEligible}>Preview</Button>
+                <Button size="sm" variant="ghost" onClick={loadEligible}>
+                  Preview
+                </Button>
               </div>
               {eligible == null ? (
-                <p className="text-xs text-subtle">Click preview to compute who matches this criteria.</p>
+                <p className="text-xs text-subtle">
+                  Click preview to compute who matches this criteria.
+                </p>
               ) : eligible.length === 0 ? (
-                <p className="text-xs text-subtle">No verified students currently match this criteria.</p>
+                <p className="text-xs text-subtle">
+                  No verified students currently match this criteria.
+                </p>
               ) : (
                 <div className="space-y-1">
                   {eligible.map((s) => (
                     <div key={s.id} className="flex items-center justify-between text-sm">
-                      <span className="text-strong">{s.fullName} <span className="text-subtle">· {s.rollNumber}</span></span>
-                      <span className="text-xs text-subtle">{s.branch} · {s.cgpa != null ? `${s.cgpa}%` : '—'}</span>
+                      <span className="text-strong">
+                        {s.fullName} <span className="text-subtle">· {s.rollNumber}</span>
+                      </span>
+                      <span className="text-xs text-subtle">
+                        {s.branch} · {s.cgpa != null ? `${s.cgpa}%` : '—'}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -289,7 +346,10 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               <Criteria label="Courses" value={job.eligibleCourses.join(', ') || 'Any'} />
               <Criteria label="Branches" value={job.eligibleBranches.join(', ') || 'Any'} />
               <Criteria label="Batch" value={job.graduationYears.join(', ') || 'Any'} />
-              <Criteria label="Min UG %" value={job.minUgPercentage != null ? `${job.minUgPercentage}%` : 'Any'} />
+              <Criteria
+                label="Min UG %"
+                value={job.minUgPercentage != null ? `${job.minUgPercentage}%` : 'Any'}
+              />
               <Criteria label="Min PG %" value={job.minCgpa != null ? `${job.minCgpa}%` : 'Any'} />
             </dl>
           </Card>
@@ -297,8 +357,23 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
           <Card className="space-y-3 p-5">
             <h2 className="text-sm font-semibold text-strong">Hiring period</h2>
             <dl className="space-y-2.5">
-              <Criteria label="Posted" value={job.publishedAt ? new Date(job.publishedAt).toLocaleDateString() : 'Not published'} />
-              <Criteria label="Apply by" value={deadline ? deadline.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'No deadline'} />
+              <Criteria
+                label="Posted"
+                value={
+                  job.publishedAt ? new Date(job.publishedAt).toLocaleDateString() : 'Not published'
+                }
+              />
+              <Criteria
+                label="Apply by"
+                value={
+                  deadline
+                    ? deadline.toLocaleString(undefined, {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      })
+                    : 'No deadline'
+                }
+              />
             </dl>
           </Card>
         </div>

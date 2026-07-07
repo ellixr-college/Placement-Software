@@ -162,17 +162,18 @@ model AlumniCommunicationRecipient {
   called in exactly one place (logging + retry centralized).
 - **Event-driven wiring** (consuming domain events emitted in earlier phases):
 
-  | Event (source phase) | In-app | Email template |
-  |---|---|---|
-  | User created / bulk import (P2) | ✓ | Welcome |
-  | Job published → eligible students (P3) | ✓ | Job Alert |
-  | Application stage change (P3) | ✓ | Application Update |
-  | Interview scheduled (P3) | ✓ | Interview Schedule |
-  | Offer released (P3) | ✓ | Offer |
-  | Forgot password (P1) | — | Password Reset |
-  | Deadline reminder (cron) | ✓ | Reminder |
+  | Event (source phase)                   | In-app | Email template     |
+  | -------------------------------------- | ------ | ------------------ |
+  | User created / bulk import (P2)        | ✓      | Welcome            |
+  | Job published → eligible students (P3) | ✓      | Job Alert          |
+  | Application stage change (P3)          | ✓      | Application Update |
+  | Interview scheduled (P3)               | ✓      | Interview Schedule |
+  | Offer released (P3)                    | ✓      | Offer              |
+  | Forgot password (P1)                   | —      | Password Reset     |
+  | Deadline reminder (cron)               | ✓      | Reminder           |
 
 ### Email templates (React Email in `packages/notifications`)
+
 `Welcome`, `JobAlert`, `Reminder`, `InterviewSchedule`, `Offer`, `PasswordReset`,
 `AlumniBirthday`, `AlumniEventInvite`, `AlumniCampaign`. All share a branded layout with
 per-college name/logo.
@@ -180,17 +181,20 @@ per-college name/logo.
 ## Alumni Module Design
 
 ### Management
+
 - Full CRUD + CSV/Excel import (same R2-upload-then-process pattern as student import in Phase 2).
 - Search (name/email/company) + filters (batch, course, company, year, status).
 - Import template: `fullName,email,phone,dateOfBirth,batchYear,course,currentCompany,designation,city,linkedinUrl`.
 
 ### Birthday automation
+
 - **Daily cron** (Phase 5 hosts the scheduler; the job logic lives here) finds alumni whose
   `dateOfBirth` month/day = today and `status = ACTIVE`, sends `AlumniBirthday` email, logs to
   `EmailLog` + creates an `AlumniCommunication`(type=BIRTHDAY) record per run for history.
 - Idempotent: guarded so a given alumnus gets at most one birthday email per year.
 
 ### Segmented campaigns
+
 - Officer composes a communication, picks a segment (`batchYear` / `course` / `company` /
   `designation` / `city` / `all`), previews recipient count, sends.
 - Body sanitized server-side (anti-XSS) before storage/send.
@@ -199,31 +203,31 @@ per-college name/logo.
 
 ## API Endpoints
 
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/api/v1/notifications` | any auth | Own notifications (paginated, unread filter) |
-| PATCH | `/api/v1/notifications/:id/read` | any auth | Mark read |
-| POST | `/api/v1/notifications/read-all` | any auth | Mark all read |
-| GET | `/api/v1/notifications/unread-count` | any auth | Badge count |
-| GET | `/api/v1/email-logs` | COLLEGE_ADMIN | Email history for college (audit/debug) |
-| POST/GET/PATCH/DELETE | `/api/v1/alumni` `…/:id` | COLLEGE_ADMIN, PLACEMENT_OFFICER | Alumni CRUD |
-| POST | `/api/v1/alumni/import` | COLLEGE_ADMIN, PLACEMENT_OFFICER | CSV/Excel import |
-| GET | `/api/v1/alumni/segment/preview` | COLLEGE_ADMIN, PLACEMENT_OFFICER | Recipient count for a segment filter |
-| POST | `/api/v1/alumni/communications` | COLLEGE_ADMIN, PLACEMENT_OFFICER | Compose + send campaign |
-| GET | `/api/v1/alumni/communications` | COLLEGE_ADMIN, PLACEMENT_OFFICER | Communication history |
-| GET | `/api/v1/alumni/dashboard` | COLLEGE_ADMIN, PLACEMENT_OFFICER | Alumni dashboard metrics |
+| Method                | Path                                 | Roles                            | Description                                  |
+| --------------------- | ------------------------------------ | -------------------------------- | -------------------------------------------- |
+| GET                   | `/api/v1/notifications`              | any auth                         | Own notifications (paginated, unread filter) |
+| PATCH                 | `/api/v1/notifications/:id/read`     | any auth                         | Mark read                                    |
+| POST                  | `/api/v1/notifications/read-all`     | any auth                         | Mark all read                                |
+| GET                   | `/api/v1/notifications/unread-count` | any auth                         | Badge count                                  |
+| GET                   | `/api/v1/email-logs`                 | COLLEGE_ADMIN                    | Email history for college (audit/debug)      |
+| POST/GET/PATCH/DELETE | `/api/v1/alumni` `…/:id`             | COLLEGE_ADMIN, PLACEMENT_OFFICER | Alumni CRUD                                  |
+| POST                  | `/api/v1/alumni/import`              | COLLEGE_ADMIN, PLACEMENT_OFFICER | CSV/Excel import                             |
+| GET                   | `/api/v1/alumni/segment/preview`     | COLLEGE_ADMIN, PLACEMENT_OFFICER | Recipient count for a segment filter         |
+| POST                  | `/api/v1/alumni/communications`      | COLLEGE_ADMIN, PLACEMENT_OFFICER | Compose + send campaign                      |
+| GET                   | `/api/v1/alumni/communications`      | COLLEGE_ADMIN, PLACEMENT_OFFICER | Communication history                        |
+| GET                   | `/api/v1/alumni/dashboard`           | COLLEGE_ADMIN, PLACEMENT_OFFICER | Alumni dashboard metrics                     |
 
 ## UI Screens
 
-| Route | Access | Notes |
-|---|---|---|
-| Notification bell + dropdown (global) | any auth | Unread badge, recent list, mark read |
-| `/notifications` | any auth | Full notification history |
-| `/alumni` | CA, PO | Table: search, filters, status |
-| `/alumni/new`, `/alumni/[id]` | CA, PO | Add/edit alumnus |
-| `/alumni/import` | CA, PO | CSV/Excel upload + error report |
-| `/alumni/communications` | CA, PO | Compose campaign, segment picker, recipient preview, history |
-| `/alumni/dashboard` | CA, PO | Total alumni, by batch, by company, upcoming birthdays, recent comms, active/inactive |
+| Route                                 | Access   | Notes                                                                                 |
+| ------------------------------------- | -------- | ------------------------------------------------------------------------------------- |
+| Notification bell + dropdown (global) | any auth | Unread badge, recent list, mark read                                                  |
+| `/notifications`                      | any auth | Full notification history                                                             |
+| `/alumni`                             | CA, PO   | Table: search, filters, status                                                        |
+| `/alumni/new`, `/alumni/[id]`         | CA, PO   | Add/edit alumnus                                                                      |
+| `/alumni/import`                      | CA, PO   | CSV/Excel upload + error report                                                       |
+| `/alumni/communications`              | CA, PO   | Compose campaign, segment picker, recipient preview, history                          |
+| `/alumni/dashboard`                   | CA, PO   | Total alumni, by batch, by company, upcoming birthdays, recent comms, active/inactive |
 
 ## Security Notes (Phase 4)
 

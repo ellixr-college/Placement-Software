@@ -64,9 +64,15 @@ export default function FunnelPage({ params }: { params: Promise<{ id: string }>
       count: r.participants.length,
       tone: r.status === 'OPEN' ? ('open' as const) : ('done' as const),
     })),
-    ...(funnel.finalists.length ? [{ key: 'finalists', label: 'Finalists', count: funnel.finalists.length }] : []),
-    ...(funnel.placed.length ? [{ key: 'selected', label: 'Selected', count: funnel.placed.length }] : []),
-    ...(funnel.pool.length ? [{ key: 'pool', label: 'New applicants', count: funnel.pool.length }] : []),
+    ...(funnel.finalists.length
+      ? [{ key: 'finalists', label: 'Finalists', count: funnel.finalists.length }]
+      : []),
+    ...(funnel.placed.length
+      ? [{ key: 'selected', label: 'Selected', count: funnel.placed.length }]
+      : []),
+    ...(funnel.pool.length
+      ? [{ key: 'pool', label: 'New applicants', count: funnel.pool.length }]
+      : []),
   ];
 
   async function addRound(title: string, scheduledAt: string) {
@@ -109,7 +115,11 @@ export default function FunnelPage({ params }: { params: Promise<{ id: string }>
   }
 
   async function removeRound(round: FunnelRound) {
-    const ok = await confirm({ title: `Remove ${round.title}?`, confirmLabel: 'Remove', destructive: true });
+    const ok = await confirm({
+      title: `Remove ${round.title}?`,
+      confirmLabel: 'Remove',
+      destructive: true,
+    });
     if (!ok) return;
     setBusy(true);
     try {
@@ -123,7 +133,11 @@ export default function FunnelPage({ params }: { params: Promise<{ id: string }>
   }
 
   async function reject(s: FunnelStudent) {
-    const ok = await confirm({ title: `Reject ${s.fullName}?`, confirmLabel: 'Reject', destructive: true });
+    const ok = await confirm({
+      title: `Reject ${s.fullName}?`,
+      confirmLabel: 'Reject',
+      destructive: true,
+    });
     if (!ok) return;
     setBusy(true);
     try {
@@ -246,14 +260,23 @@ export default function FunnelPage({ params }: { params: Promise<{ id: string }>
           action={(s) => (
             <div className="flex items-center gap-3">
               {s.offerCtc != null && (
-                <span className="text-sm font-medium text-strong">₹{(s.offerCtc / 100000).toFixed(2)} LPA</span>
+                <span className="text-sm font-medium text-strong">
+                  ₹{(s.offerCtc / 100000).toFixed(2)} LPA
+                </span>
               )}
               {s.offerLetterUrl ? (
-                <a href={s.offerLetterUrl} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary-600 hover:underline">
+                <a
+                  href={s.offerLetterUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-medium text-primary-600 hover:underline"
+                >
                   Offer letter
                 </a>
               ) : (
-                <Button size="sm" variant="ghost" onClick={() => setPlacing(s)}>Add offer letter</Button>
+                <Button size="sm" variant="ghost" onClick={() => setPlacing(s)}>
+                  Add offer letter
+                </Button>
               )}
               <Badge tint="mint">Selected</Badge>
             </div>
@@ -295,7 +318,9 @@ function StartCard({ count, onStart }: { count: number; onStart: () => void }) {
         {count} {count === 1 ? 'student has' : 'students have'} applied. Add Round 1 to start
         shortlisting — everyone who applied enters the first round.
       </p>
-      <Button onClick={onStart} disabled={count === 0}>Add Round 1</Button>
+      <Button onClick={onStart} disabled={count === 0}>
+        Add Round 1
+      </Button>
     </Card>
   );
 }
@@ -333,12 +358,17 @@ function RoundView({
           {round.scheduledAt && (
             <span className={round.overdue ? 'font-medium text-danger' : ''}>
               {round.overdue ? '⚠ Was due ' : 'Scheduled '}
-              {new Date(round.scheduledAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+              {new Date(round.scheduledAt).toLocaleString(undefined, {
+                dateStyle: 'medium',
+                timeStyle: 'short',
+              })}
             </span>
           )}
         </div>
         {open && isLast && round.participants.length === 0 && (
-          <Button size="sm" variant="ghost" onClick={onRemove}>Remove round</Button>
+          <Button size="sm" variant="ghost" onClick={onRemove}>
+            Remove round
+          </Button>
         )}
       </div>
 
@@ -352,7 +382,11 @@ function RoundView({
                     type="checkbox"
                     checked={allPicked}
                     onChange={() =>
-                      setPicked(allPicked ? new Set() : new Set(round.participants.map((p) => p.applicationId)))
+                      setPicked(
+                        allPicked
+                          ? new Set()
+                          : new Set(round.participants.map((p) => p.applicationId)),
+                      )
                     }
                     className="h-4 w-4 cursor-pointer accent-primary-600"
                     aria-label="Select all"
@@ -375,7 +409,10 @@ function RoundView({
               </tr>
             ) : (
               round.participants.map((p) => (
-                <tr key={p.applicationId} className="border-b border-border last:border-0 hover:bg-app/60">
+                <tr
+                  key={p.applicationId}
+                  className="border-b border-border last:border-0 hover:bg-app/60"
+                >
                   {open && (
                     <td className="px-4 py-3">
                       <input
@@ -392,7 +429,12 @@ function RoundView({
                   <td className="px-4 py-3">{p.branch}</td>
                   <td className="px-4 py-3">
                     {p.resumeSlug ? (
-                      <a href={`/students/${p.studentId}/resume`} target="_blank" rel="noreferrer" className="text-xs text-primary-600 hover:underline">
+                      <a
+                        href={`/students/${p.studentId}/resume`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-primary-600 hover:underline"
+                      >
                         View
                       </a>
                     ) : (
@@ -433,7 +475,12 @@ function RoundView({
 /** Visual selection funnel: how many students carry from stage to stage. */
 function FunnelChart({ funnel }: { funnel: Funnel }) {
   const total = Math.max(1, funnel.applicantsTotal);
-  const stages: { label: string; count: number; sub?: string; tone: 'app' | 'open' | 'done' | 'success' }[] = [
+  const stages: {
+    label: string;
+    count: number;
+    sub?: string;
+    tone: 'app' | 'open' | 'done' | 'success';
+  }[] = [
     { label: 'Applied', count: funnel.applicantsTotal, tone: 'app' },
     ...funnel.rounds.map((r) => {
       const advanced = r.participants.filter((p) => p.outcome === 'ADVANCED').length;
@@ -458,7 +505,7 @@ function FunnelChart({ funnel }: { funnel: Funnel }) {
       <p className="text-sm font-semibold text-strong">Round-by-round funnel</p>
       <div className="space-y-2.5">
         {stages.map((s, i) => {
-          const prev = i > 0 ? stages[i - 1]?.count ?? 0 : s.count;
+          const prev = i > 0 ? (stages[i - 1]?.count ?? 0) : s.count;
           const dropped = i > 0 && prev - s.count > 0 ? prev - s.count : 0;
           return (
             <div key={`${s.label}-${i}`}>
@@ -523,7 +570,9 @@ function FinalistsTable({
                 <input
                   type="checkbox"
                   checked={allPicked}
-                  onChange={() => setPicked(allPicked ? new Set() : new Set(people.map((p) => p.applicationId)))}
+                  onChange={() =>
+                    setPicked(allPicked ? new Set() : new Set(people.map((p) => p.applicationId)))
+                  }
                   className="h-4 w-4 cursor-pointer accent-primary-600"
                   aria-label="Select all"
                 />
@@ -557,7 +606,12 @@ function FinalistsTable({
                 <td className="px-4 py-3">{s.branch}</td>
                 <td className="px-4 py-3">
                   {s.resumeSlug ? (
-                    <a href={`/students/${s.studentId}/resume`} target="_blank" rel="noreferrer" className="text-xs text-primary-600 hover:underline">
+                    <a
+                      href={`/students/${s.studentId}/resume`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-primary-600 hover:underline"
+                    >
                       View
                     </a>
                   ) : (
@@ -566,8 +620,12 @@ function FinalistsTable({
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
-                    <Button size="sm" onClick={() => onPlace(s)}>Select / place</Button>
-                    <Button size="sm" variant="ghost" onClick={() => onReject(s)}>Reject</Button>
+                    <Button size="sm" onClick={() => onPlace(s)}>
+                      Select / place
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => onReject(s)}>
+                      Reject
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -599,7 +657,8 @@ function PeopleList({
   empty: string;
   action?: (s: FunnelStudent) => React.ReactNode;
 }) {
-  if (people.length === 0) return <Card className="p-8 text-center text-sm text-subtle">{empty}</Card>;
+  if (people.length === 0)
+    return <Card className="p-8 text-center text-sm text-subtle">{empty}</Card>;
   return (
     <div className="space-y-2">
       {people.map((s) => (
@@ -611,7 +670,12 @@ function PeopleList({
               {s.resumeSlug && (
                 <>
                   {' · '}
-                  <a href={`/students/${s.studentId}/resume`} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">
+                  <a
+                    href={`/students/${s.studentId}/resume`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary-600 hover:underline"
+                  >
                     resume
                   </a>
                 </>
@@ -638,18 +702,29 @@ function AddRoundForm({
 }) {
   const [title, setTitle] = useState('');
   const [when, setWhen] = useState('');
-  const cls = 'h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400';
+  const cls =
+    'h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400';
   return (
     <Card className="space-y-3 p-4">
       <p className="text-sm font-semibold text-strong">Add {nextLabel}</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block space-y-1">
           <span className="text-xs font-medium text-subtle">Name (optional)</span>
-          <input className={cls} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={nextLabel} />
+          <input
+            className={cls}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={nextLabel}
+          />
         </label>
         <label className="block space-y-1">
           <span className="text-xs font-medium text-subtle">Date &amp; time (optional)</span>
-          <input type="datetime-local" className={cls} value={when} onChange={(e) => setWhen(e.target.value)} />
+          <input
+            type="datetime-local"
+            className={cls}
+            value={when}
+            onChange={(e) => setWhen(e.target.value)}
+          />
         </label>
       </div>
       <p className="text-xs text-subtle">
@@ -658,10 +733,15 @@ function AddRoundForm({
           : 'Everyone who cleared the previous round enters this round.'}
       </p>
       <div className="flex gap-2">
-        <Button onClick={() => onSubmit(title, when ? new Date(when).toISOString() : '')} loading={busy}>
+        <Button
+          onClick={() => onSubmit(title, when ? new Date(when).toISOString() : '')}
+          loading={busy}
+        >
           Add round
         </Button>
-        <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
       </div>
     </Card>
   );
@@ -702,9 +782,14 @@ function PlaceModal({
     }
   }
 
-  const cls = 'h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400';
+  const cls =
+    'h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400';
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      role="dialog"
+      aria-modal="true"
+    >
       <Card className="w-full max-w-sm space-y-4 p-6">
         <div>
           <h2 className="text-lg font-semibold text-strong">Select {student.fullName}</h2>
@@ -712,13 +797,30 @@ function PlaceModal({
         </div>
         <label className="block space-y-1">
           <span className="text-xs font-medium text-subtle">Offer CTC (₹/yr, optional)</span>
-          <input type="number" className={cls} value={ctc} onChange={(e) => setCtc(e.target.value)} placeholder="600000" />
+          <input
+            type="number"
+            className={cls}
+            value={ctc}
+            onChange={(e) => setCtc(e.target.value)}
+            placeholder="600000"
+          />
         </label>
         <div className="space-y-1">
           <span className="text-xs font-medium text-subtle">Offer letter PDF (optional)</span>
           <div className="flex items-center gap-3">
-            <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-            <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+            >
               {file ? 'Change PDF' : 'Choose PDF…'}
             </Button>
             <span className="truncate text-xs text-subtle">{file ? file.name : 'No file'}</span>
@@ -726,8 +828,12 @@ function PlaceModal({
         </div>
         {error && <p className="text-sm text-danger">{error}</p>}
         <div className="flex gap-2">
-          <Button onClick={submit} loading={busy}>Mark selected</Button>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={submit} loading={busy}>
+            Mark selected
+          </Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
         </div>
       </Card>
     </div>

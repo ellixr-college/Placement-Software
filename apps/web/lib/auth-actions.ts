@@ -58,10 +58,7 @@ export async function resetPassword(token: string, password: string): Promise<vo
 }
 
 /** Authenticated self-service change (used for forced first-login changes). */
-export async function changePassword(
-  currentPassword: string,
-  newPassword: string,
-): Promise<void> {
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
   await api('/auth/change-password', {
     method: 'POST',
     body: JSON.stringify({ currentPassword, newPassword }),

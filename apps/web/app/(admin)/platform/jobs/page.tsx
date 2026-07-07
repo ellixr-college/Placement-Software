@@ -49,7 +49,9 @@ export default function PlatformJobsPage() {
   }, [status]);
 
   useEffect(() => {
-    listColleges().then((c) => setColleges(c.filter((x) => x.isActive))).catch(() => {});
+    listColleges()
+      .then((c) => setColleges(c.filter((x) => x.isActive)))
+      .catch(() => {});
   }, []);
 
   const collegeName = (id: string) => colleges.find((c) => c.id === id)?.name ?? id;
@@ -73,7 +75,8 @@ export default function PlatformJobsPage() {
         <div>
           <h1 className="text-2xl font-semibold text-strong">Platform jobs</h1>
           <p className="text-sm text-subtle">
-            Broadcast a posting to the colleges you select. Each college manages only its own applicants.
+            Broadcast a posting to the colleges you select. Each college manages only its own
+            applicants.
           </p>
         </div>
         <Button onClick={() => setCreating((v) => !v)} variant={creating ? 'outline' : 'primary'}>
@@ -125,12 +128,21 @@ export default function PlatformJobsPage() {
                 footer={
                   <div className="flex gap-2">
                     {j.status === 'DRAFT' && (
-                      <Button size="sm" loading={busyId === j.id} onClick={() => act(j.id, publishPlatformJob)}>
+                      <Button
+                        size="sm"
+                        loading={busyId === j.id}
+                        onClick={() => act(j.id, publishPlatformJob)}
+                      >
                         Publish
                       </Button>
                     )}
                     {j.status !== 'CLOSED' && (
-                      <Button size="sm" variant="outline" loading={busyId === j.id} onClick={() => act(j.id, closePlatformJob)}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        loading={busyId === j.id}
+                        onClick={() => act(j.id, closePlatformJob)}
+                      >
                         Close
                       </Button>
                     )}
@@ -138,7 +150,8 @@ export default function PlatformJobsPage() {
                 }
               >
                 <p className="text-xs text-subtle" title={colleges.map(collegeName).join(', ')}>
-                  {colleges.length} college{colleges.length === 1 ? '' : 's'} · {j.applicationCount ?? 0} applicant
+                  {colleges.length} college{colleges.length === 1 ? '' : 's'} ·{' '}
+                  {j.applicationCount ?? 0} applicant
                   {(j.applicationCount ?? 0) === 1 ? '' : 's'}
                 </p>
               </JobCard>
@@ -180,14 +193,23 @@ function NewPlatformJobForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set =
+    (k: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const toggleTarget = (id: string) =>
     setTargets((t) => (t.includes(id) ? t.filter((x) => x !== id) : [...t, id]));
 
-  const splitList = (v: string) => v.split(',').map((s) => s.trim()).filter(Boolean);
-  const numList = (v: string) => splitList(v).map(Number).filter((n) => !Number.isNaN(n));
+  const splitList = (v: string) =>
+    v
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  const numList = (v: string) =>
+    splitList(v)
+      .map(Number)
+      .filter((n) => !Number.isNaN(n));
   const num = (v: string) => (v.trim() === '' ? undefined : Number(v));
 
   async function submit() {
@@ -239,8 +261,17 @@ function NewPlatformJobForm({
       </p>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Title *"><input className={inputCls} value={form.title} onChange={set('title')} /></Field>
-        <Field label="Company *"><input className={inputCls} value={form.companyName} onChange={set('companyName')} placeholder="Acme Corp" /></Field>
+        <Field label="Title *">
+          <input className={inputCls} value={form.title} onChange={set('title')} />
+        </Field>
+        <Field label="Company *">
+          <input
+            className={inputCls}
+            value={form.companyName}
+            onChange={set('companyName')}
+            placeholder="Acme Corp"
+          />
+        </Field>
       </div>
 
       <Field label="Target colleges *">
@@ -256,7 +287,9 @@ function NewPlatformJobForm({
                   type="button"
                   onClick={() => toggleTarget(c.id)}
                   className={`rounded-pill px-3 py-1.5 text-sm font-medium ${
-                    on ? 'bg-primary-600 text-white' : 'bg-white text-body ring-1 ring-muted hover:bg-primary-50'
+                    on
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-white text-body ring-1 ring-muted hover:bg-primary-50'
                   }`}
                 >
                   {c.name}
@@ -270,44 +303,138 @@ function NewPlatformJobForm({
       <div className="grid grid-cols-2 gap-3">
         <Field label="Job type">
           <select className={inputCls} value={form.jobType} onChange={set('jobType')}>
-            {JOB_TYPES.map((t) => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
+            {JOB_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t.replace('_', ' ')}
+              </option>
+            ))}
           </select>
         </Field>
         <Field label="Work mode">
           <select className={inputCls} value={form.workMode} onChange={set('workMode')}>
             <option value="">Not specified</option>
-            {WORK_MODES.map((m) => <option key={m} value={m}>{m === 'ONSITE' ? 'Work from office' : m.charAt(0) + m.slice(1).toLowerCase()}</option>)}
+            {WORK_MODES.map((m) => (
+              <option key={m} value={m}>
+                {m === 'ONSITE' ? 'Work from office' : m.charAt(0) + m.slice(1).toLowerCase()}
+              </option>
+            ))}
           </select>
         </Field>
       </div>
       <div className="grid grid-cols-3 gap-3">
-        <Field label="Location"><input className={inputCls} value={form.location} onChange={set('location')} placeholder="Bangalore" /></Field>
-        <Field label="Min experience (yrs)"><input className={inputCls} type="number" value={form.experienceMin} onChange={set('experienceMin')} placeholder="0" /></Field>
-        <Field label="Max experience (yrs)"><input className={inputCls} type="number" value={form.experienceMax} onChange={set('experienceMax')} placeholder="3" /></Field>
+        <Field label="Location">
+          <input
+            className={inputCls}
+            value={form.location}
+            onChange={set('location')}
+            placeholder="Bangalore"
+          />
+        </Field>
+        <Field label="Min experience (yrs)">
+          <input
+            className={inputCls}
+            type="number"
+            value={form.experienceMin}
+            onChange={set('experienceMin')}
+            placeholder="0"
+          />
+        </Field>
+        <Field label="Max experience (yrs)">
+          <input
+            className={inputCls}
+            type="number"
+            value={form.experienceMax}
+            onChange={set('experienceMax')}
+            placeholder="3"
+          />
+        </Field>
       </div>
-      <Field label="Description"><textarea className={areaCls} rows={3} value={form.description} onChange={set('description')} /></Field>
+      <Field label="Description">
+        <textarea
+          className={areaCls}
+          rows={3}
+          value={form.description}
+          onChange={set('description')}
+        />
+      </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="CTC min (₹/yr)"><input className={inputCls} type="number" value={form.ctcMin} onChange={set('ctcMin')} /></Field>
-        <Field label="CTC max (₹/yr)"><input className={inputCls} type="number" value={form.ctcMax} onChange={set('ctcMax')} /></Field>
+        <Field label="CTC min (₹/yr)">
+          <input className={inputCls} type="number" value={form.ctcMin} onChange={set('ctcMin')} />
+        </Field>
+        <Field label="CTC max (₹/yr)">
+          <input className={inputCls} type="number" value={form.ctcMax} onChange={set('ctcMax')} />
+        </Field>
       </div>
 
       <div className="border-t border-border pt-4">
         <p className="mb-3 text-sm font-semibold text-strong">Eligibility criteria</p>
         <div className="space-y-3">
-          <Field label="Eligible courses * (comma-separated)"><input className={inputCls} value={form.eligibleCourses} onChange={set('eligibleCourses')} placeholder="B.Tech, M.Tech" /></Field>
-          <Field label="Eligible branches * (comma-separated)"><input className={inputCls} value={form.eligibleBranches} onChange={set('eligibleBranches')} placeholder="CSE, ECE, IT" /></Field>
-          <Field label="Graduation years * (comma-separated)"><input className={inputCls} value={form.graduationYears} onChange={set('graduationYears')} placeholder="2026, 2027" /></Field>
+          <Field label="Eligible courses * (comma-separated)">
+            <input
+              className={inputCls}
+              value={form.eligibleCourses}
+              onChange={set('eligibleCourses')}
+              placeholder="B.Tech, M.Tech"
+            />
+          </Field>
+          <Field label="Eligible branches * (comma-separated)">
+            <input
+              className={inputCls}
+              value={form.eligibleBranches}
+              onChange={set('eligibleBranches')}
+              placeholder="CSE, ECE, IT"
+            />
+          </Field>
+          <Field label="Graduation years * (comma-separated)">
+            <input
+              className={inputCls}
+              value={form.graduationYears}
+              onChange={set('graduationYears')}
+              placeholder="2026, 2027"
+            />
+          </Field>
           <div className="grid grid-cols-3 gap-3">
-            <Field label="Min %"><input className={inputCls} type="number" value={form.minCgpa} onChange={set('minCgpa')} placeholder="60" /></Field>
-            <Field label="Max active backlogs"><input className={inputCls} type="number" value={form.maxActiveBacklogs} onChange={set('maxActiveBacklogs')} /></Field>
-            <Field label="Max total backlogs"><input className={inputCls} type="number" value={form.maxTotalBacklogs} onChange={set('maxTotalBacklogs')} /></Field>
+            <Field label="Min %">
+              <input
+                className={inputCls}
+                type="number"
+                value={form.minCgpa}
+                onChange={set('minCgpa')}
+                placeholder="60"
+              />
+            </Field>
+            <Field label="Max active backlogs">
+              <input
+                className={inputCls}
+                type="number"
+                value={form.maxActiveBacklogs}
+                onChange={set('maxActiveBacklogs')}
+              />
+            </Field>
+            <Field label="Max total backlogs">
+              <input
+                className={inputCls}
+                type="number"
+                value={form.maxTotalBacklogs}
+                onChange={set('maxTotalBacklogs')}
+              />
+            </Field>
           </div>
-          <Field label="Application deadline"><input className={inputCls} type="datetime-local" value={form.applicationDeadline} onChange={set('applicationDeadline')} /></Field>
+          <Field label="Application deadline">
+            <input
+              className={inputCls}
+              type="datetime-local"
+              value={form.applicationDeadline}
+              onChange={set('applicationDeadline')}
+            />
+          </Field>
         </div>
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
-      <Button onClick={submit} loading={saving} disabled={!valid}>{saving ? 'Creating…' : 'Create draft'}</Button>
+      <Button onClick={submit} loading={saving} disabled={!valid}>
+        {saving ? 'Creating…' : 'Create draft'}
+      </Button>
     </Card>
   );
 }

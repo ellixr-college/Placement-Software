@@ -123,8 +123,8 @@ export default function PlatformCollegesPage() {
             )}
           </div>
           <p className="text-xs text-subtle">
-            They'll be prompted to set a new password on first login. The College Admin manages their
-            own officers, students, companies, jobs and alumni from here on.
+            They'll be prompted to set a new password on first login. The College Admin manages
+            their own officers, students, companies, jobs and alumni from here on.
           </p>
         </Card>
       )}
@@ -133,10 +133,11 @@ export default function PlatformCollegesPage() {
       {reset && (
         <Card className="space-y-2 border border-primary-200 bg-primary-50/40 p-5">
           <div className="flex items-start justify-between gap-4">
-            <p className="text-sm font-semibold text-strong">
-              New password for {reset.adminEmail}
-            </p>
-            <button onClick={() => setReset(null)} className="text-xs text-subtle hover:text-strong">
+            <p className="text-sm font-semibold text-strong">New password for {reset.adminEmail}</p>
+            <button
+              onClick={() => setReset(null)}
+              className="text-xs text-subtle hover:text-strong"
+            >
               Dismiss
             </button>
           </div>
@@ -211,61 +212,61 @@ export default function PlatformCollegesPage() {
             ) : (
               items.map((c) => (
                 <Fragment key={c.id}>
-                <tr className="border-b border-border last:border-0 hover:bg-app/60">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-strong">{c.name}</p>
-                    <p className="text-xs text-subtle">
-                      {c.slug} · {c.contactEmail}
-                    </p>
-                  </td>
-                  <td className="px-4 py-3">
-                    {[c.city, c.state].filter(Boolean).join(', ') || '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge tint="cream">{c.subscriptionPlan}</Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    {c.isActive ? (
-                      <span className="rounded-pill bg-success/15 px-2 py-0.5 text-xs font-medium text-success">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="rounded-pill bg-danger/15 px-2 py-0.5 text-xs font-medium text-danger">
-                        Suspended
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-3">
-                      <button
-                        onClick={() => setCoursesFor((id) => (id === c.id ? null : c.id))}
-                        className="text-xs font-medium text-primary-600 hover:underline"
-                      >
-                        {coursesFor === c.id ? 'Hide courses' : 'Courses'}
-                      </button>
-                      <button
-                        onClick={() => resetPassword(c)}
-                        disabled={busyId === c.id}
-                        className="text-xs font-medium text-primary-600 hover:underline disabled:opacity-50"
-                      >
-                        {busyId === c.id ? 'Resetting…' : 'Reset password'}
-                      </button>
-                      <button
-                        onClick={() => toggleStatus(c)}
-                        className="text-xs font-medium text-primary-600 hover:underline"
-                      >
-                        {c.isActive ? 'Suspend' : 'Reactivate'}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                {coursesFor === c.id && (
-                  <tr className="border-b border-border">
-                    <td colSpan={5} className="px-4 py-3">
-                      <CoursesPanel collegeId={c.id} />
+                  <tr className="border-b border-border last:border-0 hover:bg-app/60">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-strong">{c.name}</p>
+                      <p className="text-xs text-subtle">
+                        {c.slug} · {c.contactEmail}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3">
+                      {[c.city, c.state].filter(Boolean).join(', ') || '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge tint="cream">{c.subscriptionPlan}</Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      {c.isActive ? (
+                        <span className="rounded-pill bg-success/15 px-2 py-0.5 text-xs font-medium text-success">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="rounded-pill bg-danger/15 px-2 py-0.5 text-xs font-medium text-danger">
+                          Suspended
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => setCoursesFor((id) => (id === c.id ? null : c.id))}
+                          className="text-xs font-medium text-primary-600 hover:underline"
+                        >
+                          {coursesFor === c.id ? 'Hide courses' : 'Courses'}
+                        </button>
+                        <button
+                          onClick={() => resetPassword(c)}
+                          disabled={busyId === c.id}
+                          className="text-xs font-medium text-primary-600 hover:underline disabled:opacity-50"
+                        >
+                          {busyId === c.id ? 'Resetting…' : 'Reset password'}
+                        </button>
+                        <button
+                          onClick={() => toggleStatus(c)}
+                          className="text-xs font-medium text-primary-600 hover:underline"
+                        >
+                          {c.isActive ? 'Suspend' : 'Reactivate'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                )}
+                  {coursesFor === c.id && (
+                    <tr className="border-b border-border">
+                      <td colSpan={5} className="px-4 py-3">
+                        <CoursesPanel collegeId={c.id} />
+                      </td>
+                    </tr>
+                  )}
                 </Fragment>
               ))
             )}
@@ -306,7 +307,14 @@ function NewCollegeForm({ onCreated }: { onCreated: (result: CreateCollegeResult
   function addCourse() {
     const name = courseName.trim();
     if (!name || courses.some((c) => c.name.toLowerCase() === name.toLowerCase())) return;
-    const branches = [...new Set(courseBranches.split(',').map((b) => b.trim()).filter(Boolean))];
+    const branches = [
+      ...new Set(
+        courseBranches
+          .split(',')
+          .map((b) => b.trim())
+          .filter(Boolean),
+      ),
+    ];
     setCourses((cs) => [...cs, { name, branches }]);
     setCourseName('');
     setCourseBranches('');
@@ -367,7 +375,11 @@ function NewCollegeForm({ onCreated }: { onCreated: (result: CreateCollegeResult
         <h2 className="text-sm font-semibold text-strong">College details</h2>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Name *">
-            <input className={inputCls} value={form.name} onChange={(e) => setField('name', e.target.value)} />
+            <input
+              className={inputCls}
+              value={form.name}
+              onChange={(e) => setField('name', e.target.value)}
+            />
           </Field>
           <Field label="Slug *">
             <input
@@ -398,10 +410,18 @@ function NewCollegeForm({ onCreated }: { onCreated: (result: CreateCollegeResult
             {!phoneOk && <FieldError>Enter a valid 10-digit mobile number.</FieldError>}
           </Field>
           <Field label="City">
-            <input className={inputCls} value={form.city} onChange={(e) => setField('city', e.target.value)} />
+            <input
+              className={inputCls}
+              value={form.city}
+              onChange={(e) => setField('city', e.target.value)}
+            />
           </Field>
           <Field label="State">
-            <input className={inputCls} value={form.state} onChange={(e) => setField('state', e.target.value)} />
+            <input
+              className={inputCls}
+              value={form.state}
+              onChange={(e) => setField('state', e.target.value)}
+            />
           </Field>
         </div>
       </div>
@@ -452,7 +472,10 @@ function NewCollegeForm({ onCreated }: { onCreated: (result: CreateCollegeResult
         {courses.length > 0 && (
           <div className="mt-3 space-y-1">
             {courses.map((co, i) => (
-              <div key={co.name} className="flex items-center gap-2 rounded-md bg-app px-3 py-1.5 text-sm">
+              <div
+                key={co.name}
+                className="flex items-center gap-2 rounded-md bg-app px-3 py-1.5 text-sm"
+              >
                 <span className="font-medium text-strong">{co.name}</span>
                 <span className="flex-1 text-xs text-subtle">
                   {co.branches.length ? co.branches.join(' · ') : 'no branches'}
@@ -487,7 +510,13 @@ function NewCollegeForm({ onCreated }: { onCreated: (result: CreateCollegeResult
               placeholder="CSE, ECE, Mechanical (blank if none)"
             />
           </Field>
-          <Button type="button" variant="outline" size="sm" onClick={addCourse} disabled={!courseName.trim()}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addCourse}
+            disabled={!courseName.trim()}
+          >
             Add course
           </Button>
         </div>

@@ -44,7 +44,12 @@ export interface Breakdowns {
 
 export interface Insights {
   studentsWithMultipleOffers: number;
-  multipleOfferStudents: { name: string; rollNumber: string; offers: number; bestPackage: number | null }[];
+  multipleOfferStudents: {
+    name: string;
+    rollNumber: string;
+    offers: number;
+    bestPackage: number | null;
+  }[];
   dreamThreshold: number | null;
   dreamOffers: number;
   repeatRecruiters: { company: string; hires: number }[];

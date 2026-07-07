@@ -129,7 +129,10 @@ export default function StudentProfilePage() {
             />
           </div>
           {resumeMissing.length > 0 ? (
-            <Link href="/me/resume" className="mt-2 inline-block text-xs font-medium text-primary-600 hover:underline">
+            <Link
+              href="/me/resume"
+              className="mt-2 inline-block text-xs font-medium text-primary-600 hover:underline"
+            >
               Finish your resume — still needed: {resumeMissing.join(', ')} →
             </Link>
           ) : (
@@ -162,7 +165,11 @@ export default function StudentProfilePage() {
 
       {/* Personal */}
       <Section title="Personal">
-        <Text label="Full name" value={form.fullName ?? ''} onChange={(v) => patch({ fullName: v })} />
+        <Text
+          label="Full name"
+          value={form.fullName ?? ''}
+          onChange={(v) => patch({ fullName: v })}
+        />
         <Text label="Phone" value={form.phone ?? ''} onChange={(v) => patch({ phone: v })} />
         <Text
           label="Personal email"
@@ -187,8 +194,18 @@ export default function StudentProfilePage() {
 
       {/* Academic */}
       <Section title="Academic">
-        <Text label="Course" value={form.course ?? ''} onChange={(v) => patch({ course: v })} placeholder="B.Tech" />
-        <Text label="Branch" value={form.branch ?? ''} onChange={(v) => patch({ branch: v })} placeholder="Computer Science" />
+        <Text
+          label="Course"
+          value={form.course ?? ''}
+          onChange={(v) => patch({ course: v })}
+          placeholder="B.Tech"
+        />
+        <Text
+          label="Branch"
+          value={form.branch ?? ''}
+          onChange={(v) => patch({ branch: v })}
+          placeholder="Computer Science"
+        />
         <Text
           label="Enrollment number"
           value={form.enrollmentNumber ?? ''}

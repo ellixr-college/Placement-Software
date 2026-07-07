@@ -92,18 +92,28 @@ export class CreateStudentDto {
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) tenthPercentage?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) twelfthPercentage?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) ugPercentage?: number;
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => SemesterMarkDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SemesterMarkDto)
   semesterMarks?: SemesterMarkDto[];
 }
 
 export class UpdateStudentDto {
   @IsOptional() @IsString() @MinLength(2) fullName?: string;
-  @EmptyToUndefined() @IsOptional() @Matches(PHONE_REGEX, { message: PHONE_MESSAGE }) phone?: string;
+  @EmptyToUndefined()
+  @IsOptional()
+  @Matches(PHONE_REGEX, { message: PHONE_MESSAGE })
+  phone?: string;
   @IsOptional() @IsString() @MinLength(1) course?: string;
   @IsOptional() @IsString() @MinLength(1) branch?: string;
   @IsOptional() @IsString() enrollmentNumber?: string;
 
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1990) @Max(CURRENT_YEAR + 10)
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1990)
+  @Max(CURRENT_YEAR + 10)
   graduationYear?: number;
 
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10) currentYear?: number;
@@ -119,19 +129,30 @@ export class UpdateStudentDto {
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) tenthPercentage?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) twelfthPercentage?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) ugPercentage?: number;
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => SemesterMarkDto) semesterMarks?: SemesterMarkDto[];
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SemesterMarkDto)
+  semesterMarks?: SemesterMarkDto[];
 }
 
 // Fields a student may edit on their own record. rollNumber is intentionally
 // excluded — it is the officer-assigned identity.
 export class UpdateOwnProfileDto {
   @IsOptional() @IsString() @MinLength(2) fullName?: string;
-  @EmptyToUndefined() @IsOptional() @Matches(PHONE_REGEX, { message: PHONE_MESSAGE }) phone?: string;
+  @EmptyToUndefined()
+  @IsOptional()
+  @Matches(PHONE_REGEX, { message: PHONE_MESSAGE })
+  phone?: string;
   @IsOptional() @IsString() enrollmentNumber?: string;
   @IsOptional() @IsString() @MinLength(1) course?: string;
   @IsOptional() @IsString() @MinLength(1) branch?: string;
 
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1990) @Max(CURRENT_YEAR + 10)
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1990)
+  @Max(CURRENT_YEAR + 10)
   graduationYear?: number;
 
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) cgpa?: number;
@@ -144,7 +165,11 @@ export class UpdateOwnProfileDto {
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) tenthPercentage?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) twelfthPercentage?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) ugPercentage?: number;
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => SemesterMarkDto) semesterMarks?: SemesterMarkDto[];
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SemesterMarkDto)
+  semesterMarks?: SemesterMarkDto[];
 }
 
 export class VerifyStudentDto {
@@ -166,7 +191,12 @@ export class ImportStudentsDto {
   // reg no / name / email per row; course/branch/passout/year are shared).
   @IsOptional() @IsString() course?: string;
   @IsOptional() @IsString() branch?: string;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1990) @Max(CURRENT_YEAR + 10) graduationYear?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1990)
+  @Max(CURRENT_YEAR + 10)
+  graduationYear?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10) currentYear?: number;
 }
 
@@ -192,7 +222,8 @@ export class ListStudentsQuery {
 
   @IsOptional() @IsIn(Object.values(StudentStatus)) status?: StudentStatus;
 
-  @IsOptional() @IsIn(Object.values(VerificationStatus))
+  @IsOptional()
+  @IsIn(Object.values(VerificationStatus))
   verificationStatus?: VerificationStatus;
 
   // Query booleans arrive as strings ("true"/"false"); coerce before validating.

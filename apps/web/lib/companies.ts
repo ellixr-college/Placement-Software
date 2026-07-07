@@ -36,7 +36,9 @@ export interface HiringHistoryItem {
 }
 
 export async function listCompanies(search = ''): Promise<Company[]> {
-  const { data } = await apiList<Company[]>(`/companies${search ? `?search=${encodeURIComponent(search)}` : ''}`);
+  const { data } = await apiList<Company[]>(
+    `/companies${search ? `?search=${encodeURIComponent(search)}` : ''}`,
+  );
   return data;
 }
 

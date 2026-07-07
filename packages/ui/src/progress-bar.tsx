@@ -35,7 +35,12 @@ export const ProgressBar = ({
           <span className="text-subtle">{caption}</span>
         </div>
       )}
-      <div className={cn('w-full overflow-hidden rounded-pill bg-muted', size === 'sm' ? 'h-1.5' : 'h-2.5')}>
+      <div
+        className={cn(
+          'w-full overflow-hidden rounded-pill bg-muted',
+          size === 'sm' ? 'h-1.5' : 'h-2.5',
+        )}
+      >
         <div className={cn('h-full rounded-pill', fillClassName)} style={{ width: `${pct}%` }} />
       </div>
     </div>

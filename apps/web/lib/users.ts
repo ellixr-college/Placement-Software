@@ -46,4 +46,3 @@ export const deactivateUser = (id: string) =>
   api<{ success: boolean }>(`/users/${id}`, { method: 'DELETE' });
 
 export const reactivateUser = (id: string) => updateUser(id, { isActive: true });
-

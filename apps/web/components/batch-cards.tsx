@@ -18,7 +18,13 @@ const VALUE_TINT: Record<'default' | 'success' | 'warn', string> = {
 };
 
 // Soft decorative blob colours, picked deterministically per card for variety.
-const BLOBS = ['text-sky-300', 'text-emerald-300', 'text-amber-300', 'text-violet-300', 'text-rose-300'];
+const BLOBS = [
+  'text-sky-300',
+  'text-emerald-300',
+  'text-amber-300',
+  'text-violet-300',
+  'text-rose-300',
+];
 const hash = (s: string) => [...s].reduce((n, c) => n + c.charCodeAt(0), 0);
 
 /** Responsive grid of premium cohort cards. Used by the Students, Internships
@@ -67,8 +73,12 @@ export function BatchCards({
             <div className="relative mt-5 flex flex-wrap gap-x-7 gap-y-3">
               {b.stats.map((s) => (
                 <div key={s.label}>
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-subtle">{s.label}</p>
-                  <p className={`text-lg font-bold ${VALUE_TINT[s.tint ?? 'default']}`}>{s.value}</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-subtle">
+                    {s.label}
+                  </p>
+                  <p className={`text-lg font-bold ${VALUE_TINT[s.tint ?? 'default']}`}>
+                    {s.value}
+                  </p>
                 </div>
               ))}
             </div>
@@ -81,9 +91,19 @@ export function BatchCards({
 
 function CapIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      className="h-6 w-6"
+    >
       <path d="M12 4 2 9l10 5 10-5-10-5Z" strokeLinejoin="round" />
-      <path d="M6 11.5V16c0 1.1 2.7 2.5 6 2.5s6-1.4 6-2.5v-4.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M6 11.5V16c0 1.1 2.7 2.5 6 2.5s6-1.4 6-2.5v-4.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

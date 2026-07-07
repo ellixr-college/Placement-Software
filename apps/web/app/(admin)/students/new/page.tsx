@@ -34,13 +34,17 @@ export default function NewStudentPage() {
   const [form, setForm] = useState({ ...EMPTY });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [created, setCreated] = useState<{ fullName: string; email: string; tempPassword: string } | null>(
-    null,
-  );
+  const [created, setCreated] = useState<{
+    fullName: string;
+    email: string;
+    tempPassword: string;
+  } | null>(null);
 
   const [courses, setCourses] = useState<CollegeCourse[]>([]);
   useEffect(() => {
-    listMyCourses().then(setCourses).catch(() => {});
+    listMyCourses()
+      .then(setCourses)
+      .catch(() => {});
   }, []);
 
   const set = (k: keyof typeof EMPTY) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -67,7 +71,8 @@ export default function NewStudentPage() {
         activeBacklogs: form.activeBacklogs === '' ? undefined : Number(form.activeBacklogs),
         totalBacklogs: form.totalBacklogs === '' ? undefined : Number(form.totalBacklogs),
         tenthPercentage: form.tenthPercentage === '' ? undefined : Number(form.tenthPercentage),
-        twelfthPercentage: form.twelfthPercentage === '' ? undefined : Number(form.twelfthPercentage),
+        twelfthPercentage:
+          form.twelfthPercentage === '' ? undefined : Number(form.twelfthPercentage),
         ugPercentage: form.ugPercentage === '' ? undefined : Number(form.ugPercentage),
       };
       const res = await createStudent(input);
@@ -136,21 +141,51 @@ export default function NewStudentPage() {
         <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Full name" required value={form.fullName} onChange={set('fullName')} />
           <Field label="Email" type="email" required value={form.email} onChange={set('email')} />
-          <Field label="Roll number" required value={form.rollNumber} onChange={set('rollNumber')} />
+          <Field
+            label="Roll number"
+            required
+            value={form.rollNumber}
+            onChange={set('rollNumber')}
+          />
           <Field
             label="Enrollment number"
             value={form.enrollmentNumber}
             onChange={set('enrollmentNumber')}
           />
           {courses.length > 0 ? (
-            <SelectField label="Course" required value={form.course} onChange={setCourse} options={courses.map((c) => c.name)} placeholder="Select a course…" />
+            <SelectField
+              label="Course"
+              required
+              value={form.course}
+              onChange={setCourse}
+              options={courses.map((c) => c.name)}
+              placeholder="Select a course…"
+            />
           ) : (
-            <Field label="Course" required value={form.course} onChange={setCourse} placeholder="B.Tech" />
+            <Field
+              label="Course"
+              required
+              value={form.course}
+              onChange={setCourse}
+              placeholder="B.Tech"
+            />
           )}
           {branchesFor.length > 0 ? (
-            <SelectField label="Branch" required value={form.branch} onChange={set('branch')} options={branchesFor} placeholder="Select a branch…" />
+            <SelectField
+              label="Branch"
+              required
+              value={form.branch}
+              onChange={set('branch')}
+              options={branchesFor}
+              placeholder="Select a branch…"
+            />
           ) : (
-            <Field label="Branch" value={form.branch} onChange={set('branch')} placeholder={form.course ? 'No branches for this course' : 'CSE'} />
+            <Field
+              label="Branch"
+              value={form.branch}
+              onChange={set('branch')}
+              placeholder={form.course ? 'No branches for this course' : 'CSE'}
+            />
           )}
           <Field
             label="Passout year"
@@ -168,7 +203,13 @@ export default function NewStudentPage() {
             placeholder="Not tracked"
           />
           <Field label="Phone" value={form.phone} onChange={set('phone')} />
-          <Field label="Percentage (%)" type="number" value={form.cgpa} onChange={set('cgpa')} placeholder="85" />
+          <Field
+            label="Percentage (%)"
+            type="number"
+            value={form.cgpa}
+            onChange={set('cgpa')}
+            placeholder="85"
+          />
           <Field
             label="Active backlogs"
             type="number"
@@ -181,11 +222,30 @@ export default function NewStudentPage() {
             value={form.totalBacklogs}
             onChange={set('totalBacklogs')}
           />
-          <Field label="10th %" type="number" value={form.tenthPercentage} onChange={set('tenthPercentage')} placeholder="85" />
-          <Field label="12th %" type="number" value={form.twelfthPercentage} onChange={set('twelfthPercentage')} placeholder="82" />
-          <Field label="UG %" type="number" value={form.ugPercentage} onChange={set('ugPercentage')} placeholder="70" />
+          <Field
+            label="10th %"
+            type="number"
+            value={form.tenthPercentage}
+            onChange={set('tenthPercentage')}
+            placeholder="85"
+          />
+          <Field
+            label="12th %"
+            type="number"
+            value={form.twelfthPercentage}
+            onChange={set('twelfthPercentage')}
+            placeholder="82"
+          />
+          <Field
+            label="UG %"
+            type="number"
+            value={form.ugPercentage}
+            onChange={set('ugPercentage')}
+            placeholder="70"
+          />
           <p className="text-xs text-subtle sm:col-span-2">
-            &ldquo;Percentage&rdquo; is the current/PG course; UG % is the undergraduate degree (for PG students).
+            &ldquo;Percentage&rdquo; is the current/PG course; UG % is the undergraduate degree (for
+            PG students).
           </p>
 
           {error && <p className="text-sm text-danger sm:col-span-2">{error}</p>}

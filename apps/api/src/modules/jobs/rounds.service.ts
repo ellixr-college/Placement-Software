@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PRISMA } from '../../common/prisma.module';
 import { Prisma } from '@ellixr/database';
 import type { PrismaClient } from '@ellixr/database';
@@ -109,9 +104,7 @@ export class RoundsService {
         })),
       })),
       // Applied but not yet placed into any round (before Round 1, or late applicants).
-      pool: apps
-        .filter((a) => a.status === 'APPLIED')
-        .map(pub),
+      pool: apps.filter((a) => a.status === 'APPLIED').map(pub),
       // Cleared every existing round, not waiting in an open one → ready to place or advance.
       finalists: apps
         .filter((a) => a.status === 'IN_PROGRESS' && !pendingInOpen.has(a.id))
@@ -184,7 +177,9 @@ export class RoundsService {
 
   async updateRound(collegeId: string, jobId: string, roundId: string, dto: UpdateRoundDto) {
     await this.resolveJob(collegeId, jobId);
-    const round = await this.prisma.jobRound.findFirst({ where: { id: roundId, jobId, collegeId } });
+    const round = await this.prisma.jobRound.findFirst({
+      where: { id: roundId, jobId, collegeId },
+    });
     if (!round) throw new NotFoundException('Round not found');
     return this.prisma.jobRound.update({
       where: { id: roundId },
@@ -201,7 +196,9 @@ export class RoundsService {
   // round added by mistake. Participation rows cascade.
   async deleteRound(collegeId: string, jobId: string, roundId: string) {
     await this.resolveJob(collegeId, jobId);
-    const round = await this.prisma.jobRound.findFirst({ where: { id: roundId, jobId, collegeId } });
+    const round = await this.prisma.jobRound.findFirst({
+      where: { id: roundId, jobId, collegeId },
+    });
     if (!round) throw new NotFoundException('Round not found');
     if (round.status === 'DECIDED') {
       throw new BadRequestException('A decided round cannot be deleted.');
@@ -219,20 +216,21 @@ export class RoundsService {
   }
 
   // ─────────────── Decide a round (advance some, auto-reject the rest) ───────────────
-  async decideRound(
-    collegeId: string,
-    jobId: string,
-    roundId: string,
-    advanceIds: string[],
-  ) {
+  async decideRound(collegeId: string, jobId: string, roundId: string, advanceIds: string[]) {
     const job = await this.resolveJob(collegeId, jobId);
-    const round = await this.prisma.jobRound.findFirst({ where: { id: roundId, jobId, collegeId } });
+    const round = await this.prisma.jobRound.findFirst({
+      where: { id: roundId, jobId, collegeId },
+    });
     if (!round) throw new NotFoundException('Round not found');
     if (round.status === 'DECIDED') throw new BadRequestException('This round is already decided.');
 
     const parts = await this.prisma.applicationRound.findMany({
       where: { roundId, outcome: 'PENDING' },
-      include: { application: { select: { id: true, studentId: true, student: { select: { userId: true } } } } },
+      include: {
+        application: {
+          select: { id: true, studentId: true, student: { select: { userId: true } } },
+        },
+      },
     });
     const advance = new Set(advanceIds);
     const advanced = parts.filter((p) => advance.has(p.applicationId));
@@ -295,12 +293,7 @@ export class RoundsService {
   }
 
   // ─────────────── Select / place a finalist ───────────────
-  async place(
-    collegeId: string,
-    jobId: string,
-    applicationId: string,
-    dto: PlaceApplicantDto,
-  ) {
+  async place(collegeId: string, jobId: string, applicationId: string, dto: PlaceApplicantDto) {
     const job = await this.resolveJob(collegeId, jobId);
     const app = await this.prisma.application.findFirst({
       where: { id: applicationId, jobId, collegeId },
@@ -319,7 +312,9 @@ export class RoundsService {
           // Legacy bridge so analytics/reports keep counting placements.
           stage: 'OFFER_ACCEPTED',
           ...(dto.offerCtc != null ? { offerCtc: new Prisma.Decimal(dto.offerCtc) } : {}),
-          ...(dto.offerLetterUrl !== undefined ? { offerLetterUrl: dto.offerLetterUrl || null } : {}),
+          ...(dto.offerLetterUrl !== undefined
+            ? { offerLetterUrl: dto.offerLetterUrl || null }
+            : {}),
         },
       }),
       this.prisma.student.update({ where: { id: app.studentId }, data: { status: 'PLACED' } }),

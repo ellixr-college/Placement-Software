@@ -73,10 +73,7 @@ export async function downloadReport(
   }
 
   const blob = await res.blob();
-  const filename = filenameFrom(
-    res.headers.get('Content-Disposition'),
-    `${type}.${format}`,
-  );
+  const filename = filenameFrom(res.headers.get('Content-Disposition'), `${type}.${format}`);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

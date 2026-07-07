@@ -33,7 +33,9 @@ export default function DashboardPage() {
         setPlacement(p);
       })
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load metrics'));
-    listPendingResults().then(setPending).catch(() => {});
+    listPendingResults()
+      .then(setPending)
+      .catch(() => {});
   }, [loading, user]);
 
   const firstName = user?.fullName?.split(' ')[0] ?? 'there';
@@ -43,7 +45,9 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <header className="rounded-2xl bg-gradient-primary p-6 text-white shadow-nav">
         <h1 className="text-2xl font-semibold">Welcome, {firstName}</h1>
-        <p className="text-sm text-white/80">Placement overview for {user?.college?.name ?? 'your college'}</p>
+        <p className="text-sm text-white/80">
+          Placement overview for {user?.college?.name ?? 'your college'}
+        </p>
       </header>
 
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -65,7 +69,8 @@ export default function DashboardPage() {
                   <span className="font-medium text-strong">{p.jobTitle}</span> · {p.roundTitle}
                 </span>
                 <span className="text-xs text-warning">
-                  due {p.scheduledAt ? new Date(p.scheduledAt).toLocaleDateString() : ''} · enter results →
+                  due {p.scheduledAt ? new Date(p.scheduledAt).toLocaleDateString() : ''} · enter
+                  results →
                 </span>
               </Link>
             ))}
@@ -101,9 +106,18 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatTile label="Verified" value={placement ? placement.verifiedStudents.toLocaleString() : '—'} />
-        <StatTile label="Internships" value={students ? students.internships.toLocaleString() : '—'} />
-        <StatTile label="Applications" value={jobs ? jobs.applicationsReceived.toLocaleString() : '—'} />
+        <StatTile
+          label="Verified"
+          value={placement ? placement.verifiedStudents.toLocaleString() : '—'}
+        />
+        <StatTile
+          label="Internships"
+          value={students ? students.internships.toLocaleString() : '—'}
+        />
+        <StatTile
+          label="Applications"
+          value={jobs ? jobs.applicationsReceived.toLocaleString() : '—'}
+        />
         <StatTile label="Highest package" value={lpa(placement?.highestPackage ?? null)} />
         <StatTile label="Median package" value={lpa(placement?.medianPackage ?? null)} />
       </div>
@@ -111,8 +125,8 @@ export default function DashboardPage() {
       <SectionCard title="Welcome to Ellixr" subtitle="Your placement command center">
         <p className="text-sm text-body">
           Manage students, companies, jobs, the ATS pipeline, alumni, and analytics from the left
-          navigation. Head to <span className="font-medium text-strong">Analytics</span> for the full
-          breakdown by branch, batch and recruiter.
+          navigation. Head to <span className="font-medium text-strong">Analytics</span> for the
+          full breakdown by branch, batch and recruiter.
         </p>
       </SectionCard>
     </div>

@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { Button, Card, SectionCard } from '@ellixr/ui';
-import { downloadReport, getReportCatalog, REPORT_LABELS, type ReportFormat } from '../../../lib/reports';
+import {
+  downloadReport,
+  getReportCatalog,
+  REPORT_LABELS,
+  type ReportFormat,
+} from '../../../lib/reports';
 import { getPlacementMetrics, type PlacementMetrics } from '../../../lib/analytics';
 
 const DESCRIPTIONS: Record<string, string> = {
@@ -66,7 +71,9 @@ export default function ReportsPage() {
         <p className="text-sm text-subtle">Month-on-month placement trend, plus data exports.</p>
       </header>
 
-      {error && <div className="rounded-card bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>}
+      {error && (
+        <div className="rounded-card bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>
+      )}
 
       {/* Month-on-month placements */}
       <SectionCard
@@ -118,7 +125,12 @@ export default function ReportsPage() {
               <h3 className="text-base font-semibold text-strong">{REPORT_LABELS[type] ?? type}</h3>
               <p className="mt-1 text-xs text-subtle">{DESCRIPTIONS[type] ?? ''}</p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => handleDownload(type)} loading={busy === type}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDownload(type)}
+              loading={busy === type}
+            >
               {busy === type ? 'Preparing…' : `Download ${format.toUpperCase()}`}
             </Button>
           </Card>

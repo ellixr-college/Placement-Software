@@ -87,7 +87,9 @@ export default function ResumeEditorPage() {
 
   if (loading) return <p className="text-subtle">Loading…</p>;
 
-  const link = meta ? `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${meta.publicSlug}` : '';
+  const link = meta
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${meta.publicSlug}`
+    : '';
   const readiness = resumeReadiness(data);
 
   // ── View mode: read-only preview after save (Edit returns to the form) ──
@@ -142,13 +144,11 @@ export default function ResumeEditorPage() {
       <header className="flex items-center justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold text-strong">My resume</h1>
-          <p className="text-sm text-subtle">Fill in your details, pick a template, and share the link.</p>
+          <p className="text-sm text-subtle">
+            Fill in your details, pick a template, and share the link.
+          </p>
         </div>
-        {meta && readiness.ready && (
-          <Button onClick={() => setMode('view')}>
-            Preview
-          </Button>
-        )}
+        {meta && readiness.ready && <Button onClick={() => setMode('view')}>Preview</Button>}
       </header>
 
       {/* Public link */}
@@ -236,8 +236,18 @@ export default function ResumeEditorPage() {
       {/* Basics */}
       <Section title="Basics">
         <Text label="Full name" value={data.fullName} onChange={(v) => patch({ fullName: v })} />
-        <Text label="Headline" value={data.headline} onChange={(v) => patch({ headline: v })} placeholder="Final-year CSE · Aspiring SDE" />
-        <Text label="Date of birth" type="date" value={data.dateOfBirth} onChange={(v) => patch({ dateOfBirth: v })} />
+        <Text
+          label="Headline"
+          value={data.headline}
+          onChange={(v) => patch({ headline: v })}
+          placeholder="Final-year CSE · Aspiring SDE"
+        />
+        <Text
+          label="Date of birth"
+          type="date"
+          value={data.dateOfBirth}
+          onChange={(v) => patch({ dateOfBirth: v })}
+        />
         <Text label="Email" value={data.email} onChange={(v) => patch({ email: v })} />
         <Text label="Phone" value={data.phone} onChange={(v) => patch({ phone: v })} />
         <Text label="Location" value={data.location} onChange={(v) => patch({ location: v })} />
@@ -267,15 +277,29 @@ export default function ResumeEditorPage() {
         }
         render={(l, i) => (
           <>
-            <Text label="Label" value={l.label} onChange={(v) => patch({ links: replace(data.links, i, { ...l, label: v }) })} placeholder="GitHub" />
-            <Text label="URL" value={l.url} onChange={(v) => patch({ links: replace(data.links, i, { ...l, url: v }) })} placeholder="https://…" />
+            <Text
+              label="Label"
+              value={l.label}
+              onChange={(v) => patch({ links: replace(data.links, i, { ...l, label: v }) })}
+              placeholder="GitHub"
+            />
+            <Text
+              label="URL"
+              value={l.url}
+              onChange={(v) => patch({ links: replace(data.links, i, { ...l, url: v }) })}
+              placeholder="https://…"
+            />
           </>
         )}
       />
 
       {/* Summary */}
       <Section title="Summary">
-        <Area value={data.summary} onChange={(v) => patch({ summary: v })} placeholder="2–3 lines about you." />
+        <Area
+          value={data.summary}
+          onChange={(v) => patch({ summary: v })}
+          placeholder="2–3 lines about you."
+        />
       </Section>
 
       {/* Skills */}
@@ -302,9 +326,7 @@ export default function ResumeEditorPage() {
       <ArraySection
         title="Experience"
         items={data.experience}
-        onAdd={() =>
-          patch({ experience: [...data.experience, blankExperience()] })
-        }
+        onAdd={() => patch({ experience: [...data.experience, blankExperience()] })}
         onRemove={(i) => patch({ experience: data.experience.filter((_, x) => x !== i) })}
         render={(e, i) => {
           const set = (p: Partial<ResumeExperience>) =>
@@ -315,8 +337,18 @@ export default function ResumeEditorPage() {
               <Text label="Company" value={e.company} onChange={(v) => set({ company: v })} />
               <Text label="Location" value={e.location} onChange={(v) => set({ location: v })} />
               <div className="grid grid-cols-2 gap-2">
-                <Text label="Start" value={e.startDate} onChange={(v) => set({ startDate: v })} placeholder="Jun 2025" />
-                <Text label="End" value={e.endDate} onChange={(v) => set({ endDate: v })} placeholder="Present" />
+                <Text
+                  label="Start"
+                  value={e.startDate}
+                  onChange={(v) => set({ startDate: v })}
+                  placeholder="Jun 2025"
+                />
+                <Text
+                  label="End"
+                  value={e.endDate}
+                  onChange={(v) => set({ endDate: v })}
+                  placeholder="Present"
+                />
               </div>
               <Area
                 label="Highlights (one per line)"
@@ -339,12 +371,27 @@ export default function ResumeEditorPage() {
             patch({ internships: replace(data.internships, i, { ...e, ...p }) });
           return (
             <>
-              <Text label="Role" value={e.role} onChange={(v) => set({ role: v })} placeholder="Marketing Intern" />
+              <Text
+                label="Role"
+                value={e.role}
+                onChange={(v) => set({ role: v })}
+                placeholder="Marketing Intern"
+              />
               <Text label="Company" value={e.company} onChange={(v) => set({ company: v })} />
               <Text label="Location" value={e.location} onChange={(v) => set({ location: v })} />
               <div className="grid grid-cols-2 gap-2">
-                <Text label="Start" value={e.startDate} onChange={(v) => set({ startDate: v })} placeholder="Jun 2025" />
-                <Text label="End" value={e.endDate} onChange={(v) => set({ endDate: v })} placeholder="Aug 2025" />
+                <Text
+                  label="Start"
+                  value={e.startDate}
+                  onChange={(v) => set({ startDate: v })}
+                  placeholder="Jun 2025"
+                />
+                <Text
+                  label="End"
+                  value={e.endDate}
+                  onChange={(v) => set({ endDate: v })}
+                  placeholder="Aug 2025"
+                />
               </div>
               <Area
                 label="Highlights (one per line)"
@@ -368,9 +415,22 @@ export default function ResumeEditorPage() {
           return (
             <>
               <Text label="Name" value={p.name} onChange={(v) => set({ name: v })} />
-              <Text label="Link" value={p.link} onChange={(v) => set({ link: v })} placeholder="https://…" />
-              <Area label="Description" value={p.description} onChange={(v) => set({ description: v })} />
-              <Text label="Tech (comma-separated)" value={p.tech.join(', ')} onChange={(v) => set({ tech: splitList(v, ',') })} />
+              <Text
+                label="Link"
+                value={p.link}
+                onChange={(v) => set({ link: v })}
+                placeholder="https://…"
+              />
+              <Area
+                label="Description"
+                value={p.description}
+                onChange={(v) => set({ description: v })}
+              />
+              <Text
+                label="Tech (comma-separated)"
+                value={p.tech.join(', ')}
+                onChange={(v) => set({ tech: splitList(v, ',') })}
+              />
             </>
           );
         }}
@@ -387,14 +447,32 @@ export default function ResumeEditorPage() {
             patch({ education: replace(data.education, i, { ...ed, ...up }) });
           return (
             <>
-              <Text label="Institution" value={ed.institution} onChange={(v) => set({ institution: v })} />
-              <Text label="Qualification" value={ed.degree} onChange={(v) => set({ degree: v })} placeholder="10th / 12th / B.Com" />
+              <Text
+                label="Institution"
+                value={ed.institution}
+                onChange={(v) => set({ institution: v })}
+              />
+              <Text
+                label="Qualification"
+                value={ed.degree}
+                onChange={(v) => set({ degree: v })}
+                placeholder="10th / 12th / B.Com"
+              />
               <Text label="Field" value={ed.field} onChange={(v) => set({ field: v })} />
               <div className="grid grid-cols-2 gap-2">
-                <Text label="Start year" value={ed.startYear} onChange={(v) => set({ startYear: v })} />
+                <Text
+                  label="Start year"
+                  value={ed.startYear}
+                  onChange={(v) => set({ startYear: v })}
+                />
                 <Text label="End year" value={ed.endYear} onChange={(v) => set({ endYear: v })} />
               </div>
-              <Text label="Percentage" value={ed.score} onChange={(v) => set({ score: v })} placeholder="e.g. 85%" />
+              <Text
+                label="Percentage"
+                value={ed.score}
+                onChange={(v) => set({ score: v })}
+                placeholder="e.g. 85%"
+              />
             </>
           );
         }}
@@ -404,7 +482,9 @@ export default function ResumeEditorPage() {
       <ArraySection
         title="Certifications"
         items={data.certifications}
-        onAdd={() => patch({ certifications: [...data.certifications, { name: '', issuer: '', year: '' }] })}
+        onAdd={() =>
+          patch({ certifications: [...data.certifications, { name: '', issuer: '', year: '' }] })
+        }
         onRemove={(i) => patch({ certifications: data.certifications.filter((_, x) => x !== i) })}
         render={(c, i) => {
           const set = (up: Partial<ResumeCertification>) =>
@@ -452,14 +532,29 @@ function splitList(v: string, sep: string): string[] {
     .filter(Boolean);
 }
 const blankExperience = (): ResumeExperience => ({
-  company: '', role: '', location: '', startDate: '', endDate: '', bullets: [],
+  company: '',
+  role: '',
+  location: '',
+  startDate: '',
+  endDate: '',
+  bullets: [],
 });
 const blankInternship = (): ResumeInternship => ({
-  company: '', role: '', location: '', startDate: '', endDate: '', bullets: [],
+  company: '',
+  role: '',
+  location: '',
+  startDate: '',
+  endDate: '',
+  bullets: [],
 });
 const blankProject = (): ResumeProject => ({ name: '', description: '', link: '', tech: [] });
 const blankEducation = (): ResumeEducation => ({
-  institution: '', degree: '', field: '', startYear: '', endYear: '', score: '',
+  institution: '',
+  degree: '',
+  field: '',
+  startYear: '',
+  endYear: '',
+  score: '',
 });
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

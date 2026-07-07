@@ -1,4 +1,12 @@
-import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
 import { UserRole, PHONE_REGEX } from '@ellixr/shared';
 import { EmptyToUndefined } from '../../common/transforms';
 
@@ -30,7 +38,10 @@ export class CreateUserDto {
 
 export class UpdateUserDto {
   @IsOptional() @IsString() fullName?: string;
-  @EmptyToUndefined() @IsOptional() @Matches(PHONE_REGEX, { message: PHONE_MESSAGE }) phone?: string;
+  @EmptyToUndefined()
+  @IsOptional()
+  @Matches(PHONE_REGEX, { message: PHONE_MESSAGE })
+  phone?: string;
   @IsOptional() @IsIn([UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER]) role?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
 }

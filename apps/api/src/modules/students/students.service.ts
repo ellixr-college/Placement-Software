@@ -151,7 +151,12 @@ export class StudentsService {
     const passwordHash = await bcrypt.hash(DEFAULT_STUDENT_PASSWORD, 12);
     const userData: Prisma.UserCreateManyInput[] = [];
     const studentData: Prisma.StudentCreateManyInput[] = [];
-    const created: Array<{ rollNumber: string; fullName: string; email: string; tempPassword: string }> = [];
+    const created: Array<{
+      rollNumber: string;
+      fullName: string;
+      email: string;
+      tempPassword: string;
+    }> = [];
 
     for (const { rowNum, dto: d } of parsed) {
       const emailKey = d.email.toLowerCase();
@@ -189,7 +194,8 @@ export class StudentsService {
         cgpa: d.cgpa != null ? new Prisma.Decimal(d.cgpa) : null,
         ugPercentage: d.ugPercentage != null ? new Prisma.Decimal(d.ugPercentage) : null,
         tenthPercentage: d.tenthPercentage != null ? new Prisma.Decimal(d.tenthPercentage) : null,
-        twelfthPercentage: d.twelfthPercentage != null ? new Prisma.Decimal(d.twelfthPercentage) : null,
+        twelfthPercentage:
+          d.twelfthPercentage != null ? new Prisma.Decimal(d.twelfthPercentage) : null,
         activeBacklogs: d.activeBacklogs ?? 0,
         totalBacklogs: d.totalBacklogs ?? 0,
         gender: d.gender,
@@ -199,7 +205,12 @@ export class StudentsService {
         verificationStatus: 'VERIFIED',
         verifiedAt: new Date(),
       });
-      created.push({ rollNumber: d.rollNumber, fullName: d.fullName, email: d.email, tempPassword: DEFAULT_STUDENT_PASSWORD });
+      created.push({
+        rollNumber: d.rollNumber,
+        fullName: d.fullName,
+        email: d.email,
+        tempPassword: DEFAULT_STUDENT_PASSWORD,
+      });
     }
 
     if (userData.length > 0) {
@@ -299,7 +310,10 @@ export class StudentsService {
       q.detailsComplete === undefined
         ? where
         : {
-            AND: [where, q.detailsComplete ? DETAILS_COMPLETE_WHERE : { NOT: DETAILS_COMPLETE_WHERE }],
+            AND: [
+              where,
+              q.detailsComplete ? DETAILS_COMPLETE_WHERE : { NOT: DETAILS_COMPLETE_WHERE },
+            ],
           };
 
     const [total, students, detailsCompleteCount] = await this.prisma.$transaction([
@@ -342,13 +356,25 @@ export class StudentsService {
 
     const map = new Map<
       string,
-      { course: string; graduationYear: number; count: number; loggedIn: number; detailsComplete: number }
+      {
+        course: string;
+        graduationYear: number;
+        count: number;
+        loggedIn: number;
+        detailsComplete: number;
+      }
     >();
     for (const s of rows) {
       const key = `${s.graduationYear}|${s.course}`;
       let b = map.get(key);
       if (!b) {
-        b = { course: s.course, graduationYear: s.graduationYear, count: 0, loggedIn: 0, detailsComplete: 0 };
+        b = {
+          course: s.course,
+          graduationYear: s.graduationYear,
+          count: 0,
+          loggedIn: 0,
+          detailsComplete: 0,
+        };
         map.set(key, b);
       }
       b.count++;
@@ -372,7 +398,17 @@ export class StudentsService {
 
   async update(collegeId: string, id: string, dto: UpdateStudentDto) {
     await this.findOne(collegeId, id);
-    const { fullName, phone, cgpa, dateOfBirth, tenthPercentage, twelfthPercentage, ugPercentage, semesterMarks, ...studentFields } = dto;
+    const {
+      fullName,
+      phone,
+      cgpa,
+      dateOfBirth,
+      tenthPercentage,
+      twelfthPercentage,
+      ugPercentage,
+      semesterMarks,
+      ...studentFields
+    } = dto;
 
     const student = await this.prisma.$transaction(async (tx) => {
       if (fullName !== undefined || phone !== undefined) {
@@ -390,7 +426,13 @@ export class StudentsService {
         data: {
           ...studentFields,
           ...(cgpa !== undefined ? { cgpa: cgpa != null ? new Prisma.Decimal(cgpa) : null } : {}),
-          ...this.extendedData({ dateOfBirth, tenthPercentage, twelfthPercentage, ugPercentage, semesterMarks }),
+          ...this.extendedData({
+            dateOfBirth,
+            tenthPercentage,
+            twelfthPercentage,
+            ugPercentage,
+            semesterMarks,
+          }),
         },
         include: { user: true },
       });
@@ -485,7 +527,17 @@ export class StudentsService {
   // every profile edit would silently hide all eligible jobs from them.
   async updateOwnProfile(userId: string, dto: UpdateOwnProfileDto) {
     const student = await this.ownStudent(userId);
-    const { fullName, phone, cgpa, dateOfBirth, tenthPercentage, twelfthPercentage, ugPercentage, semesterMarks, ...academic } = dto;
+    const {
+      fullName,
+      phone,
+      cgpa,
+      dateOfBirth,
+      tenthPercentage,
+      twelfthPercentage,
+      ugPercentage,
+      semesterMarks,
+      ...academic
+    } = dto;
 
     const updated = await this.prisma.$transaction(async (tx) => {
       if (fullName !== undefined || phone !== undefined) {
@@ -502,7 +554,13 @@ export class StudentsService {
         data: {
           ...academic,
           ...(cgpa !== undefined ? { cgpa: cgpa != null ? new Prisma.Decimal(cgpa) : null } : {}),
-          ...this.extendedData({ dateOfBirth, tenthPercentage, twelfthPercentage, ugPercentage, semesterMarks }),
+          ...this.extendedData({
+            dateOfBirth,
+            tenthPercentage,
+            twelfthPercentage,
+            ugPercentage,
+            semesterMarks,
+          }),
         },
         include: { user: true },
       });
@@ -601,7 +659,8 @@ export class StudentsService {
     if (course === '') throw new BadRequestException('course is required (set it on the form)');
     const branch = first('branch') || (defaults.branch ?? '').trim() || course;
     const gradYear = num('graduationyear', 'graduationYear') ?? defaults.graduationYear;
-    if (gradYear == null) throw new BadRequestException('passout year is required (set it on the form)');
+    if (gradYear == null)
+      throw new BadRequestException('passout year is required (set it on the form)');
     const currentYear = num('currentyear', 'currentYear') ?? defaults.currentYear;
 
     return {
@@ -654,12 +713,20 @@ export class StudentsService {
     semesterMarks?: { label: string; score: string }[];
   }) {
     return {
-      ...(d.dateOfBirth !== undefined ? { dateOfBirth: d.dateOfBirth ? new Date(d.dateOfBirth) : null } : {}),
+      ...(d.dateOfBirth !== undefined
+        ? { dateOfBirth: d.dateOfBirth ? new Date(d.dateOfBirth) : null }
+        : {}),
       ...(d.tenthPercentage !== undefined
-        ? { tenthPercentage: d.tenthPercentage != null ? new Prisma.Decimal(d.tenthPercentage) : null }
+        ? {
+            tenthPercentage:
+              d.tenthPercentage != null ? new Prisma.Decimal(d.tenthPercentage) : null,
+          }
         : {}),
       ...(d.twelfthPercentage !== undefined
-        ? { twelfthPercentage: d.twelfthPercentage != null ? new Prisma.Decimal(d.twelfthPercentage) : null }
+        ? {
+            twelfthPercentage:
+              d.twelfthPercentage != null ? new Prisma.Decimal(d.twelfthPercentage) : null,
+          }
         : {}),
       ...(d.ugPercentage !== undefined
         ? { ugPercentage: d.ugPercentage != null ? new Prisma.Decimal(d.ugPercentage) : null }
@@ -748,7 +815,14 @@ export class StudentsService {
 // Weighted profile-completion checklist (0–100). Academic fields live on the
 // Student row; skills/summary/projects live in the linked Resume's JSON `data`.
 function computeCompletion(
-  s: { course: string; branch: string; graduationYear: number; cgpa: Prisma.Decimal | null; enrollmentNumber: string | null; user: { phone: string | null } },
+  s: {
+    course: string;
+    branch: string;
+    graduationYear: number;
+    cgpa: Prisma.Decimal | null;
+    enrollmentNumber: string | null;
+    user: { phone: string | null };
+  },
   resumeData: Prisma.JsonValue | null,
 ): number {
   let score = 0;
@@ -757,7 +831,10 @@ function computeCompletion(
   if (s.course && s.branch && s.graduationYear) score += 20;
   if (s.cgpa != null) score += 10;
 
-  const r = (resumeData && typeof resumeData === 'object' ? resumeData : {}) as Record<string, unknown>;
+  const r = (resumeData && typeof resumeData === 'object' ? resumeData : {}) as Record<
+    string,
+    unknown
+  >;
   const arr = (k: string): unknown[] => (Array.isArray(r[k]) ? (r[k] as unknown[]) : []);
   if (typeof r.summary === 'string' && r.summary.trim()) score += 10;
   if (arr('skills').length >= 3) score += 15;

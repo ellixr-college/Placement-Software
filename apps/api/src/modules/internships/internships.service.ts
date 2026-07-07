@@ -1,9 +1,4 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PRISMA } from '../../common/prisma.module';
 import { Prisma } from '@ellixr/database';
 import type { Internship, PrismaClient } from '@ellixr/database';
@@ -119,8 +114,12 @@ export class InternshipsService {
         ...(dto.location !== undefined ? { location: dto.location } : {}),
         ...(dto.isPaid !== undefined ? { isPaid: dto.isPaid } : {}),
         ...(dto.stipend !== undefined ? { stipend: toDec(dto.stipend) } : {}),
-        ...(dto.startDate !== undefined ? { startDate: dto.startDate ? new Date(dto.startDate) : null } : {}),
-        ...(dto.endDate !== undefined ? { endDate: dto.endDate ? new Date(dto.endDate) : null } : {}),
+        ...(dto.startDate !== undefined
+          ? { startDate: dto.startDate ? new Date(dto.startDate) : null }
+          : {}),
+        ...(dto.endDate !== undefined
+          ? { endDate: dto.endDate ? new Date(dto.endDate) : null }
+          : {}),
         ...(dto.isPpo !== undefined ? { isPpo: dto.isPpo } : {}),
         ...(dto.description !== undefined ? { description: dto.description } : {}),
         ...(dto.pocName !== undefined ? { pocName: dto.pocName } : {}),

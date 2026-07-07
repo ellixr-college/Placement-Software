@@ -88,10 +88,17 @@ export default function TeamSettingsPage() {
         <div>
           <h1 className="text-2xl font-semibold text-strong">Team</h1>
           <p className="text-sm text-subtle">
-            {active.length} member{active.length === 1 ? '' : 's'} · Placement Officers & Administrators
+            {active.length} member{active.length === 1 ? '' : 's'} · Placement Officers &
+            Administrators
           </p>
         </div>
-        <Button onClick={() => { setShowForm((s) => !s); setCreated(null); }} variant={showForm ? 'outline' : 'primary'}>
+        <Button
+          onClick={() => {
+            setShowForm((s) => !s);
+            setCreated(null);
+          }}
+          variant={showForm ? 'outline' : 'primary'}
+        >
           {showForm ? 'Cancel' : 'Add member'}
         </Button>
       </header>
@@ -122,7 +129,9 @@ export default function TeamSettingsPage() {
               </p>
             )}
           </div>
-          <p className="text-xs text-subtle">They'll be prompted to set a new password on first login.</p>
+          <p className="text-xs text-subtle">
+            They'll be prompted to set a new password on first login.
+          </p>
         </Card>
       )}
 
@@ -151,15 +160,25 @@ export default function TeamSettingsPage() {
           </thead>
           <tbody>
             {members.length === 0 ? (
-              <tr><td colSpan={5} className="px-5 py-8 text-center text-subtle">No team members yet. Add your first.</td></tr>
+              <tr>
+                <td colSpan={5} className="px-5 py-8 text-center text-subtle">
+                  No team members yet. Add your first.
+                </td>
+              </tr>
             ) : (
               members.map((m) => {
                 const isSelf = m.id === user?.id;
                 return (
                   <tr key={m.id} className="border-b border-border last:border-0 hover:bg-app/50">
                     <td className="px-5 py-3">
-                      <p className="font-medium text-strong">{m.fullName}{isSelf && <span className="ml-1.5 text-xs text-subtle">(you)</span>}</p>
-                      <p className="text-xs text-subtle">{m.email}{m.phone ? ` · ${m.phone}` : ''}</p>
+                      <p className="font-medium text-strong">
+                        {m.fullName}
+                        {isSelf && <span className="ml-1.5 text-xs text-subtle">(you)</span>}
+                      </p>
+                      <p className="text-xs text-subtle">
+                        {m.email}
+                        {m.phone ? ` · ${m.phone}` : ''}
+                      </p>
                     </td>
                     <td className="px-5 py-3">
                       {isSelf || !m.isActive ? (
@@ -183,9 +202,13 @@ export default function TeamSettingsPage() {
                     </td>
                     <td className="px-5 py-3">
                       {m.isActive ? (
-                        <span className="rounded-pill bg-success/15 px-2 py-0.5 text-xs font-medium text-success">Active</span>
+                        <span className="rounded-pill bg-success/15 px-2 py-0.5 text-xs font-medium text-success">
+                          Active
+                        </span>
                       ) : (
-                        <span className="rounded-pill bg-danger/15 px-2 py-0.5 text-xs font-medium text-danger">Inactive</span>
+                        <span className="rounded-pill bg-danger/15 px-2 py-0.5 text-xs font-medium text-danger">
+                          Inactive
+                        </span>
                       )}
                     </td>
                     <td className="px-5 py-3 text-right">
@@ -228,8 +251,9 @@ function NewMemberForm({ onCreated }: { onCreated: (r: CreateUserResult) => void
   });
   const [error, setError] = useState<string | null>(null);
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set =
+    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   async function submit() {
     setError(null);
@@ -268,7 +292,12 @@ function NewMemberForm({ onCreated }: { onCreated: (r: CreateUserResult) => void
           </select>
         </Field>
         <Field label="Phone">
-          <input className={inputCls} value={form.phone} onChange={set('phone')} placeholder="10-digit mobile" />
+          <input
+            className={inputCls}
+            value={form.phone}
+            onChange={set('phone')}
+            placeholder="10-digit mobile"
+          />
           {!phoneOk && <FieldError>Enter a valid 10-digit mobile number.</FieldError>}
         </Field>
         <Field label="Password">
@@ -284,11 +313,13 @@ function NewMemberForm({ onCreated }: { onCreated: (r: CreateUserResult) => void
       </div>
       <p className="text-xs text-subtle">
         Placement Officers manage students, companies, jobs and the ATS pipeline. College Admins can
-        additionally manage the team. Set a password to share directly, or leave blank for a one-time
-        temp password.
+        additionally manage the team. Set a password to share directly, or leave blank for a
+        one-time temp password.
       </p>
       {error && <p className="text-sm text-danger">{error}</p>}
-      <Button onClick={submit} disabled={!ready}>Add member</Button>
+      <Button onClick={submit} disabled={!ready}>
+        Add member
+      </Button>
     </Card>
   );
 }

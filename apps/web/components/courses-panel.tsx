@@ -10,7 +10,11 @@ import {
   type CollegeCourse,
 } from '../lib/courses';
 
-const parseList = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
+const parseList = (s: string) =>
+  s
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean);
 const inputCls =
   'h-9 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400';
 
@@ -89,13 +93,25 @@ export function CoursesPanel({ collegeId }: { collegeId: string }) {
       <div className="flex flex-wrap items-end gap-2 border-t border-border pt-3">
         <label className="space-y-1">
           <span className="text-xs font-medium text-subtle">Course</span>
-          <input className={`${inputCls} w-40`} value={name} onChange={(e) => setName(e.target.value)} placeholder="B.Tech" />
+          <input
+            className={`${inputCls} w-40`}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="B.Tech"
+          />
         </label>
         <label className="flex-1 space-y-1">
           <span className="text-xs font-medium text-subtle">Branches (comma-separated)</span>
-          <input className={inputCls} value={branches} onChange={(e) => setBranches(e.target.value)} placeholder="CSE, ECE, Mechanical (leave blank if none)" />
+          <input
+            className={inputCls}
+            value={branches}
+            onChange={(e) => setBranches(e.target.value)}
+            placeholder="CSE, ECE, Mechanical (leave blank if none)"
+          />
         </label>
-        <Button size="sm" onClick={add} loading={busy} disabled={!name.trim()}>Add course</Button>
+        <Button size="sm" onClick={add} loading={busy} disabled={!name.trim()}>
+          Add course
+        </Button>
       </div>
     </div>
   );
@@ -121,20 +137,42 @@ function CourseRow({
           <span className="flex-1 text-xs text-subtle">
             {course.branches.length ? course.branches.join(' · ') : 'no branches'}
           </span>
-          <button onClick={() => { setValue(course.branches.join(', ')); setEditing(true); }} className="text-xs font-medium text-primary-600 hover:underline">
+          <button
+            onClick={() => {
+              setValue(course.branches.join(', '));
+              setEditing(true);
+            }}
+            className="text-xs font-medium text-primary-600 hover:underline"
+          >
             Edit branches
           </button>
-          <button onClick={() => onRemove(course.id)} className="text-xs font-medium text-danger hover:underline">
+          <button
+            onClick={() => onRemove(course.id)}
+            className="text-xs font-medium text-danger hover:underline"
+          >
             Remove
           </button>
         </>
       ) : (
         <>
-          <input className={`${inputCls} flex-1`} value={value} onChange={(e) => setValue(e.target.value)} placeholder="CSE, ECE…" />
-          <button onClick={() => { onSave(course.id, value); setEditing(false); }} className="text-xs font-medium text-primary-600 hover:underline">
+          <input
+            className={`${inputCls} flex-1`}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="CSE, ECE…"
+          />
+          <button
+            onClick={() => {
+              onSave(course.id, value);
+              setEditing(false);
+            }}
+            className="text-xs font-medium text-primary-600 hover:underline"
+          >
             Save
           </button>
-          <button onClick={() => setEditing(false)} className="text-xs text-subtle hover:underline">Cancel</button>
+          <button onClick={() => setEditing(false)} className="text-xs text-subtle hover:underline">
+            Cancel
+          </button>
         </>
       )}
     </div>

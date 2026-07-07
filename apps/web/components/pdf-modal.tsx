@@ -25,7 +25,11 @@ export function PdfModal({
 
   useEffect(() => {
     let cancelled = false;
-    let pdfDoc: { numPages: number; getPage: (n: number) => Promise<unknown>; destroy: () => void } | null = null;
+    let pdfDoc: {
+      numPages: number;
+      getPage: (n: number) => Promise<unknown>;
+      destroy: () => void;
+    } | null = null;
 
     (async () => {
       setStatus('loading');

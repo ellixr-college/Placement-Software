@@ -194,8 +194,7 @@ function EditAlumniForm({
   const [error, setError] = useState<string | null>(null);
 
   const set =
-    (k: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
   async function submit() {
@@ -213,7 +212,10 @@ function EditAlumniForm({
         currentDesignation: form.currentDesignation || undefined,
         currentLocation: form.currentLocation || undefined,
         linkedinUrl: form.linkedinUrl || undefined,
-        tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
+        tags: form.tags
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean),
         notes: form.notes || undefined,
         isMentor: form.isMentor,
         isHiring: form.isHiring,
@@ -255,7 +257,11 @@ function EditAlumniForm({
           <input className={inputCls} value={form.phone} onChange={set('phone')} />
         </Field>
         <Field label="Current company">
-          <input className={inputCls} value={form.currentCompany} onChange={set('currentCompany')} />
+          <input
+            className={inputCls}
+            value={form.currentCompany}
+            onChange={set('currentCompany')}
+          />
         </Field>
         <Field label="Designation">
           <input
@@ -265,7 +271,11 @@ function EditAlumniForm({
           />
         </Field>
         <Field label="Location">
-          <input className={inputCls} value={form.currentLocation} onChange={set('currentLocation')} />
+          <input
+            className={inputCls}
+            value={form.currentLocation}
+            onChange={set('currentLocation')}
+          />
         </Field>
         <Field label="LinkedIn URL">
           <input className={inputCls} value={form.linkedinUrl} onChange={set('linkedinUrl')} />

@@ -32,7 +32,9 @@ export interface CreatePlatformJobInput {
 export type UpdatePlatformJobInput = Partial<CreatePlatformJobInput>;
 
 export async function listPlatformJobs(status = ''): Promise<PlatformJob[]> {
-  const { data } = await apiList<PlatformJob[]>(`/platform/jobs${status ? `?status=${status}` : ''}`);
+  const { data } = await apiList<PlatformJob[]>(
+    `/platform/jobs${status ? `?status=${status}` : ''}`,
+  );
   return data;
 }
 

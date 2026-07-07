@@ -61,30 +61,34 @@ Computed via `packages/analytics` (parameterized aggregate queries, all tenant-s
 expensive aggregates (short TTL) if needed.
 
 ### Placement metrics
+
 - Placement % = placed students / eligible (registered+verified) students
 - Average package, highest package, median package (from `Application.offerCtc` where stage ≥ OFFER_ACCEPTED)
 - Placement count over time
 
 ### Job metrics
+
 - Jobs posted, jobs published, applications received, offers released, conversion (apply→offer) rate
 
 ### Student metrics
+
 - Profile completion distribution, active students, placed vs unplaced
 
 ### Breakdowns
+
 - Company-wise placements, branch-wise placement %, batch/graduation-year-wise, application funnel
   (count at each ATS stage)
 
 ## Reports & Export
 
-| Report | Contents | Formats |
-|---|---|---|
-| Student Report | Roster + profile completion + status + placement | CSV, Excel, PDF |
-| Company Report | Companies, jobs posted, hires | CSV, Excel, PDF |
-| Placement Report | Placement %, packages, branch/company breakdowns | CSV, Excel, PDF |
-| Offer Report | All offers: student, company, CTC, stage, date | CSV, Excel, PDF |
-| Branch Report | Per-branch placement stats | CSV, Excel, PDF |
-| Application Funnel | Counts per ATS stage for a job/period | CSV, Excel, PDF |
+| Report             | Contents                                         | Formats         |
+| ------------------ | ------------------------------------------------ | --------------- |
+| Student Report     | Roster + profile completion + status + placement | CSV, Excel, PDF |
+| Company Report     | Companies, jobs posted, hires                    | CSV, Excel, PDF |
+| Placement Report   | Placement %, packages, branch/company breakdowns | CSV, Excel, PDF |
+| Offer Report       | All offers: student, company, CTC, stage, date   | CSV, Excel, PDF |
+| Branch Report      | Per-branch placement stats                       | CSV, Excel, PDF |
+| Application Funnel | Counts per ATS stage for a job/period            | CSV, Excel, PDF |
 
 - CSV/Excel generated server-side (`exceljs`); PDF via a server renderer (e.g. Puppeteer or a PDF
   lib). Large exports written to R2 and returned as a presigned download URL.
@@ -92,29 +96,30 @@ expensive aggregates (short TTL) if needed.
 
 ## API Endpoints
 
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/api/v1/analytics/placement` | CA, PO | Placement metrics |
-| GET | `/api/v1/analytics/jobs` | CA, PO | Job metrics |
-| GET | `/api/v1/analytics/students` | CA, PO | Student metrics |
-| GET | `/api/v1/analytics/funnel` | CA, PO | Application funnel |
-| GET | `/api/v1/analytics/breakdowns` | CA, PO | Company/branch/batch breakdowns |
-| POST | `/api/v1/reports/:reportType/export?format=csv\|xlsx\|pdf` | CA, PO | Generate export → presigned URL |
-| GET | `/api/v1/audit-logs` | COLLEGE_ADMIN | College audit trail (filter by entity/actor/date) |
-| GET | `/api/v1/platform/analytics` | PLATFORM_ADMIN | Cross-college platform metrics |
+| Method | Path                                                       | Roles          | Description                                       |
+| ------ | ---------------------------------------------------------- | -------------- | ------------------------------------------------- |
+| GET    | `/api/v1/analytics/placement`                              | CA, PO         | Placement metrics                                 |
+| GET    | `/api/v1/analytics/jobs`                                   | CA, PO         | Job metrics                                       |
+| GET    | `/api/v1/analytics/students`                               | CA, PO         | Student metrics                                   |
+| GET    | `/api/v1/analytics/funnel`                                 | CA, PO         | Application funnel                                |
+| GET    | `/api/v1/analytics/breakdowns`                             | CA, PO         | Company/branch/batch breakdowns                   |
+| POST   | `/api/v1/reports/:reportType/export?format=csv\|xlsx\|pdf` | CA, PO         | Generate export → presigned URL                   |
+| GET    | `/api/v1/audit-logs`                                       | COLLEGE_ADMIN  | College audit trail (filter by entity/actor/date) |
+| GET    | `/api/v1/platform/analytics`                               | PLATFORM_ADMIN | Cross-college platform metrics                    |
 
 ## UI Screens
 
-| Route | Access | Notes |
-|---|---|---|
-| `/analytics` | CA, PO | Dashboard: placement %, packages, funnel, breakdown charts |
-| `/reports` | CA, PO | Pick report + format, generate, download |
-| `/audit-logs` | COLLEGE_ADMIN | Filterable audit trail table |
-| `/platform/analytics` | PLATFORM_ADMIN | Cross-college overview, subscription status |
+| Route                 | Access         | Notes                                                      |
+| --------------------- | -------------- | ---------------------------------------------------------- |
+| `/analytics`          | CA, PO         | Dashboard: placement %, packages, funnel, breakdown charts |
+| `/reports`            | CA, PO         | Pick report + format, generate, download                   |
+| `/audit-logs`         | COLLEGE_ADMIN  | Filterable audit trail table                               |
+| `/platform/analytics` | PLATFORM_ADMIN | Cross-college overview, subscription status                |
 
 ## Cron / Scheduled Jobs
 
 Scheduler (Railway cron or `@nestjs/schedule`):
+
 - **Daily birthday check** → triggers Phase 4 birthday automation.
 - **Deadline reminders** → notify students of jobs whose `applicationDeadline` is near.
 - **Trial expiry check** → flag colleges whose `trialEndsAt` has passed for Platform Admin.
@@ -122,6 +127,7 @@ Scheduler (Railway cron or `@nestjs/schedule`):
 ## Production Readiness Checklist
 
 ### Deployment targets
+
 - **Web** → Vercel (Next.js 15). Env: `NEXT_PUBLIC_API_URL`, Sentry DSN.
 - **API** → Railway (NestJS). Env: `DATABASE_URL`, JWT secrets, `RESEND_API_KEY`, `R2_*`, Sentry DSN.
 - **Database** → Neon PostgreSQL (connection pooling enabled).
@@ -129,6 +135,7 @@ Scheduler (Railway cron or `@nestjs/schedule`):
 - **Email** → Resend (verified sending domain + SPF/DKIM).
 
 ### Hardening / ops
+
 - [ ] Sentry on web + api; PII/secret scrubbing configured.
 - [ ] Prisma migrations run on deploy (`migrate deploy`); no `db push` in prod.
 - [ ] DB backups (Neon point-in-time) verified; documented restore.
@@ -141,6 +148,7 @@ Scheduler (Railway cron or `@nestjs/schedule`):
 - [ ] Audit logging verified on all sensitive mutations.
 
 ### Final repository structure
+
 ```text
 ellixr/
 ├── apps/

@@ -41,11 +41,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function PublicResumePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function PublicResumePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const resume = await fetchResume(slug);
   if (!resume) notFound();

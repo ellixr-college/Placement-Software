@@ -52,7 +52,12 @@ export const StatTile = ({
           </span>
         )}
       </div>
-      <p className={cn('mt-3 text-3xl font-bold tracking-tight', onColor ? 'text-white' : 'text-strong')}>
+      <p
+        className={cn(
+          'mt-3 text-3xl font-bold tracking-tight',
+          onColor ? 'text-white' : 'text-strong',
+        )}
+      >
         {value}
       </p>
       {hint && (

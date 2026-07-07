@@ -65,7 +65,9 @@ export default function JobsPage() {
       {loading ? (
         <p className="text-subtle">Loading…</p>
       ) : items.length === 0 ? (
-        <Card className="p-8 text-center text-sm text-subtle">No jobs yet. Post one to get started.</Card>
+        <Card className="p-8 text-center text-sm text-subtle">
+          No jobs yet. Post one to get started.
+        </Card>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {items.map((j, i) => {

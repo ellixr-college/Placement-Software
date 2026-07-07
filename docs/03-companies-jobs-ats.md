@@ -226,36 +226,36 @@ APPLIED → VERIFIED → SHORTLISTED → ROUND_1 → ROUND_2 → ROUND_3 → HR
 
 ## API Endpoints
 
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| POST/GET/PATCH/DELETE | `/api/v1/companies` `…/:id` | PLACEMENT_OFFICER | Company CRUD (soft delete) |
-| POST/PATCH/DELETE | `/api/v1/companies/:id/contacts` `…/:contactId` | PLACEMENT_OFFICER | Manage POCs |
-| GET | `/api/v1/companies/:id/hiring-history` | PLACEMENT_OFFICER | Jobs + hires for a company |
-| POST/GET/PATCH | `/api/v1/jobs` `…/:id` | PLACEMENT_OFFICER | Job CRUD (create as DRAFT) |
-| POST | `/api/v1/jobs/:id/publish` | PLACEMENT_OFFICER | Publish → compute eligible set + notify |
-| POST | `/api/v1/jobs/:id/close` | PLACEMENT_OFFICER | Close job |
-| GET | `/api/v1/jobs/:id/eligible-students` | PLACEMENT_OFFICER | Preview eligible set |
-| GET | `/api/v1/jobs` | STUDENT | Eligible+published jobs feed for current student |
-| GET | `/api/v1/jobs/:id` | STUDENT (if eligible), PLACEMENT_OFFICER | Job detail |
-| POST | `/api/v1/jobs/:id/apply` | STUDENT | Apply (re-checks eligibility + deadline) |
-| GET | `/api/v1/me/applications` | STUDENT | Own applications + timelines |
-| POST | `/api/v1/me/applications/:id/withdraw` | STUDENT | Withdraw |
-| GET | `/api/v1/jobs/:id/applications` | PLACEMENT_OFFICER | Applicant pipeline (kanban by stage) |
-| PATCH | `/api/v1/applications/:id/stage` | PLACEMENT_OFFICER | Advance/reject stage (writes history) |
-| POST/PATCH | `/api/v1/applications/:id/interviews` `…/:roundId` | PLACEMENT_OFFICER | Schedule/record interview rounds |
+| Method                | Path                                               | Roles                                    | Description                                      |
+| --------------------- | -------------------------------------------------- | ---------------------------------------- | ------------------------------------------------ |
+| POST/GET/PATCH/DELETE | `/api/v1/companies` `…/:id`                        | PLACEMENT_OFFICER                        | Company CRUD (soft delete)                       |
+| POST/PATCH/DELETE     | `/api/v1/companies/:id/contacts` `…/:contactId`    | PLACEMENT_OFFICER                        | Manage POCs                                      |
+| GET                   | `/api/v1/companies/:id/hiring-history`             | PLACEMENT_OFFICER                        | Jobs + hires for a company                       |
+| POST/GET/PATCH        | `/api/v1/jobs` `…/:id`                             | PLACEMENT_OFFICER                        | Job CRUD (create as DRAFT)                       |
+| POST                  | `/api/v1/jobs/:id/publish`                         | PLACEMENT_OFFICER                        | Publish → compute eligible set + notify          |
+| POST                  | `/api/v1/jobs/:id/close`                           | PLACEMENT_OFFICER                        | Close job                                        |
+| GET                   | `/api/v1/jobs/:id/eligible-students`               | PLACEMENT_OFFICER                        | Preview eligible set                             |
+| GET                   | `/api/v1/jobs`                                     | STUDENT                                  | Eligible+published jobs feed for current student |
+| GET                   | `/api/v1/jobs/:id`                                 | STUDENT (if eligible), PLACEMENT_OFFICER | Job detail                                       |
+| POST                  | `/api/v1/jobs/:id/apply`                           | STUDENT                                  | Apply (re-checks eligibility + deadline)         |
+| GET                   | `/api/v1/me/applications`                          | STUDENT                                  | Own applications + timelines                     |
+| POST                  | `/api/v1/me/applications/:id/withdraw`             | STUDENT                                  | Withdraw                                         |
+| GET                   | `/api/v1/jobs/:id/applications`                    | PLACEMENT_OFFICER                        | Applicant pipeline (kanban by stage)             |
+| PATCH                 | `/api/v1/applications/:id/stage`                   | PLACEMENT_OFFICER                        | Advance/reject stage (writes history)            |
+| POST/PATCH            | `/api/v1/applications/:id/interviews` `…/:roundId` | PLACEMENT_OFFICER                        | Schedule/record interview rounds                 |
 
 ## UI Screens
 
-| Route | Access | Notes |
-|---|---|---|
-| `/companies`, `/companies/[id]` | PLACEMENT_OFFICER | List + detail (POCs, hiring history) |
-| `/jobs` (manage), `/jobs/new`, `/jobs/[id]` | PLACEMENT_OFFICER | Job CRUD, publish, eligible preview |
-| `/jobs/[id]/pipeline` | PLACEMENT_OFFICER | Kanban board of applications by stage; drag to advance |
-| `/applications/[id]` | PLACEMENT_OFFICER | Applicant detail, interview rounds, stage history |
-| `/me/jobs` | STUDENT | Eligible jobs feed + apply |
-| `/me/applications` | STUDENT | Applied jobs, interview timeline, offers |
-| `/dashboard` (PO funnel) | PLACEMENT_OFFICER | Applications / shortlisted / offers counts |
-| `/dashboard` (student) | STUDENT | Active applications, upcoming interviews, offers |
+| Route                                       | Access            | Notes                                                  |
+| ------------------------------------------- | ----------------- | ------------------------------------------------------ |
+| `/companies`, `/companies/[id]`             | PLACEMENT_OFFICER | List + detail (POCs, hiring history)                   |
+| `/jobs` (manage), `/jobs/new`, `/jobs/[id]` | PLACEMENT_OFFICER | Job CRUD, publish, eligible preview                    |
+| `/jobs/[id]/pipeline`                       | PLACEMENT_OFFICER | Kanban board of applications by stage; drag to advance |
+| `/applications/[id]`                        | PLACEMENT_OFFICER | Applicant detail, interview rounds, stage history      |
+| `/me/jobs`                                  | STUDENT           | Eligible jobs feed + apply                             |
+| `/me/applications`                          | STUDENT           | Applied jobs, interview timeline, offers               |
+| `/dashboard` (PO funnel)                    | PLACEMENT_OFFICER | Applications / shortlisted / offers counts             |
+| `/dashboard` (student)                      | STUDENT           | Active applications, upcoming interviews, offers       |
 
 ## Security Notes (Phase 3)
 

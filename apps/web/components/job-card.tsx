@@ -4,7 +4,13 @@ import { formatCtc, type Job } from '../lib/jobs';
 
 // Soft decorative blob colours, picked deterministically per job — matches the
 // BatchCards look for a consistent design language across the app.
-const BLOBS = ['text-sky-300', 'text-emerald-300', 'text-amber-300', 'text-violet-300', 'text-rose-300'];
+const BLOBS = [
+  'text-sky-300',
+  'text-emerald-300',
+  'text-amber-300',
+  'text-violet-300',
+  'text-rose-300',
+];
 const hash = (s: string) => [...s].reduce((n, c) => n + c.charCodeAt(0), 0);
 
 const jobTypeLabel = (t: string) =>
@@ -60,7 +66,9 @@ export function JobCard({
   ].filter(Boolean) as string[];
   const meta = [
     job.location,
-    deadline ? `apply by ${deadline.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : null,
+    deadline
+      ? `apply by ${deadline.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
+      : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -75,7 +83,9 @@ export function JobCard({
       onKeyDown={onOpen ? (e) => (e.key === 'Enter' || e.key === ' ') && onOpen() : undefined}
       style={delay ? { animationDelay: `${delay}ms` } : undefined}
       className={`animate-rise relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-white p-5 shadow-card ${
-        onOpen ? 'press cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary-400' : ''
+        onOpen
+          ? 'press cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary-400'
+          : ''
       }`}
     >
       {/* decorative blob */}
@@ -102,7 +112,9 @@ export function JobCard({
       {/* company + title + gradient monogram */}
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-subtle">{company}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-subtle">
+            {company}
+          </p>
           <h3 className="mt-1 text-lg font-bold leading-snug text-strong">{job.title}</h3>
         </div>
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-primary text-lg font-bold text-white shadow-card">

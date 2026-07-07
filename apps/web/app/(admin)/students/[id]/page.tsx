@@ -100,7 +100,11 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
           ← Students
         </Link>
         <div className="flex items-center gap-2">
-          <Button variant={student.isActive ? 'outline' : 'primary'} onClick={toggleActive} disabled={busy}>
+          <Button
+            variant={student.isActive ? 'outline' : 'primary'}
+            onClick={toggleActive}
+            disabled={busy}
+          >
             {busy ? 'Saving…' : student.isActive ? 'Disable login' : 'Enable login'}
           </Button>
           <Button variant="danger" onClick={remove} disabled={busy}>
@@ -218,7 +222,10 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
             <Detail label="Course" value={student.course || '—'} />
             <Detail label="Branch" value={student.branch || '—'} />
             <Detail label="Passout year" value={String(student.graduationYear)} />
-            <Detail label="Current year" value={student.currentYear ? `Year ${student.currentYear}` : '—'} />
+            <Detail
+              label="Current year"
+              value={student.currentYear ? `Year ${student.currentYear}` : '—'}
+            />
             <Detail label="Percentage" value={student.cgpa != null ? `${student.cgpa}%` : '—'} />
             <Detail label="Active backlogs" value={String(student.activeBacklogs)} />
             <Detail label="Total backlogs" value={String(student.totalBacklogs)} />
@@ -230,18 +237,30 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
               label="Date of birth"
               value={student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : '—'}
             />
-            <Detail label="10th %" value={student.tenthPercentage != null ? String(student.tenthPercentage) : '—'} />
-            <Detail label="12th %" value={student.twelfthPercentage != null ? String(student.twelfthPercentage) : '—'} />
-            <Detail label="UG %" value={student.ugPercentage != null ? String(student.ugPercentage) : '—'} />
+            <Detail
+              label="10th %"
+              value={student.tenthPercentage != null ? String(student.tenthPercentage) : '—'}
+            />
+            <Detail
+              label="12th %"
+              value={student.twelfthPercentage != null ? String(student.twelfthPercentage) : '—'}
+            />
+            <Detail
+              label="UG %"
+              value={student.ugPercentage != null ? String(student.ugPercentage) : '—'}
+            />
             <Detail
               label="Last login"
-              value={student.user.lastLoginAt ? new Date(student.user.lastLoginAt).toLocaleString() : 'Never'}
+              value={
+                student.user.lastLoginAt
+                  ? new Date(student.user.lastLoginAt).toLocaleString()
+                  : 'Never'
+              }
             />
             <Detail label="Profile complete" value={`${student.profileCompletion}%`} />
           </div>
         )}
       </Card>
-
     </div>
   );
 }
@@ -326,7 +345,12 @@ function EditStudentForm({
         <EditField label="Reg no." value={form.rollNumber} onChange={set('rollNumber')} />
         <EditField label="Course" value={form.course} onChange={set('course')} />
         <EditField label="Branch" value={form.branch} onChange={set('branch')} />
-        <EditField label="Passout year" type="number" value={form.graduationYear} onChange={set('graduationYear')} />
+        <EditField
+          label="Passout year"
+          type="number"
+          value={form.graduationYear}
+          onChange={set('graduationYear')}
+        />
         <label className="space-y-1">
           <span className="text-xs font-medium text-subtle">Current year of study</span>
           <select
@@ -343,8 +367,17 @@ function EditStudentForm({
         </label>
         <EditField label="Phone" value={form.phone} onChange={set('phone')} />
         <EditField label="Percentage (%)" type="number" value={form.cgpa} onChange={set('cgpa')} />
-        <EditField label="UG %" type="number" value={form.ugPercentage} onChange={set('ugPercentage')} />
-        <EditField label="Enrollment no." value={form.enrollmentNumber} onChange={set('enrollmentNumber')} />
+        <EditField
+          label="UG %"
+          type="number"
+          value={form.ugPercentage}
+          onChange={set('ugPercentage')}
+        />
+        <EditField
+          label="Enrollment no."
+          value={form.enrollmentNumber}
+          onChange={set('enrollmentNumber')}
+        />
       </div>
       {error && <p className="text-sm text-danger">{error}</p>}
       <div className="flex gap-2">

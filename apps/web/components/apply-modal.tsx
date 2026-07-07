@@ -52,7 +52,9 @@ export function ApplyModal({
           <h2 className="text-lg font-semibold text-strong">Apply to {job.title}</h2>
           <p className="text-sm text-subtle">
             {job.companyName ?? job.company?.name}
-            {fields.length > 0 ? ' · a few questions before you apply' : ' · confirm your application'}
+            {fields.length > 0
+              ? ' · a few questions before you apply'
+              : ' · confirm your application'}
           </p>
         </div>
 
@@ -63,9 +65,18 @@ export function ApplyModal({
               {f.required && <span className="text-danger"> *</span>}
             </span>
             {f.type === 'textarea' ? (
-              <textarea rows={3} className={fieldCls} value={responses[f.id] ?? ''} onChange={(e) => set(f.id, e.target.value)} />
+              <textarea
+                rows={3}
+                className={fieldCls}
+                value={responses[f.id] ?? ''}
+                onChange={(e) => set(f.id, e.target.value)}
+              />
             ) : f.type === 'select' ? (
-              <select className={fieldCls} value={responses[f.id] ?? ''} onChange={(e) => set(f.id, e.target.value)}>
+              <select
+                className={fieldCls}
+                value={responses[f.id] ?? ''}
+                onChange={(e) => set(f.id, e.target.value)}
+              >
                 <option value="">Select…</option>
                 {(f.options ?? []).map((o) => (
                   <option key={o} value={o}>

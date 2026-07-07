@@ -50,9 +50,7 @@ export const AvatarStack = ({ people, max = 3, extraLabel }: AvatarStackProps) =
         ))}
       </div>
       {(extra > 0 || extraLabel) && (
-        <span className="ml-2 text-xs text-subtle">
-          {extraLabel ?? `+ ${extra} members`}
-        </span>
+        <span className="ml-2 text-xs text-subtle">{extraLabel ?? `+ ${extra} members`}</span>
       )}
     </div>
   );

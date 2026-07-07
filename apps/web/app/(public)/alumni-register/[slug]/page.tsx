@@ -37,21 +37,15 @@ export default function AlumniRegisterPage({ params }: { params: Promise<{ slug:
       <Card className="space-y-3 p-6 text-center">
         <h1 className="text-lg font-semibold text-strong">Thanks for registering! 🎉</h1>
         <p className="text-sm text-body">
-          Your details have been received. The {collegeName ? `${collegeName} ` : ''}Alumni Cell will
-          review and add you to the alumni network shortly.
+          Your details have been received. The {collegeName ? `${collegeName} ` : ''}Alumni Cell
+          will review and add you to the alumni network shortly.
         </p>
         <p className="text-xs text-subtle">— {collegeName ? `${collegeName} ` : ''}Alumni Cell</p>
       </Card>
     );
   }
 
-  return (
-    <RegisterForm
-      slug={slug}
-      collegeName={collegeName}
-      onDone={() => setDone(true)}
-    />
-  );
+  return <RegisterForm slug={slug} collegeName={collegeName} onDone={() => setDone(true)} />;
 }
 
 const inputCls =
@@ -82,9 +76,8 @@ function RegisterForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const set =
-    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const emailOk = !form.email.trim() || isValidEmail(form.email);
   const phoneOk = !form.phone.trim() || isValidPhone(form.phone);
@@ -156,13 +149,27 @@ function RegisterForm({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Course">
-          <input className={inputCls} value={form.course} onChange={set('course')} placeholder="B.Tech" />
+          <input
+            className={inputCls}
+            value={form.course}
+            onChange={set('course')}
+            placeholder="B.Tech"
+          />
         </Field>
         <Field label="Register number">
-          <input className={inputCls} value={form.registerNumber} onChange={set('registerNumber')} />
+          <input
+            className={inputCls}
+            value={form.registerNumber}
+            onChange={set('registerNumber')}
+          />
         </Field>
         <Field label="Phone">
-          <input className={inputCls} value={form.phone} onChange={set('phone')} placeholder="10-digit mobile" />
+          <input
+            className={inputCls}
+            value={form.phone}
+            onChange={set('phone')}
+            placeholder="10-digit mobile"
+          />
           {!phoneOk && <span className="text-xs text-danger">Enter a valid 10-digit mobile.</span>}
         </Field>
       </div>
@@ -171,10 +178,18 @@ function RegisterForm({
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Designation">
-          <input className={inputCls} value={form.currentDesignation} onChange={set('currentDesignation')} />
+          <input
+            className={inputCls}
+            value={form.currentDesignation}
+            onChange={set('currentDesignation')}
+          />
         </Field>
         <Field label="Location">
-          <input className={inputCls} value={form.currentLocation} onChange={set('currentLocation')} />
+          <input
+            className={inputCls}
+            value={form.currentLocation}
+            onChange={set('currentLocation')}
+          />
         </Field>
       </div>
       <Field label="LinkedIn URL">

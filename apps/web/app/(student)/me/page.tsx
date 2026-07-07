@@ -114,9 +114,19 @@ export default function StudentHome() {
             aria-label="Sign out"
             className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className="h-5 w-5"
+            >
               <path d="M15 12H3m0 0 4-4m-4 4 4 4" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M9 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M9 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
         </div>
@@ -247,10 +257,7 @@ function Stat({ value, label }: { value: number; label: string }) {
 
 function QuickLink({ href, title, sub }: { href: string; title: string; sub: string }) {
   return (
-    <Link
-      href={href}
-      className="rounded-card bg-white p-4 shadow-card transition hover:shadow-nav"
-    >
+    <Link href={href} className="rounded-card bg-white p-4 shadow-card transition hover:shadow-nav">
       <p className="text-sm font-semibold text-strong">{title}</p>
       <p className="mt-1 text-xs text-subtle">{sub}</p>
     </Link>

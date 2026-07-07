@@ -24,8 +24,7 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   /**
    * Force the loading state on. Usually unnecessary: if `onClick` returns a
    * promise the Button tracks it automatically. Use this for `<form>` submit
@@ -44,7 +43,20 @@ export interface ButtonProps
  * feedback and can never be double-fired. No per-button wiring required.
  */
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, loading, autoLoading = true, disabled, children, onClick, ...props }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      loading,
+      autoLoading = true,
+      disabled,
+      children,
+      onClick,
+      ...props
+    },
+    ref,
+  ) => {
     const [pending, setPending] = React.useState(false);
     const mounted = React.useRef(true);
     // Synchronous guard: blocks a second click that lands before React re-renders.
@@ -85,12 +97,7 @@ Button.displayName = 'Button';
 
 function Spinner() {
   return (
-    <svg
-      className="h-4 w-4 animate-spin"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
+    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
         className="opacity-90"

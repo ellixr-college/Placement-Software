@@ -1,4 +1,15 @@
-import { BadRequestException, Body, Controller, Delete, Get, Ip, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Ip,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { UserRole } from '@ellixr/shared';
 import type { JwtPayload } from '@ellixr/shared';
 import { CurrentUser, Roles } from '../../common/decorators';
@@ -73,11 +84,7 @@ export class StudentsController {
 
   @Post('graduate')
   @Roles(UserRole.PLACEMENT_OFFICER, UserRole.COLLEGE_ADMIN)
-  async graduate(
-    @CurrentUser() user: JwtPayload,
-    @Body() dto: GraduateBatchDto,
-    @Ip() ip: string,
-  ) {
+  async graduate(@CurrentUser() user: JwtPayload, @Body() dto: GraduateBatchDto, @Ip() ip: string) {
     const result = await this.students.graduateBatch(this.collegeId(user), dto.graduationYear);
     await this.audit.record(user, {
       action: 'STUDENT_BATCH_GRADUATE',

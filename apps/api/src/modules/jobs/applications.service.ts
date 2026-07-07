@@ -9,11 +9,7 @@ import { PRISMA } from '../../common/prisma.module';
 import { Prisma, ApplicationStage } from '@ellixr/database';
 import type { PrismaClient } from '@ellixr/database';
 import { NotificationsService } from '../notifications/notifications.service';
-import {
-  ChangeStageDto,
-  CreateInterviewDto,
-  UpdateInterviewDto,
-} from './application-dto';
+import { ChangeStageDto, CreateInterviewDto, UpdateInterviewDto } from './application-dto';
 
 // Allowed officer-driven stage transitions. WITHDRAWN is reachable only via the
 // student withdraw endpoint, so it is not an officer target here.

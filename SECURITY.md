@@ -5,17 +5,18 @@ deployment**. The biggest real-world risk is misconfiguration, not the code.
 
 ## Production environment checklist (do ALL of these)
 
-| Variable | Dev | **Production** | Why it matters |
-|---|---|---|---|
-| `NODE_ENV` | `development` | **`production`** | In dev, password-reset tokens are printed to the server log (`auth.service.ts`). In prod this MUST be off or reset tokens leak into logs → account takeover. |
-| `COOKIE_SECURE` | `false` | **`true`** | Marks the refresh cookie `Secure` so it is only sent over HTTPS. If false on a real domain, the refresh token can be intercepted on plain HTTP. |
-| `JWT_ACCESS_SECRET` | any | **unique 48+ byte random** | `openssl rand -base64 48`. Never reuse the refresh secret or a placeholder. |
-| `JWT_REFRESH_SECRET` | any | **different unique 48+ byte random** | Must differ from the access secret. |
-| `WEB_ORIGIN` | `http://localhost:3000` | **exact deployed web origin** | CORS allowlist. Credentials require an exact origin (no wildcard). |
-| `DATABASE_URL` | local/cloud | cloud, `sslmode=verify-full` | TLS to the DB. |
-| `SEED_ADMIN_PASSWORD` | weak ok | **strong, rotated after first login** | Seeds the Platform Admin. Change it immediately after first login. |
+| Variable              | Dev                     | **Production**                        | Why it matters                                                                                                                                               |
+| --------------------- | ----------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NODE_ENV`            | `development`           | **`production`**                      | In dev, password-reset tokens are printed to the server log (`auth.service.ts`). In prod this MUST be off or reset tokens leak into logs → account takeover. |
+| `COOKIE_SECURE`       | `false`                 | **`true`**                            | Marks the refresh cookie `Secure` so it is only sent over HTTPS. If false on a real domain, the refresh token can be intercepted on plain HTTP.              |
+| `JWT_ACCESS_SECRET`   | any                     | **unique 48+ byte random**            | `openssl rand -base64 48`. Never reuse the refresh secret or a placeholder.                                                                                  |
+| `JWT_REFRESH_SECRET`  | any                     | **different unique 48+ byte random**  | Must differ from the access secret.                                                                                                                          |
+| `WEB_ORIGIN`          | `http://localhost:3000` | **exact deployed web origin**         | CORS allowlist. Credentials require an exact origin (no wildcard).                                                                                           |
+| `DATABASE_URL`        | local/cloud             | cloud, `sslmode=verify-full`          | TLS to the DB.                                                                                                                                               |
+| `SEED_ADMIN_PASSWORD` | weak ok                 | **strong, rotated after first login** | Seeds the Platform Admin. Change it immediately after first login.                                                                                           |
 
 Also:
+
 - **Serve everything over HTTPS / TLS.** The refresh cookie (`SameSite=strict`) and Bearer access tokens assume a secure transport.
 - **`.env` is gitignored** — never commit real secrets. Only `.env.example` (placeholders) is tracked.
 - Keep the web app's BFF proxy same-origin (`NEXT_PUBLIC_API_URL="/api/v1"`) so the refresh cookie stays first-party.
@@ -39,12 +40,12 @@ From the 2026-06-14 tenant-isolation audit (result: clean — every tenant query
 scoped by JWT `collegeId`, every `:id` mutation is guarded before a bare
 `where:{id}` write). Two low-severity items were reviewed and **accepted as-is**:
 
-- **Public résumé links have no expiry** — *needed for now.* A résumé is shared via
+- **Public résumé links have no expiry** — _needed for now._ A résumé is shared via
   an unguessable capability URL (~72-bit `publicSlug`) and only renders when
   `isPublished`. There is no time-based expiry; revocation is by toggling
   `isPublished` off. Acceptable for the shareable-link feature; revisit if links
   ever need TTL/rotation.
-- **Cross-tenant email enumeration** — *no concern.* Emails are globally unique, so
+- **Cross-tenant email enumeration** — _no concern._ Emails are globally unique, so
   "Email already in use" reveals an email exists somewhere on the platform (not
   which college). Accepted; could switch to a generic message later.
 

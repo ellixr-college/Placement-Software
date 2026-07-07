@@ -18,7 +18,13 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
   const [history, setHistory] = useState<HiringHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [contact, setContact] = useState({ name: '', email: '', designation: '', phone: '', isPrimary: false });
+  const [contact, setContact] = useState({
+    name: '',
+    email: '',
+    designation: '',
+    phone: '',
+    isPrimary: false,
+  });
   const [busy, setBusy] = useState(false);
 
   async function load() {
@@ -73,14 +79,27 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Link href="/companies" className="text-sm text-primary-600 hover:underline">← Companies</Link>
+      <Link href="/companies" className="text-sm text-primary-600 hover:underline">
+        ← Companies
+      </Link>
 
       <header>
         <h1 className="text-2xl font-semibold text-strong">{company.name}</h1>
         <p className="text-sm text-subtle">
           {[company.industry, company.city].filter(Boolean).join(' · ') || '—'}
           {company.website && (
-            <> · <a href={company.website} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">Website</a></>
+            <>
+              {' '}
+              ·{' '}
+              <a
+                href={company.website}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary-600 hover:underline"
+              >
+                Website
+              </a>
+            </>
           )}
         </p>
         {company.description && <p className="mt-2 text-sm text-body">{company.description}</p>}
@@ -93,33 +112,69 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         <h2 className="text-sm font-semibold text-strong">Points of contact</h2>
         {company.contacts.length === 0 && <p className="text-xs text-subtle">No contacts yet.</p>}
         {company.contacts.map((c) => (
-          <div key={c.id} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
+          <div
+            key={c.id}
+            className="flex items-center justify-between border-b border-border pb-2 last:border-0"
+          >
             <div>
               <p className="text-sm font-medium text-strong">
-                {c.name} {c.isPrimary && <span className="ml-1 text-xs text-primary-600">(primary)</span>}
+                {c.name}{' '}
+                {c.isPrimary && <span className="ml-1 text-xs text-primary-600">(primary)</span>}
               </p>
               <p className="text-xs text-subtle">
                 {[c.designation, c.email, c.phone].filter(Boolean).join(' · ')}
               </p>
             </div>
-            <button onClick={() => deleteContact(c.id)} disabled={busy} className="text-xs text-danger hover:underline">
+            <button
+              onClick={() => deleteContact(c.id)}
+              disabled={busy}
+              className="text-xs text-danger hover:underline"
+            >
               Remove
             </button>
           </div>
         ))}
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <input className={inputCls} placeholder="Name" value={contact.name} onChange={(e) => setContact({ ...contact, name: e.target.value })} />
-          <input className={inputCls} placeholder="Email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} />
-          <input className={inputCls} placeholder="Designation" value={contact.designation} onChange={(e) => setContact({ ...contact, designation: e.target.value })} />
-          <input className={inputCls} placeholder="Phone" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} />
+          <input
+            className={inputCls}
+            placeholder="Name"
+            value={contact.name}
+            onChange={(e) => setContact({ ...contact, name: e.target.value })}
+          />
+          <input
+            className={inputCls}
+            placeholder="Email"
+            value={contact.email}
+            onChange={(e) => setContact({ ...contact, email: e.target.value })}
+          />
+          <input
+            className={inputCls}
+            placeholder="Designation"
+            value={contact.designation}
+            onChange={(e) => setContact({ ...contact, designation: e.target.value })}
+          />
+          <input
+            className={inputCls}
+            placeholder="Phone"
+            value={contact.phone}
+            onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+          />
         </div>
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 text-xs text-subtle">
-            <input type="checkbox" checked={contact.isPrimary} onChange={(e) => setContact({ ...contact, isPrimary: e.target.checked })} />
+            <input
+              type="checkbox"
+              checked={contact.isPrimary}
+              onChange={(e) => setContact({ ...contact, isPrimary: e.target.checked })}
+            />
             Primary contact
           </label>
-          <Button size="sm" onClick={submitContact} disabled={busy || !contact.name.trim() || !contact.email.trim()}>
+          <Button
+            size="sm"
+            onClick={submitContact}
+            disabled={busy || !contact.name.trim() || !contact.email.trim()}
+          >
             Add contact
           </Button>
         </div>
@@ -132,8 +187,16 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
           <p className="text-xs text-subtle">No jobs posted for this company yet.</p>
         ) : (
           history.map((j) => (
-            <div key={j.id} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
-              <Link href={`/jobs/${j.id}`} className="text-sm font-medium text-strong hover:underline">{j.title}</Link>
+            <div
+              key={j.id}
+              className="flex items-center justify-between border-b border-border pb-2 last:border-0"
+            >
+              <Link
+                href={`/jobs/${j.id}`}
+                className="text-sm font-medium text-strong hover:underline"
+              >
+                {j.title}
+              </Link>
               <span className="text-xs text-subtle">
                 {j.status} · {j.applicationCount} applied · {j.hiredCount} hired
               </span>

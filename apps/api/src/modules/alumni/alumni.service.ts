@@ -2,12 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 import { PRISMA } from '../../common/prisma.module';
 import { Prisma } from '@ellixr/database';
 import type { PrismaClient } from '@ellixr/database';
-import {
-  CreateAlumniDto,
-  ListAlumniQuery,
-  SelfRegisterAlumniDto,
-  UpdateAlumniDto,
-} from './dto';
+import { CreateAlumniDto, ListAlumniQuery, SelfRegisterAlumniDto, UpdateAlumniDto } from './dto';
 import { NotificationsService } from '../notifications/notifications.service';
 
 /**
@@ -82,9 +77,7 @@ export class AlumniService {
       collegeId,
       ...(q.branch ? { branch: q.branch } : {}),
       ...(q.graduationYear ? { graduationYear: q.graduationYear } : {}),
-      ...(q.company
-        ? { currentCompany: { contains: q.company, mode: 'insensitive' } }
-        : {}),
+      ...(q.company ? { currentCompany: { contains: q.company, mode: 'insensitive' } } : {}),
       ...(q.tag ? { tags: { has: q.tag } } : {}),
       ...(q.isMentor !== undefined ? { isMentor: q.isMentor } : {}),
       ...(q.isHiring !== undefined ? { isHiring: q.isHiring } : {}),

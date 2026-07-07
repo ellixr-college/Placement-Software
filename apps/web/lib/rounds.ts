@@ -76,7 +76,11 @@ export const placeApplicant = (
   jobId: string,
   appId: string,
   input: { offerCtc?: number; offerLetterUrl?: string },
-) => api(`/jobs/${jobId}/applications/${appId}/place`, { method: 'POST', body: JSON.stringify(input) });
+) =>
+  api(`/jobs/${jobId}/applications/${appId}/place`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
 
 export const rejectApplicant = (jobId: string, appId: string, reason?: string) =>
   api(`/jobs/${jobId}/applications/${appId}/reject`, {

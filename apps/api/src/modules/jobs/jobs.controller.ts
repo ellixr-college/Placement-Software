@@ -52,9 +52,11 @@ export class JobsController {
   async uploadPdf(@CurrentUser() user: JwtPayload, @UploadedFile() file?: UploadedPdf) {
     this.collegeId(user);
     if (!file) throw new BadRequestException('No file uploaded');
-    if (file.mimetype !== 'application/pdf') throw new BadRequestException('Only PDF files are allowed');
+    if (file.mimetype !== 'application/pdf')
+      throw new BadRequestException('Only PDF files are allowed');
     const token = process.env.BLOB_READ_WRITE_TOKEN;
-    if (!token) throw new BadRequestException('File storage is not configured (BLOB_READ_WRITE_TOKEN)');
+    if (!token)
+      throw new BadRequestException('File storage is not configured (BLOB_READ_WRITE_TOKEN)');
     const safe = file.originalname.replace(/[^\w.\-]+/g, '_').slice(-80) || 'job.pdf';
     const blob = await put(`job-pdfs/${user.collegeId}/${Date.now()}-${safe}`, file.buffer, {
       access: 'private',
@@ -73,9 +75,11 @@ export class JobsController {
   async uploadOfferLetter(@CurrentUser() user: JwtPayload, @UploadedFile() file?: UploadedPdf) {
     this.collegeId(user);
     if (!file) throw new BadRequestException('No file uploaded');
-    if (file.mimetype !== 'application/pdf') throw new BadRequestException('Only PDF files are allowed');
+    if (file.mimetype !== 'application/pdf')
+      throw new BadRequestException('Only PDF files are allowed');
     const token = process.env.BLOB_READ_WRITE_TOKEN;
-    if (!token) throw new BadRequestException('File storage is not configured (BLOB_READ_WRITE_TOKEN)');
+    if (!token)
+      throw new BadRequestException('File storage is not configured (BLOB_READ_WRITE_TOKEN)');
     const safe = file.originalname.replace(/[^\w.\-]+/g, '_').slice(-80) || 'offer.pdf';
     const blob = await put(`offer-letters/${user.collegeId}/${Date.now()}-${safe}`, file.buffer, {
       access: 'public',
@@ -98,7 +102,10 @@ export class JobsController {
     if (!result || !result.stream) throw new BadRequestException('PDF not found');
     const buffer = Buffer.from(await new Response(result.stream as ReadableStream).arrayBuffer());
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="${(ref.pdfName ?? 'job.pdf').replace(/"/g, '')}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${(ref.pdfName ?? 'job.pdf').replace(/"/g, '')}"`,
+    );
     res.send(buffer);
   }
 
@@ -176,11 +183,7 @@ export class JobsController {
 
   @Post(':id/apply')
   @Roles(UserRole.STUDENT)
-  async apply(
-    @CurrentUser() user: JwtPayload,
-    @Param('id') id: string,
-    @Body() dto: ApplyDto,
-  ) {
+  async apply(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Body() dto: ApplyDto) {
     return { data: await this.jobs.apply(user.sub, id, dto.formResponses) };
   }
 }

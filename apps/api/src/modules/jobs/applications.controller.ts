@@ -1,21 +1,9 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { UserRole } from '@ellixr/shared';
 import type { JwtPayload } from '@ellixr/shared';
 import { CurrentUser, Roles } from '../../common/decorators';
 import { ApplicationsService } from './applications.service';
-import {
-  ChangeStageDto,
-  CreateInterviewDto,
-  UpdateInterviewDto,
-} from './application-dto';
+import { ChangeStageDto, CreateInterviewDto, UpdateInterviewDto } from './application-dto';
 
 @Controller('applications')
 @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER)

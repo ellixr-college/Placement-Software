@@ -24,7 +24,9 @@ async function main() {
 
   console.log(`Seeded Platform Admin: ${admin.email}`);
   if (!process.env.SEED_ADMIN_PASSWORD) {
-    console.warn('No SEED_ADMIN_PASSWORD set — used default "ChangeMe!123". Change it immediately.');
+    console.warn(
+      'No SEED_ADMIN_PASSWORD set — used default "ChangeMe!123". Change it immediately.',
+    );
   }
 }
 

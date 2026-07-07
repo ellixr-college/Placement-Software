@@ -27,7 +27,9 @@ export default function ImportStudentsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    listMyCourses().then(setCourses).catch(() => {});
+    listMyCourses()
+      .then(setCourses)
+      .catch(() => {});
   }, []);
 
   const branchesFor = courses.find((c) => c.name === course)?.branches ?? [];
@@ -117,13 +119,22 @@ export default function ImportStudentsPage() {
                   ))}
                 </select>
               ) : (
-                <input className={inputCls} value={course} onChange={(e) => setCourse(e.target.value)} placeholder="MBA" />
+                <input
+                  className={inputCls}
+                  value={course}
+                  onChange={(e) => setCourse(e.target.value)}
+                  placeholder="MBA"
+                />
               )}
             </label>
             <label className="space-y-1">
               <span className="text-xs font-medium text-subtle">Branch (optional)</span>
               {branchesFor.length > 0 ? (
-                <select className={inputCls} value={branch} onChange={(e) => setBranch(e.target.value)}>
+                <select
+                  className={inputCls}
+                  value={branch}
+                  onChange={(e) => setBranch(e.target.value)}
+                >
                   <option value="">All / none</option>
                   {branchesFor.map((b) => (
                     <option key={b} value={b}>
@@ -132,7 +143,12 @@ export default function ImportStudentsPage() {
                   ))}
                 </select>
               ) : (
-                <input className={inputCls} value={branch} onChange={(e) => setBranch(e.target.value)} placeholder="e.g. Finance" />
+                <input
+                  className={inputCls}
+                  value={branch}
+                  onChange={(e) => setBranch(e.target.value)}
+                  placeholder="e.g. Finance"
+                />
               )}
             </label>
             <label className="space-y-1">
@@ -146,8 +162,14 @@ export default function ImportStudentsPage() {
               />
             </label>
             <label className="space-y-1">
-              <span className="text-xs font-medium text-subtle">Current year of study (optional)</span>
-              <select className={inputCls} value={currentYear} onChange={(e) => setCurrentYear(e.target.value)}>
+              <span className="text-xs font-medium text-subtle">
+                Current year of study (optional)
+              </span>
+              <select
+                className={inputCls}
+                value={currentYear}
+                onChange={(e) => setCurrentYear(e.target.value)}
+              >
                 <option value="">Not tracked</option>
                 <option value="1">1st year</option>
                 <option value="2">2nd year</option>
@@ -163,15 +185,27 @@ export default function ImportStudentsPage() {
           <p className="text-sm font-medium text-strong">CSV rows</p>
           <p className="text-xs text-subtle">
             First row is the header. Required columns: <b>regNo, name, email</b>. Optional:
-            <b> enrollmentNumber, phone, cgpa, ugPercentage, tenthPercentage, twelfthPercentage, activeBacklogs, totalBacklogs</b>.
-            Everyone is created
-            with the password <b>password123</b> — students can change it later.
+            <b>
+              {' '}
+              enrollmentNumber, phone, cgpa, ugPercentage, tenthPercentage, twelfthPercentage,
+              activeBacklogs, totalBacklogs
+            </b>
+            . Everyone is created with the password <b>password123</b> — students can change it
+            later.
           </p>
-          <pre className="overflow-x-auto rounded-md bg-app p-3 text-xs text-strong">{TEMPLATE}</pre>
+          <pre className="overflow-x-auto rounded-md bg-app p-3 text-xs text-strong">
+            {TEMPLATE}
+          </pre>
         </div>
 
         <div className="flex items-center gap-2">
-          <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={onFile} className="hidden" />
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,text/csv"
+            onChange={onFile}
+            className="hidden"
+          />
           <Button variant="ghost" onClick={() => fileRef.current?.click()}>
             Choose file…
           </Button>

@@ -22,7 +22,19 @@ function isPublic(pathname: string): boolean {
 // Student routes all live under /me (incl. /me/notifications). Everything else
 // is the desktop admin/officer shell.
 const STUDENT_PREFIXES = ['/me'];
-const ADMIN_PREFIXES = ['/dashboard', '/platform', '/students', '/companies', '/jobs', '/applications', '/settings', '/analytics', '/reports', '/alumni', '/notifications'];
+const ADMIN_PREFIXES = [
+  '/dashboard',
+  '/platform',
+  '/students',
+  '/companies',
+  '/jobs',
+  '/applications',
+  '/settings',
+  '/analytics',
+  '/reports',
+  '/alumni',
+  '/notifications',
+];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -53,8 +65,10 @@ export function middleware(req: NextRequest) {
   // Wrong shell for this role → redirect to its home.
   const wantsStudent = STUDENT_PREFIXES.some((p) => pathname.startsWith(p));
   const wantsAdmin = ADMIN_PREFIXES.some((p) => pathname.startsWith(p));
-  if (wantsStudent && isAdminRole(role)) return NextResponse.redirect(new URL(homeFor(role), req.url));
-  if (wantsAdmin && role === UserRole.STUDENT) return NextResponse.redirect(new URL(homeFor(role), req.url));
+  if (wantsStudent && isAdminRole(role))
+    return NextResponse.redirect(new URL(homeFor(role), req.url));
+  if (wantsAdmin && role === UserRole.STUDENT)
+    return NextResponse.redirect(new URL(homeFor(role), req.url));
   if (pathname.startsWith('/platform') && role !== UserRole.PLATFORM_ADMIN) {
     return NextResponse.redirect(new URL(homeFor(role), req.url));
   }

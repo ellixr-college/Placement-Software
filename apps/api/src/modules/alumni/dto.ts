@@ -23,7 +23,10 @@ const toBool = ({ value }: { value: unknown }) =>
 export class CreateAlumniDto {
   @IsString() @MinLength(2) fullName!: string;
   @IsEmail() email!: string;
-  @EmptyToUndefined() @IsOptional() @Matches(PHONE_REGEX, { message: PHONE_MESSAGE }) phone?: string;
+  @EmptyToUndefined()
+  @IsOptional()
+  @Matches(PHONE_REGEX, { message: PHONE_MESSAGE })
+  phone?: string;
   @IsOptional() @IsString() registerNumber?: string;
   @Type(() => Number) @IsInt() @Min(1950) @Max(2100) graduationYear!: number;
   @IsString() @MinLength(1) branch!: string;
@@ -43,7 +46,10 @@ export class CreateAlumniDto {
 export class SelfRegisterAlumniDto {
   @IsString() @MinLength(2) fullName!: string;
   @IsEmail() email!: string;
-  @EmptyToUndefined() @IsOptional() @Matches(PHONE_REGEX, { message: PHONE_MESSAGE }) phone?: string;
+  @EmptyToUndefined()
+  @IsOptional()
+  @Matches(PHONE_REGEX, { message: PHONE_MESSAGE })
+  phone?: string;
   @IsOptional() @IsString() registerNumber?: string;
   @Type(() => Number) @IsInt() @Min(1950) @Max(2100) graduationYear!: number;
   @IsString() @MinLength(1) branch!: string;
@@ -57,7 +63,10 @@ export class SelfRegisterAlumniDto {
 export class UpdateAlumniDto {
   @IsOptional() @IsString() @MinLength(2) fullName?: string;
   @IsOptional() @IsEmail() email?: string;
-  @EmptyToUndefined() @IsOptional() @Matches(PHONE_REGEX, { message: PHONE_MESSAGE }) phone?: string;
+  @EmptyToUndefined()
+  @IsOptional()
+  @Matches(PHONE_REGEX, { message: PHONE_MESSAGE })
+  phone?: string;
   @IsOptional() @IsString() registerNumber?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1950) @Max(2100) graduationYear?: number;
   @IsOptional() @IsString() @MinLength(1) branch?: string;

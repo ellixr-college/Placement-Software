@@ -46,8 +46,7 @@ export function NotificationBell({ href, className }: { href: string; className?
       href={href}
       aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ''}`}
       className={
-        className ??
-        'relative inline-flex h-9 w-9 items-center justify-center rounded-full bg-app'
+        className ?? 'relative inline-flex h-9 w-9 items-center justify-center rounded-full bg-app'
       }
     >
       🔔

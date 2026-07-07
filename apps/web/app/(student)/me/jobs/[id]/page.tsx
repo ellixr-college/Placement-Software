@@ -77,15 +77,20 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
   if (!job) return <p className="text-danger">{error ?? 'Job not found'}</p>;
 
   const company = job.companyName ?? job.company?.name ?? 'Company';
-  const chips = [job.jobType.replace(/_/g, ' '), workModeLabel(job.workMode), job.location].filter(Boolean) as string[];
+  const chips = [job.jobType.replace(/_/g, ' '), workModeLabel(job.workMode), job.location].filter(
+    Boolean,
+  ) as string[];
   const notEligible = job.eligible === false;
-  const expired = !!job.applicationDeadline && new Date(job.applicationDeadline).getTime() < Date.now();
+  const expired =
+    !!job.applicationDeadline && new Date(job.applicationDeadline).getTime() < Date.now();
   const applied = !!app;
-  const st = app ? STATUS[app.status] ?? STATUS.APPLIED : null;
+  const st = app ? (STATUS[app.status] ?? STATUS.APPLIED) : null;
 
   return (
     <div className="space-y-5 pb-28">
-      <Link href="/me/jobs" className="text-sm text-primary-600">← Jobs</Link>
+      <Link href="/me/jobs" className="text-sm text-primary-600">
+        ← Jobs
+      </Link>
 
       {/* Header */}
       <div className="animate-rise flex items-start gap-3">
@@ -101,7 +106,12 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
 
       <div className="flex flex-wrap gap-2">
         {chips.map((c) => (
-          <span key={c} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-body shadow-sm">{c}</span>
+          <span
+            key={c}
+            className="rounded-full bg-white px-3 py-1 text-xs font-medium text-body shadow-sm"
+          >
+            {c}
+          </span>
         ))}
       </div>
 
@@ -114,10 +124,19 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
           <ApplicationTimeline app={app} />
           {app.status === 'SELECTED' && (
             <div className="flex flex-wrap items-center gap-3 rounded-md bg-success/10 px-3 py-2">
-              <span className="text-sm font-medium text-success">🎉 You&apos;ve been selected!</span>
-              {app.offerCtc != null && <span className="text-sm text-body">₹{(app.offerCtc / 100000).toFixed(2)} LPA</span>}
+              <span className="text-sm font-medium text-success">
+                🎉 You&apos;ve been selected!
+              </span>
+              {app.offerCtc != null && (
+                <span className="text-sm text-body">₹{(app.offerCtc / 100000).toFixed(2)} LPA</span>
+              )}
               {app.offerLetterUrl && (
-                <a href={app.offerLetterUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-primary-600 hover:underline">
+                <a
+                  href={app.offerLetterUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm font-medium text-primary-600 hover:underline"
+                >
                   Offer letter
                 </a>
               )}
@@ -131,13 +150,19 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           <Meta label="CTC" value={formatCtc(job.ctcMin, job.ctcMax)} />
           {job.applicationDeadline && (
-            <Meta label="Apply by" value={new Date(job.applicationDeadline).toLocaleDateString()} highlight={expired} />
+            <Meta
+              label="Apply by"
+              value={new Date(job.applicationDeadline).toLocaleDateString()}
+              highlight={expired}
+            />
           )}
         </div>
         {job.description && (
           <>
             <p className="text-sm font-semibold text-strong">About this job</p>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">{job.description}</p>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-body">
+              {job.description}
+            </p>
           </>
         )}
         {job.pdfUrl && (
@@ -152,7 +177,9 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
             }}
             className="press inline-flex w-fit items-center gap-2 rounded-md border border-border bg-white px-3 py-2 text-sm font-medium text-body"
           >
-            <span className="flex h-6 w-6 items-center justify-center rounded bg-danger/10 text-[10px] font-bold text-danger">PDF</span>
+            <span className="flex h-6 w-6 items-center justify-center rounded bg-danger/10 text-[10px] font-bold text-danger">
+              PDF
+            </span>
             View job description
           </button>
         )}
@@ -165,7 +192,9 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
           <Row label="Courses" value={job.eligibleCourses.join(', ') || 'Any'} />
           <Row label="Branches" value={job.eligibleBranches.join(', ') || 'Any'} />
           <Row label="Batch" value={job.graduationYears.join(', ') || 'Any'} />
-          {job.minUgPercentage != null && <Row label="Min UG %" value={`${job.minUgPercentage}%`} />}
+          {job.minUgPercentage != null && (
+            <Row label="Min UG %" value={`${job.minUgPercentage}%`} />
+          )}
           {job.minCgpa != null && <Row label="Min PG %" value={`${job.minCgpa}%`} />}
         </dl>
       </Card>
@@ -181,15 +210,24 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
       {/* Sticky action footer (replaces the bottom nav on this screen) */}
       <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md border-t border-border bg-white/95 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
         {applied ? (
-          <button disabled className="w-full rounded-pill bg-app py-3 text-sm font-semibold text-subtle">
+          <button
+            disabled
+            className="w-full rounded-pill bg-app py-3 text-sm font-semibold text-subtle"
+          >
             {st?.label ?? 'Applied'}
           </button>
         ) : expired ? (
-          <button disabled className="w-full rounded-pill bg-app py-3 text-sm font-semibold text-subtle">
+          <button
+            disabled
+            className="w-full rounded-pill bg-app py-3 text-sm font-semibold text-subtle"
+          >
             Applications closed
           </button>
         ) : notEligible ? (
-          <button disabled className="w-full rounded-pill bg-app py-3 text-sm font-semibold text-subtle">
+          <button
+            disabled
+            className="w-full rounded-pill bg-app py-3 text-sm font-semibold text-subtle"
+          >
             Not eligible
           </button>
         ) : (
@@ -229,7 +267,9 @@ function Meta({ label, value, highlight }: { label: string; value: string; highl
   return (
     <div>
       <p className="text-[11px] uppercase tracking-wide text-subtle">{label}</p>
-      <p className={`text-sm font-semibold ${highlight ? 'text-danger' : 'text-strong'}`}>{value}</p>
+      <p className={`text-sm font-semibold ${highlight ? 'text-danger' : 'text-strong'}`}>
+        {value}
+      </p>
     </div>
   );
 }

@@ -12,13 +12,13 @@ interview rounds, communication, analytics, reports, and alumni engagement from 
 
 ## 2. User Roles & Access Model
 
-| Role | Scope | Key Capabilities |
-|---|---|---|
-| **Platform Admin** | Global (Ellixr team) | Create/manage colleges, manage subscriptions, global oversight, no tenant data access by default |
-| **College Admin** | Single college | Oversee placement operations, manage Placement Officer accounts, college settings, alumni |
-| **Placement Officer** | Single college | Manage students, companies, jobs, applications/ATS, notifications, alumni |
-| **Student** | Single college (self) | Maintain own profile, upload resume, browse/apply jobs, track application status |
-| *Company Recruiter* | *Phase 2 of roadmap (post-V1)* | *Out of scope for all 5 phases below* |
+| Role                  | Scope                          | Key Capabilities                                                                                 |
+| --------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| **Platform Admin**    | Global (Ellixr team)           | Create/manage colleges, manage subscriptions, global oversight, no tenant data access by default |
+| **College Admin**     | Single college                 | Oversee placement operations, manage Placement Officer accounts, college settings, alumni        |
+| **Placement Officer** | Single college                 | Manage students, companies, jobs, applications/ATS, notifications, alumni                        |
+| **Student**           | Single college (self)          | Maintain own profile, upload resume, browse/apply jobs, track application status                 |
+| _Company Recruiter_   | _Phase 2 of roadmap (post-V1)_ | _Out of scope for all 5 phases below_                                                            |
 
 Every authenticated page is role-gated. A user only ever sees screens/data permitted for their role
 and (except Platform Admin) scoped to their own college.
@@ -42,17 +42,17 @@ one auth/session, one coral theme, and one `packages/ui` component library.
 
 ## 4. Technology Stack
 
-| Layer | Choice |
-|---|---|
-| Frontend | Next.js 15 (App Router), TypeScript, Tailwind CSS, Shadcn UI |
-| Backend | NestJS (modular monolith) |
-| Database | PostgreSQL (Neon) |
-| ORM | Prisma (schema, migrations, generated client) |
-| Storage | Cloudflare R2 (resumes, alumni import files, export files) |
-| Email | Resend |
-| Hosting | Vercel (web) + Railway (api) |
-| Monitoring | Sentry (web + api) |
-| Monorepo | pnpm workspaces + Turborepo |
+| Layer      | Choice                                                       |
+| ---------- | ------------------------------------------------------------ |
+| Frontend   | Next.js 15 (App Router), TypeScript, Tailwind CSS, Shadcn UI |
+| Backend    | NestJS (modular monolith)                                    |
+| Database   | PostgreSQL (Neon)                                            |
+| ORM        | Prisma (schema, migrations, generated client)                |
+| Storage    | Cloudflare R2 (resumes, alumni import files, export files)   |
+| Email      | Resend                                                       |
+| Hosting    | Vercel (web) + Railway (api)                                 |
+| Monitoring | Sentry (web + api)                                           |
+| Monorepo   | pnpm workspaces + Turborepo                                  |
 
 ## 5. Repository Structure
 
@@ -98,6 +98,7 @@ Core principle: **every page and every API route requires authentication by defa
 explicit allowlist (login, forgot/reset password) is public.
 
 ### 7.1 Authentication & Session Security
+
 - Passwords hashed with **bcrypt** (cost factor ≥ 12).
 - **Short-lived JWT access tokens** (~15 min), signed with `JWT_ACCESS_SECRET`, carrying
   `sub` (userId), `collegeId`, `role`.
@@ -107,6 +108,7 @@ explicit allowlist (login, forgot/reset password) is public.
 - Forgot/reset password uses single-use, time-limited (e.g. 1 hour), hashed tokens emailed via Resend.
 
 ### 7.2 Frontend Route Protection (Next.js)
+
 - A global `middleware.ts` checks for a valid session on **every route** except an explicit public
   allowlist (`/login`, `/forgot-password`, `/reset-password/*`). Unauthenticated requests redirect
   to `/login`.
@@ -115,6 +117,7 @@ explicit allowlist (login, forgot/reset password) is public.
   403/redirect, not a data leak.
 
 ### 7.3 Backend Access Control (NestJS)
+
 - `JwtAuthGuard` registered **globally** via `APP_GUARD` — every endpoint requires a valid access
   token unless explicitly decorated `@Public()`.
 - `RolesGuard` + `@Roles(UserRole.X, ...)` decorator for role-based authorization.
@@ -127,6 +130,7 @@ explicit allowlist (login, forgot/reset password) is public.
   `/auth/reset-password`) to mitigate brute force / credential stuffing.
 
 ### 7.4 Data & Input Security
+
 - All DB access via Prisma (parameterized queries) — no raw string-concatenated SQL.
 - `class-validator` DTOs validate/whitelist every request body, query, and param
   (`whitelist: true, forbidNonWhitelisted: true`).
@@ -136,25 +140,27 @@ explicit allowlist (login, forgot/reset password) is public.
   stored XSS via templates that later render in-app).
 
 ### 7.5 Audit & Monitoring
+
 - Sensitive mutations (student verification, application stage changes, user role changes, college
   status changes) are written to `audit_logs` (see [Phase 5](./05-analytics-production.md)) with actor,
   before/after values, and timestamp.
 - Sentry captures backend and frontend errors; secrets/PII are scrubbed from error payloads.
 
 ### 7.6 Secrets Management
+
 - Per-environment `.env` files (never committed); `.env.example` documents required keys for
   `apps/api` (`DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `RESEND_API_KEY`,
   `R2_*`) and `apps/web` (`NEXT_PUBLIC_API_URL`).
 
 ## 8. Build Order & Phase Index
 
-| Phase | Doc | Focus | Depends On |
-|---|---|---|---|
-| 1 | [01-foundation-auth.md](./01-foundation-auth.md) | Monorepo setup, multi-tenant SaaS foundation, auth, RBAC, security middleware | — |
-| 2 | [02-student-lifecycle.md](./02-student-lifecycle.md) | Student management, profiles, resumes (R2), bulk import | Phase 1 |
-| 3 | [03-companies-jobs-ats.md](./03-companies-jobs-ats.md) | Companies, jobs, eligibility/smart matching, ATS tracking | Phases 1–2 |
-| 4 | [04-notifications-alumni.md](./04-notifications-alumni.md) | Resend email automation, in-app notifications, alumni engagement | Phases 1–3 |
-| 5 | [05-analytics-production.md](./05-analytics-production.md) | Analytics, reports/exports, audit logs, deployment & monitoring | Phases 1–4 |
+| Phase | Doc                                                        | Focus                                                                         | Depends On |
+| ----- | ---------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------- |
+| 1     | [01-foundation-auth.md](./01-foundation-auth.md)           | Monorepo setup, multi-tenant SaaS foundation, auth, RBAC, security middleware | —          |
+| 2     | [02-student-lifecycle.md](./02-student-lifecycle.md)       | Student management, profiles, resumes (R2), bulk import                       | Phase 1    |
+| 3     | [03-companies-jobs-ats.md](./03-companies-jobs-ats.md)     | Companies, jobs, eligibility/smart matching, ATS tracking                     | Phases 1–2 |
+| 4     | [04-notifications-alumni.md](./04-notifications-alumni.md) | Resend email automation, in-app notifications, alumni engagement              | Phases 1–3 |
+| 5     | [05-analytics-production.md](./05-analytics-production.md) | Analytics, reports/exports, audit logs, deployment & monitoring               | Phases 1–4 |
 
 This sequence gets the **core placement workflow live by Phase 3**, with communication, alumni
 engagement, and analytics layered on as enhancements.

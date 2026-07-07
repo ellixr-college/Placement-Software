@@ -83,7 +83,9 @@ export default function AlumniPage() {
 
   const slug = user?.college?.slug;
   const registerUrl =
-    slug && typeof window !== 'undefined' ? `${window.location.origin}/alumni-register/${slug}` : null;
+    slug && typeof window !== 'undefined'
+      ? `${window.location.origin}/alumni-register/${slug}`
+      : null;
 
   return (
     <div className="space-y-6">
@@ -214,7 +216,6 @@ export default function AlumniPage() {
             ))}
           </FacetRow>
         )}
-
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -363,7 +364,11 @@ function BreakdownCard({
       ) : (
         <div className="space-y-3">
           {rows.map((r) => (
-            <button key={r.label} onClick={() => onPick(r.label)} className="block w-full text-left">
+            <button
+              key={r.label}
+              onClick={() => onPick(r.label)}
+              className="block w-full text-left"
+            >
               <div className="flex items-center justify-between text-sm">
                 <span className="text-body hover:text-primary-600">{r.label}</span>
                 <span className="text-subtle">{r.count}</span>
@@ -404,8 +409,7 @@ function NewAlumniForm({ onCreated, onCancel }: { onCreated: () => void; onCance
   const [error, setError] = useState<string | null>(null);
 
   const set =
-    (k: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
   async function submit() {
@@ -422,10 +426,15 @@ function NewAlumniForm({ onCreated, onCancel }: { onCreated: () => void; onCance
         course: form.course || undefined,
         currentCompany: form.currentCompany || undefined,
         currentDesignation: form.currentDesignation || undefined,
-        currentLocation: form.currentLocation.trim() ? toTitleCase(form.currentLocation) : undefined,
+        currentLocation: form.currentLocation.trim()
+          ? toTitleCase(form.currentLocation)
+          : undefined,
         linkedinUrl: form.linkedinUrl || undefined,
         tags: form.tags
-          ? form.tags.split(',').map((t) => t.trim()).filter(Boolean)
+          ? form.tags
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean)
           : undefined,
         notes: form.notes || undefined,
         isMentor: form.isMentor,
@@ -456,7 +465,11 @@ function NewAlumniForm({ onCreated, onCancel }: { onCreated: () => void; onCance
           <h2 className="text-lg font-semibold text-strong">Add alumnus</h2>
           <p className="text-sm text-subtle">Only name, email, batch and branch are required.</p>
         </div>
-        <button onClick={onCancel} aria-label="Close" className="rounded-md px-2 py-1 text-subtle transition hover:bg-app hover:text-strong">
+        <button
+          onClick={onCancel}
+          aria-label="Close"
+          className="rounded-md px-2 py-1 text-subtle transition hover:bg-app hover:text-strong"
+        >
           ✕
         </button>
       </div>
@@ -483,14 +496,29 @@ function NewAlumniForm({ onCreated, onCancel }: { onCreated: () => void; onCance
           <input className={inputCls} value={form.course} onChange={set('course')} />
         </Field>
         <Field label="Register number">
-          <input className={inputCls} value={form.registerNumber} onChange={set('registerNumber')} />
+          <input
+            className={inputCls}
+            value={form.registerNumber}
+            onChange={set('registerNumber')}
+          />
         </Field>
         <Field label="Phone">
-          <input className={inputCls} value={form.phone} onChange={set('phone')} placeholder="10-digit mobile" />
-          {!phoneOk && <span className="text-xs text-danger">Enter a valid 10-digit mobile number.</span>}
+          <input
+            className={inputCls}
+            value={form.phone}
+            onChange={set('phone')}
+            placeholder="10-digit mobile"
+          />
+          {!phoneOk && (
+            <span className="text-xs text-danger">Enter a valid 10-digit mobile number.</span>
+          )}
         </Field>
         <Field label="Current company">
-          <input className={inputCls} value={form.currentCompany} onChange={set('currentCompany')} />
+          <input
+            className={inputCls}
+            value={form.currentCompany}
+            onChange={set('currentCompany')}
+          />
         </Field>
         <Field label="Designation">
           <input
@@ -500,7 +528,11 @@ function NewAlumniForm({ onCreated, onCancel }: { onCreated: () => void; onCance
           />
         </Field>
         <Field label="Location">
-          <input className={inputCls} value={form.currentLocation} onChange={set('currentLocation')} />
+          <input
+            className={inputCls}
+            value={form.currentLocation}
+            onChange={set('currentLocation')}
+          />
         </Field>
         <Field label="LinkedIn URL">
           <input
@@ -511,7 +543,12 @@ function NewAlumniForm({ onCreated, onCancel }: { onCreated: () => void; onCance
           />
         </Field>
         <Field label="Tags (comma-separated)">
-          <input className={inputCls} value={form.tags} onChange={set('tags')} placeholder="ml, founder" />
+          <input
+            className={inputCls}
+            value={form.tags}
+            onChange={set('tags')}
+            placeholder="ml, founder"
+          />
         </Field>
       </div>
       <Field label="Notes">

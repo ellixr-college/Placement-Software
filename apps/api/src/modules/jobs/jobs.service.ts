@@ -16,11 +16,7 @@ import {
   UpdatePlatformJobDto,
 } from './dto';
 import { NotificationsService } from '../notifications/notifications.service';
-import {
-  checkEligibility,
-  type EligibilityJob,
-  type EligibilityStudent,
-} from './eligibility';
+import { checkEligibility, type EligibilityJob, type EligibilityStudent } from './eligibility';
 
 // A custom application question stored on Job.applicationFormFields (as JSON).
 interface ApplicationField {
@@ -51,8 +47,15 @@ export class JobsService {
       if (!company) throw new BadRequestException('Company not found');
     }
 
-    const { companyId, ctcMin, ctcMax, minCgpa, applicationDeadline, applicationFormFields, ...rest } =
-      dto;
+    const {
+      companyId,
+      ctcMin,
+      ctcMax,
+      minCgpa,
+      applicationDeadline,
+      applicationFormFields,
+      ...rest
+    } = dto;
     return this.prisma.job.create({
       data: {
         collegeId,
@@ -125,9 +128,15 @@ export class JobsService {
       where: { id },
       data: {
         ...rest,
-        ...(ctcMin !== undefined ? { ctcMin: ctcMin != null ? new Prisma.Decimal(ctcMin) : null } : {}),
-        ...(ctcMax !== undefined ? { ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null } : {}),
-        ...(minCgpa !== undefined ? { minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null } : {}),
+        ...(ctcMin !== undefined
+          ? { ctcMin: ctcMin != null ? new Prisma.Decimal(ctcMin) : null }
+          : {}),
+        ...(ctcMax !== undefined
+          ? { ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null }
+          : {}),
+        ...(minCgpa !== undefined
+          ? { minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null }
+          : {}),
         ...(applicationDeadline !== undefined
           ? { applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null }
           : {}),
@@ -160,12 +169,16 @@ export class JobsService {
     });
     if (recs.length > 0) {
       const companyName = updated.company?.name ?? updated.companyName ?? null;
-      await this.notifications.notifyMany(recs.map((r) => r.userId), collegeId, {
-        type: 'GENERAL',
-        title: 'New job posted',
-        body: companyName ? `${updated.title} · ${companyName}` : updated.title,
-        link: '/me/jobs',
-      });
+      await this.notifications.notifyMany(
+        recs.map((r) => r.userId),
+        collegeId,
+        {
+          type: 'GENERAL',
+          title: 'New job posted',
+          body: companyName ? `${updated.title} · ${companyName}` : updated.title,
+          link: '/me/jobs',
+        },
+      );
     }
     // The officer still sees how many can actually apply.
     const eligible = await this.eligibleStudents(collegeId, id);
@@ -211,7 +224,12 @@ export class JobsService {
     if (!job) throw new NotFoundException('Job not found');
 
     const students = await this.prisma.student.findMany({
-      where: { collegeId, isActive: true, verificationStatus: 'VERIFIED', status: { not: 'PLACED' } },
+      where: {
+        collegeId,
+        isActive: true,
+        verificationStatus: 'VERIFIED',
+        status: { not: 'PLACED' },
+      },
       include: { user: true },
     });
 
@@ -310,9 +328,15 @@ export class JobsService {
       where: { id },
       data: {
         ...rest,
-        ...(ctcMin !== undefined ? { ctcMin: ctcMin != null ? new Prisma.Decimal(ctcMin) : null } : {}),
-        ...(ctcMax !== undefined ? { ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null } : {}),
-        ...(minCgpa !== undefined ? { minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null } : {}),
+        ...(ctcMin !== undefined
+          ? { ctcMin: ctcMin != null ? new Prisma.Decimal(ctcMin) : null }
+          : {}),
+        ...(ctcMax !== undefined
+          ? { ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null }
+          : {}),
+        ...(minCgpa !== undefined
+          ? { minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null }
+          : {}),
         ...(applicationDeadline !== undefined
           ? { applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null }
           : {}),
@@ -357,7 +381,8 @@ export class JobsService {
 
   private async assertCollegesExist(ids: string[]) {
     const found = await this.prisma.college.count({ where: { id: { in: ids } } });
-    if (found !== ids.length) throw new BadRequestException('One or more target colleges are invalid');
+    if (found !== ids.length)
+      throw new BadRequestException('One or more target colleges are invalid');
   }
 
   // ─────────────── Student-facing ───────────────
@@ -366,10 +391,7 @@ export class JobsService {
   // job that targets their college. (collegeId is non-null for any real student.)
   private visibleToCollege(collegeId: string): Prisma.JobWhereInput {
     return {
-      OR: [
-        { collegeId },
-        { scope: 'PLATFORM', targetCollegeIds: { has: collegeId } },
-      ],
+      OR: [{ collegeId }, { scope: 'PLATFORM', targetCollegeIds: { has: collegeId } }],
     };
   }
 
@@ -573,7 +595,12 @@ export class JobsService {
       // Platform jobs carry a free-text company name; college jobs a Company row.
       companyName: j.company?.name ?? j.companyName ?? null,
       company: j.company
-        ? { id: j.company.id, name: j.company.name, logoUrl: j.company.logoUrl, industry: j.company.industry }
+        ? {
+            id: j.company.id,
+            name: j.company.name,
+            logoUrl: j.company.logoUrl,
+            industry: j.company.industry,
+          }
         : undefined,
       applicationCount: j._count?.applications,
     };

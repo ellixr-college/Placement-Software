@@ -58,7 +58,9 @@ export default function QuickPostPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    listMyCourses().then(setCourses).catch(() => {});
+    listMyCourses()
+      .then(setCourses)
+      .catch(() => {});
   }, []);
 
   const hasCatalog = courses.length > 0;
@@ -73,7 +75,9 @@ export default function QuickPostPage() {
   function toggleCourse(name: string) {
     setPickedCourses((cs) => {
       const next = cs.includes(name) ? cs.filter((x) => x !== name) : [...cs, name];
-      const allowed = new Set(next.flatMap((n) => courses.find((c) => c.name === n)?.branches ?? []));
+      const allowed = new Set(
+        next.flatMap((n) => courses.find((c) => c.name === n)?.branches ?? []),
+      );
       setPickedBranches((bs) => bs.filter((b) => allowed.has(b)));
       return next;
     });
@@ -81,12 +85,17 @@ export default function QuickPostPage() {
   const toggleBranch = (b: string) =>
     setPickedBranches((bs) => (bs.includes(b) ? bs.filter((x) => x !== b) : [...bs, b]));
 
-  const splitList = (v: string) => v.split(',').map((s) => s.trim()).filter(Boolean);
+  const splitList = (v: string) =>
+    v
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
   const num = (v: string) => (v.trim() === '' ? undefined : Number(v));
   const eligibleCourses = hasCatalog ? pickedCourses : splitList(coursesText);
   const eligibleBranches = hasCatalog ? pickedBranches : splitList(branchesText);
 
-  const valid = title.trim() && eligibleCourses.length && gradYears.length > 0 && details.ctc.trim() !== '';
+  const valid =
+    title.trim() && eligibleCourses.length && gradYears.length > 0 && details.ctc.trim() !== '';
 
   async function submit(publish: boolean) {
     setSaving(publish ? 'publish' : 'draft');
@@ -134,7 +143,9 @@ export default function QuickPostPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <Link href="/jobs" className="text-sm text-primary-600 hover:underline">← Jobs</Link>
+      <Link href="/jobs" className="text-sm text-primary-600 hover:underline">
+        ← Jobs
+      </Link>
       <div>
         <h1 className="text-2xl font-semibold text-strong">Post a job</h1>
         <p className="text-sm text-subtle">
@@ -144,10 +155,20 @@ export default function QuickPostPage() {
 
       <Card className="space-y-4 p-5">
         <Field label="Job title *">
-          <input className={inputCls} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Business Development Executive" />
+          <input
+            className={inputCls}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Business Development Executive"
+          />
         </Field>
         <Field label="Company name">
-          <input className={inputCls} value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="e.g. Infosys (optional)" />
+          <input
+            className={inputCls}
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            placeholder="e.g. Infosys (optional)"
+          />
         </Field>
 
         <Field label="Job description PDF">
@@ -159,45 +180,84 @@ export default function QuickPostPage() {
               className="hidden"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
-            <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileRef.current?.click()}
+            >
               {file ? 'Change PDF' : 'Choose PDF…'}
             </Button>
-            <span className="truncate text-sm text-subtle">{file ? file.name : 'No file selected'}</span>
+            <span className="truncate text-sm text-subtle">
+              {file ? file.name : 'No file selected'}
+            </span>
           </div>
           <p className="text-xs text-subtle">Students can view this on the job. Max 10 MB.</p>
         </Field>
 
         <Field label="Job description (or type it, if the HR didn't send a PDF)">
-          <textarea className={areaCls} rows={5} value={details.description} onChange={setD('description')} placeholder="Paste or type the job description here…" />
+          <textarea
+            className={areaCls}
+            rows={5}
+            value={details.description}
+            onChange={setD('description')}
+            placeholder="Paste or type the job description here…"
+          />
         </Field>
 
         <Field label="CTC (₹/yr) *">
-          <input className={inputCls} type="number" value={details.ctc} onChange={setD('ctc')} placeholder="600000" />
+          <input
+            className={inputCls}
+            type="number"
+            value={details.ctc}
+            onChange={setD('ctc')}
+            placeholder="600000"
+          />
           <span className="text-xs text-subtle">Shown to students on the job — required.</span>
         </Field>
 
         <div className="border-t border-border pt-4">
           <p className="mb-1 text-sm font-semibold text-strong">Who can apply</p>
-          <p className="mb-3 text-xs text-subtle">Only students in the selected courses/branches can apply.</p>
+          <p className="mb-3 text-xs text-subtle">
+            Only students in the selected courses/branches can apply.
+          </p>
           <div className="space-y-3">
             {hasCatalog ? (
               <>
                 <Field label="Eligible courses *">
-                  <ChipPicker options={courses.map((c) => c.name)} selected={pickedCourses} onToggle={toggleCourse} />
+                  <ChipPicker
+                    options={courses.map((c) => c.name)}
+                    selected={pickedCourses}
+                    onToggle={toggleCourse}
+                  />
                 </Field>
                 {availableBranches.length > 0 && (
                   <Field label="Eligible branches (leave empty = all branches of the selected courses)">
-                    <ChipPicker options={availableBranches} selected={pickedBranches} onToggle={toggleBranch} />
+                    <ChipPicker
+                      options={availableBranches}
+                      selected={pickedBranches}
+                      onToggle={toggleBranch}
+                    />
                   </Field>
                 )}
               </>
             ) : (
               <>
                 <Field label="Eligible courses * (comma-separated)">
-                  <input className={inputCls} value={coursesText} onChange={(e) => setCoursesText(e.target.value)} placeholder="B.Tech, MBA" />
+                  <input
+                    className={inputCls}
+                    value={coursesText}
+                    onChange={(e) => setCoursesText(e.target.value)}
+                    placeholder="B.Tech, MBA"
+                  />
                 </Field>
                 <Field label="Eligible branches (comma-separated, optional)">
-                  <input className={inputCls} value={branchesText} onChange={(e) => setBranchesText(e.target.value)} placeholder="CSE, ECE" />
+                  <input
+                    className={inputCls}
+                    value={branchesText}
+                    onChange={(e) => setBranchesText(e.target.value)}
+                    placeholder="CSE, ECE"
+                  />
                 </Field>
               </>
             )}
@@ -206,48 +266,99 @@ export default function QuickPostPage() {
             </Field>
             <Field label="Last date to apply">
               <div className="flex gap-2">
-                <input className={inputCls} type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
-                <input className="h-10 w-32 rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400" type="time" value={deadlineTime} onChange={(e) => setDeadlineTime(e.target.value)} />
+                <input
+                  className={inputCls}
+                  type="date"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
+                />
+                <input
+                  className="h-10 w-32 rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
+                  type="time"
+                  value={deadlineTime}
+                  onChange={(e) => setDeadlineTime(e.target.value)}
+                />
               </div>
-              <span className="text-xs text-subtle">Leave time blank to close at 11:59 PM that day.</span>
+              <span className="text-xs text-subtle">
+                Leave time blank to close at 11:59 PM that day.
+              </span>
             </Field>
           </div>
         </div>
 
         <div className="border-t border-border pt-4">
           <p className="mb-1 text-sm font-semibold text-strong">More details (optional)</p>
-          <p className="mb-3 text-xs text-subtle">Fill any of these — handy when the JD is typed, not a PDF.</p>
+          <p className="mb-3 text-xs text-subtle">
+            Fill any of these — handy when the JD is typed, not a PDF.
+          </p>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <Field label="Job type">
                 <select className={inputCls} value={details.jobType} onChange={setD('jobType')}>
-                  {JOB_TYPES.map((t) => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+                  {JOB_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t.replace(/_/g, ' ')}
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field label="Work mode">
                 <select className={inputCls} value={details.workMode} onChange={setD('workMode')}>
                   <option value="">Not specified</option>
-                  {WORK_MODES.map((m) => <option key={m} value={m}>{m === 'ONSITE' ? 'Work from office' : m.charAt(0) + m.slice(1).toLowerCase()}</option>)}
+                  {WORK_MODES.map((m) => (
+                    <option key={m} value={m}>
+                      {m === 'ONSITE' ? 'Work from office' : m.charAt(0) + m.slice(1).toLowerCase()}
+                    </option>
+                  ))}
                 </select>
               </Field>
             </div>
-            <Field label="Location"><input className={inputCls} value={details.location} onChange={setD('location')} placeholder="Bangalore" /></Field>
+            <Field label="Location">
+              <input
+                className={inputCls}
+                value={details.location}
+                onChange={setD('location')}
+                placeholder="Bangalore"
+              />
+            </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Min UG %"><input className={inputCls} type="number" value={details.minUg} onChange={setD('minUg')} placeholder="60" /></Field>
-              <Field label="Min PG %"><input className={inputCls} type="number" value={details.minPg} onChange={setD('minPg')} placeholder="60" /></Field>
+              <Field label="Min UG %">
+                <input
+                  className={inputCls}
+                  type="number"
+                  value={details.minUg}
+                  onChange={setD('minUg')}
+                  placeholder="60"
+                />
+              </Field>
+              <Field label="Min PG %">
+                <input
+                  className={inputCls}
+                  type="number"
+                  value={details.minPg}
+                  onChange={setD('minPg')}
+                  placeholder="60"
+                />
+              </Field>
             </div>
           </div>
         </div>
 
         <div className="border-t border-border pt-4">
-          <p className="mb-1 text-sm font-semibold text-strong">Custom application questions (optional)</p>
+          <p className="mb-1 text-sm font-semibold text-strong">
+            Custom application questions (optional)
+          </p>
           <p className="mb-3 text-xs text-subtle">Extra questions students answer when applying.</p>
           <FormBuilder fields={formFields} onChange={setFormFields} />
         </div>
 
         {error && <p className="text-sm text-danger">{error}</p>}
         <div className="flex gap-2">
-          <Button onClick={() => submit(true)} loading={saving === 'publish'} disabled={!valid || !!saving}>
+          <Button
+            onClick={() => submit(true)}
+            loading={saving === 'publish'}
+            disabled={!valid || !!saving}
+          >
             {saving === 'publish' ? 'Publishing…' : 'Publish'}
           </Button>
           <Button
@@ -300,7 +411,10 @@ function FormBuilder({
   onChange: (f: ApplicationField[]) => void;
 }) {
   function add() {
-    onChange([...fields, { id: `q${Date.now().toString(36)}`, label: '', type: 'text', required: false }]);
+    onChange([
+      ...fields,
+      { id: `q${Date.now().toString(36)}`, label: '', type: 'text', required: false },
+    ]);
   }
   function update(i: number, patch: Partial<ApplicationField>) {
     onChange(fields.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
@@ -314,29 +428,48 @@ function FormBuilder({
       {fields.map((f, i) => (
         <div key={f.id} className="space-y-2 rounded-card border border-border p-3">
           <div className="flex gap-2">
-            <input className={inputCls} value={f.label} onChange={(e) => update(i, { label: e.target.value })} placeholder="Question label" />
+            <input
+              className={inputCls}
+              value={f.label}
+              onChange={(e) => update(i, { label: e.target.value })}
+              placeholder="Question label"
+            />
             <select
               className="h-10 w-36 shrink-0 rounded-md border border-border bg-white px-2 text-sm outline-none focus:border-primary-400"
               value={f.type}
               onChange={(e) => update(i, { type: e.target.value as ApplicationFieldType })}
             >
-              {FIELD_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              {FIELD_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
             </select>
           </div>
           {f.type === 'select' && (
             <input
               className={inputCls}
               value={(f.options ?? []).join(', ')}
-              onChange={(e) => update(i, { options: e.target.value.split(',').map((s) => s.trim()) })}
+              onChange={(e) =>
+                update(i, { options: e.target.value.split(',').map((s) => s.trim()) })
+              }
               placeholder="Options, comma-separated"
             />
           )}
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-xs text-subtle">
-              <input type="checkbox" checked={f.required ?? false} onChange={(e) => update(i, { required: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={f.required ?? false}
+                onChange={(e) => update(i, { required: e.target.checked })}
+              />
               Required
             </label>
-            <button type="button" onClick={() => remove(i)} className="text-xs text-danger hover:underline">
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              className="text-xs text-danger hover:underline"
+            >
               Remove
             </button>
           </div>
@@ -378,7 +511,9 @@ function ChipPicker({
             type="button"
             onClick={() => onToggle(o)}
             className={`rounded-pill px-3 py-1.5 text-sm font-medium ${
-              on ? 'bg-primary-600 text-white' : 'bg-white text-body ring-1 ring-border hover:bg-primary-50'
+              on
+                ? 'bg-primary-600 text-white'
+                : 'bg-white text-body ring-1 ring-border hover:bg-primary-50'
             }`}
           >
             {o}

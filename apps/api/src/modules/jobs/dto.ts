@@ -51,7 +51,10 @@ export class CreateJobDto {
   @IsArray() @ArrayNotEmpty() @IsString({ each: true }) eligibleCourses!: string[];
   @IsArray() @IsString({ each: true }) eligibleBranches!: string[];
 
-  @IsArray() @ArrayNotEmpty() @Type(() => Number) @IsInt({ each: true })
+  @IsArray()
+  @ArrayNotEmpty()
+  @Type(() => Number)
+  @IsInt({ each: true })
   graduationYears!: number[];
 
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) minCgpa?: number;
@@ -62,7 +65,10 @@ export class CreateJobDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxActiveBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxTotalBacklogs?: number;
 
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ApplicationFieldDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ApplicationFieldDto)
   applicationFormFields?: ApplicationFieldDto[];
 
   @IsOptional() @IsString() pdfUrl?: string;
@@ -97,7 +103,10 @@ export class UpdateJobDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxActiveBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxTotalBacklogs?: number;
 
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ApplicationFieldDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ApplicationFieldDto)
   applicationFormFields?: ApplicationFieldDto[];
 
   @IsOptional() @IsString() pdfUrl?: string;
@@ -126,7 +135,10 @@ export class CreatePlatformJobDto {
   @IsArray() @ArrayNotEmpty() @IsString({ each: true }) eligibleCourses!: string[];
   @IsArray() @IsString({ each: true }) eligibleBranches!: string[];
 
-  @IsArray() @ArrayNotEmpty() @Type(() => Number) @IsInt({ each: true })
+  @IsArray()
+  @ArrayNotEmpty()
+  @Type(() => Number)
+  @IsInt({ each: true })
   graduationYears!: number[];
 
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) minCgpa?: number;
@@ -137,7 +149,10 @@ export class CreatePlatformJobDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxActiveBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxTotalBacklogs?: number;
 
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ApplicationFieldDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ApplicationFieldDto)
   applicationFormFields?: ApplicationFieldDto[];
 
   @IsOptional() @IsString() pdfUrl?: string;
@@ -174,7 +189,10 @@ export class UpdatePlatformJobDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxActiveBacklogs?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) maxTotalBacklogs?: number;
 
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ApplicationFieldDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ApplicationFieldDto)
   applicationFormFields?: ApplicationFieldDto[];
 
   @IsOptional() @IsString() pdfUrl?: string;

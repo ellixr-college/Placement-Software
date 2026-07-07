@@ -38,7 +38,7 @@ export default function ProfileMenuPage() {
         </div>
         <div className="min-w-0">
           <p className="truncate text-base font-semibold text-strong">
-            {loading ? 'Loading…' : student?.user.fullName ?? 'Student'}
+            {loading ? 'Loading…' : (student?.user.fullName ?? 'Student')}
           </p>
           {student && (
             <p className="truncate text-xs text-subtle">
@@ -78,7 +78,9 @@ export default function ProfileMenuPage() {
             {profileDone ? 'Personal details' : 'Complete your profile'}
           </p>
           <p className="text-xs text-subtle">
-            {profileDone ? 'Edit your academic & personal info' : `${completion}% done · unlock more roles`}
+            {profileDone
+              ? 'Edit your academic & personal info'
+              : `${completion}% done · unlock more roles`}
           </p>
         </div>
         <Arrow />
@@ -88,10 +90,30 @@ export default function ProfileMenuPage() {
       <Card className="divide-y divide-border p-0">
         <Row href="/me/resume" title="Resume" sub="Build & share your resume" icon={<DocIcon />} />
         <Row href="/me/jobs" title="Jobs" sub="Browse & apply" icon={<BriefcaseIcon />} />
-        <Row href="/me/applications" title="My applications" sub="Track your status" icon={<ListIcon />} />
-        <Row href="/me/internships" title="Internships" sub="Add internships you found" icon={<StarIcon />} />
-        <Row href="/me/notifications" title="Notifications" sub="Alerts on your account" icon={<BellIcon />} />
-        <Row href="/me/change-password" title="Change password" sub="Update your login password" icon={<LockIcon />} />
+        <Row
+          href="/me/applications"
+          title="My applications"
+          sub="Track your status"
+          icon={<ListIcon />}
+        />
+        <Row
+          href="/me/internships"
+          title="Internships"
+          sub="Add internships you found"
+          icon={<StarIcon />}
+        />
+        <Row
+          href="/me/notifications"
+          title="Notifications"
+          sub="Alerts on your account"
+          icon={<BellIcon />}
+        />
+        <Row
+          href="/me/change-password"
+          title="Change password"
+          sub="Update your login password"
+          icon={<LockIcon />}
+        />
       </Card>
 
       <button
@@ -137,7 +159,9 @@ function IconBox({ children, highlight }: { children: React.ReactNode; highlight
   return (
     <div
       className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${
-        highlight ? 'border-primary-300 bg-white text-primary-600' : 'border-border bg-white text-strong'
+        highlight
+          ? 'border-primary-300 bg-white text-primary-600'
+          : 'border-border bg-white text-strong'
       }`}
     >
       {children}
@@ -217,7 +241,10 @@ function ChartIcon() {
 function BellIcon() {
   return (
     <svg {...sv}>
-      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9M10 21a2 2 0 0 0 4 0" strokeLinecap="round" />
+      <path
+        d="M6 8a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9M10 21a2 2 0 0 0 4 0"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -233,7 +260,11 @@ function LogoutIcon() {
   return (
     <svg {...sv}>
       <path d="M15 12H3m0 0 4-4m-4 4 4 4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M9 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

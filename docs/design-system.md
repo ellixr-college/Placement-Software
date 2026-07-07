@@ -6,10 +6,10 @@
 
 Ellixr ships **one Next.js 15 app** with **two distinct experiences**, gated by role:
 
-| Audience | Experience | Layout |
-|---|---|---|
-| **Student** | **Mobile-first** — designed for phones, app-like. PWA-installable. | Mobile shell: top app bar, card/timeline content, **floating bottom pill nav** |
-| **Placement Officer / College Admin / Platform Admin** | **Desktop web** — dense, productive admin UI | Web shell: left sidebar nav, top bar, data tables, multi-column dashboards |
+| Audience                                               | Experience                                                         | Layout                                                                         |
+| ------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| **Student**                                            | **Mobile-first** — designed for phones, app-like. PWA-installable. | Mobile shell: top app bar, card/timeline content, **floating bottom pill nav** |
+| **Placement Officer / College Admin / Platform Admin** | **Desktop web** — dense, productive admin UI                       | Web shell: left sidebar nav, top bar, data tables, multi-column dashboards     |
 
 - Implemented via **role-based route groups** sharing one auth/session and one component library:
   - `app/(student)/*` → mobile shell (`max-w-md` centered, bottom nav, large touch targets)
@@ -28,38 +28,41 @@ category tints, generous rounding, soft diffuse shadows, stacked avatars, rounde
 
 ```css
 /* Brand / primary — coral */
---primary-50:  #FFF3EC;
---primary-100: #FFE3D4;
---primary-200: #FFC9AD;
---primary-300: #FBA983;
---primary-400: #F5926B;
---primary-500: #F0764A;   /* main brand / buttons / active nav */
---primary-600: #E85E2C;
---primary-700: #C9471B;
+--primary-50: #fff3ec;
+--primary-100: #ffe3d4;
+--primary-200: #ffc9ad;
+--primary-300: #fba983;
+--primary-400: #f5926b;
+--primary-500: #f0764a; /* main brand / buttons / active nav */
+--primary-600: #e85e2c;
+--primary-700: #c9471b;
 /* Primary gradient (headers, hero cards, bottom nav) */
---gradient-primary: linear-gradient(135deg, #F89B6C 0%, #F0764A 100%);
+--gradient-primary: linear-gradient(135deg, #f89b6c 0%, #f0764a 100%);
 
 /* Canvas / surfaces */
---bg-app:      #FDF3EA;   /* soft peach page background */
---bg-card:     #FFFFFF;   /* elevated white cards */
---bg-muted:    #F7F4F1;
+--bg-app: #fdf3ea; /* soft peach page background */
+--bg-card: #ffffff; /* elevated white cards */
+--bg-muted: #f7f4f1;
 
 /* Pastel category tints (timeline / class cards) */
---tint-lavender: #EEF0FB;  --tint-lavender-fg: #5B5FC7;
---tint-mint:     #E6F4ED;  --tint-mint-fg:     #2FA37A;
---tint-cream:    #FBF3E2;  --tint-cream-fg:    #C99A3B;
+--tint-lavender: #eef0fb;
+--tint-lavender-fg: #5b5fc7;
+--tint-mint: #e6f4ed;
+--tint-mint-fg: #2fa37a;
+--tint-cream: #fbf3e2;
+--tint-cream-fg: #c99a3b;
 
 /* Text */
---text-strong: #2B2B33;   /* headings */
---text-body:   #4A4A52;
---text-muted:  #9A9AA3;   /* secondary / timestamps */
---text-on-primary: #FFFFFF;
+--text-strong: #2b2b33; /* headings */
+--text-body: #4a4a52;
+--text-muted: #9a9aa3; /* secondary / timestamps */
+--text-on-primary: #ffffff;
 
 /* Feedback */
---success: #2FA37A;
---warning: #E8A13A;
---danger:  #E5484D;
---info:    #5B5FC7;
+--success: #2fa37a;
+--warning: #e8a13a;
+--danger: #e5484d;
+--info: #5b5fc7;
 ```
 
 ## Typography
@@ -71,11 +74,11 @@ category tints, generous rounding, soft diffuse shadows, stacked avatars, rounde
 ## Shape, Elevation, Spacing
 
 ```css
---radius-card: 1.5rem;   /* 24px — cards (rounded-3xl) */
---radius-md:   1rem;     /* 16px — inputs, small cards */
---radius-pill: 9999px;   /* nav, chips, avatars */
---shadow-card: 0 10px 30px -12px rgba(240,118,74,0.18), 0 4px 12px -6px rgba(0,0,0,0.06);
---shadow-nav:  0 12px 28px -8px rgba(240,118,74,0.45);
+--radius-card: 1.5rem; /* 24px — cards (rounded-3xl) */
+--radius-md: 1rem; /* 16px — inputs, small cards */
+--radius-pill: 9999px; /* nav, chips, avatars */
+--shadow-card: 0 10px 30px -12px rgba(240, 118, 74, 0.18), 0 4px 12px -6px rgba(0, 0, 0, 0.06);
+--shadow-nav: 0 12px 28px -8px rgba(240, 118, 74, 0.45);
 /* Spacing: 4px base grid; card padding ~20–24px; comfortable touch targets ≥44px on mobile */
 ```
 
@@ -105,14 +108,14 @@ FilterBar, FormLayout (multi-section), SlideOver (detail/edit panels).
 
 ## Reference mockup → Ellixr mapping
 
-| Mockup element | Ellixr usage |
-|---|---|
-| "Today's Classes" timeline | Student **dashboard / upcoming interviews + applications** timeline |
-| Gradient hero card ("History of Physics") | Student **next interview / featured job** hero card |
-| Pastel class cards w/ members | Student **application / interview cards** (status = tint) |
-| Class detail sheet + attachments | **Job detail / interview detail** sheet with attachments (JD, links) |
-| Floating bottom pill nav | Student app **bottom nav** |
-| Notification bell w/ dot | Shared **notification center** entry point |
+| Mockup element                            | Ellixr usage                                                         |
+| ----------------------------------------- | -------------------------------------------------------------------- |
+| "Today's Classes" timeline                | Student **dashboard / upcoming interviews + applications** timeline  |
+| Gradient hero card ("History of Physics") | Student **next interview / featured job** hero card                  |
+| Pastel class cards w/ members             | Student **application / interview cards** (status = tint)            |
+| Class detail sheet + attachments          | **Job detail / interview detail** sheet with attachments (JD, links) |
+| Floating bottom pill nav                  | Student app **bottom nav**                                           |
+| Notification bell w/ dot                  | Shared **notification center** entry point                           |
 
 ## Accessibility
 

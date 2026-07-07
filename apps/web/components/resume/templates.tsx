@@ -1,9 +1,4 @@
-import type {
-  ResumeData,
-  ResumeEducation,
-  ResumeExperience,
-  ResumeProject,
-} from '@ellixr/shared';
+import type { ResumeData, ResumeEducation, ResumeExperience, ResumeProject } from '@ellixr/shared';
 
 /** Picks the chosen template; falls back to Professional for unknown ids. */
 export function ResumeView({ template, data }: { template: string; data: ResumeData }) {
@@ -384,7 +379,9 @@ function ProfessionalTemplate({ data }: { data: ResumeData }) {
               return (
                 <div key={i}>
                   <p className="text-xs text-neutral-500">
-                    {[ed.institution, dateRange(ed.startYear, ed.endYear)].filter(Boolean).join(' | ')}
+                    {[ed.institution, dateRange(ed.startYear, ed.endYear)]
+                      .filter(Boolean)
+                      .join(' | ')}
                   </p>
                   <p className="font-bold text-neutral-900">{degree || ed.institution}</p>
                   {ed.score && <p className="text-xs text-neutral-600">{ed.score}</p>}
@@ -507,15 +504,31 @@ function ProSection({ title, children }: { title: string; children: React.ReactN
 
 function PhoneIcon() {
   return (
-    <svg className="h-3.5 w-3.5 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.6a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2Z" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      className="h-3.5 w-3.5 text-neutral-500"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path
+        d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.6a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2Z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function MailIcon() {
   return (
-    <svg className="h-3.5 w-3.5 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+    <svg
+      className="h-3.5 w-3.5 text-neutral-500"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <rect x="2" y="4" width="20" height="16" rx="2" />
       <path d="m2 6 10 7L22 6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -524,8 +537,18 @@ function MailIcon() {
 
 function PinIcon() {
   return (
-    <svg className="h-3.5 w-3.5 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      className="h-3.5 w-3.5 text-neutral-500"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path
+        d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
       <circle cx="12" cy="10" r="3" />
     </svg>
   );

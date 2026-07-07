@@ -59,9 +59,7 @@ export class ReportsController {
     @Res() res: Response,
   ): Promise<void> {
     if (!REPORT_TYPES.includes(type as ReportType)) {
-      throw new BadRequestException(
-        `Unknown report type. Allowed: ${REPORT_TYPES.join(', ')}`,
-      );
+      throw new BadRequestException(`Unknown report type. Allowed: ${REPORT_TYPES.join(', ')}`);
     }
     if (!FORMATS.includes(format as Format)) {
       throw new BadRequestException(`Unknown format. Allowed: ${FORMATS.join(', ')}`);

@@ -59,9 +59,9 @@ management, and both web shells with the coral theme. Phases 2–5 build on this
 
 ## Useful scripts
 
-| Command | What |
-|---|---|
-| `pnpm dev` | Run web + api in watch mode |
-| `pnpm build` | Build all packages/apps |
-| `pnpm typecheck` | Typecheck the workspace |
-| `pnpm db:studio` | Open Prisma Studio |
+| Command          | What                        |
+| ---------------- | --------------------------- |
+| `pnpm dev`       | Run web + api in watch mode |
+| `pnpm build`     | Build all packages/apps     |
+| `pnpm typecheck` | Typecheck the workspace     |
+| `pnpm db:studio` | Open Prisma Studio          |

@@ -4,11 +4,11 @@ Host the whole app for **$0/month**. Three pieces, tied together by the same-ori
 BFF proxy (the browser only ever talks to the web origin; Next.js forwards
 `/api/v1/*` to the API server-side, so the auth cookie stays first-party).
 
-| Piece | Host | Cost | Catch |
-|---|---|---|---|
-| Database | **CockroachDB Cloud** (Basic/free) | $0 | 50M Request Units/month free |
-| API (NestJS) | **Render** free Web Service | $0, no card | sleeps after ~15 min idle (cold start ~30–50s) |
-| Web (Next.js) | **Vercel** Hobby | $0, no card | none |
+| Piece         | Host                               | Cost        | Catch                                          |
+| ------------- | ---------------------------------- | ----------- | ---------------------------------------------- |
+| Database      | **CockroachDB Cloud** (Basic/free) | $0          | 50M Request Units/month free                   |
+| API (NestJS)  | **Render** free Web Service        | $0, no card | sleeps after ~15 min idle (cold start ~30–50s) |
+| Web (Next.js) | **Vercel** Hobby                   | $0, no card | none                                           |
 
 Config files in this repo: [`render.yaml`](render.yaml) (API), [`apps/web/vercel.json`](apps/web/vercel.json) (web).
 Pre-flight requirements live in [`SECURITY.md`](SECURITY.md).
@@ -38,6 +38,7 @@ Pre-flight requirements live in [`SECURITY.md`](SECURITY.md).
 3. Deploy. Note the API URL, e.g. `https://ellixr-api.onrender.com`. Confirm `https://ellixr-api.onrender.com/api/v1/health` returns `{ "data": ... }`.
 
 Build/start (already in the blueprint):
+
 - Build: `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @ellixr/database generate && pnpm --filter @ellixr/api build`
 - Start: `node apps/api/dist/main.js`
 

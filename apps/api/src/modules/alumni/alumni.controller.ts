@@ -13,12 +13,7 @@ import { UserRole } from '@ellixr/shared';
 import type { JwtPayload } from '@ellixr/shared';
 import { CurrentUser, Public, Roles } from '../../common/decorators';
 import { AlumniService } from './alumni.service';
-import {
-  CreateAlumniDto,
-  ListAlumniQuery,
-  SelfRegisterAlumniDto,
-  UpdateAlumniDto,
-} from './dto';
+import { CreateAlumniDto, ListAlumniQuery, SelfRegisterAlumniDto, UpdateAlumniDto } from './dto';
 
 @Controller('alumni')
 @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER)

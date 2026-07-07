@@ -65,9 +65,7 @@ export class CollegesService {
   }
 
   async list(page = 1, limit = 20, search?: string) {
-    const where = search
-      ? { name: { contains: search, mode: 'insensitive' as const } }
-      : {};
+    const where = search ? { name: { contains: search, mode: 'insensitive' as const } } : {};
     const [items, total] = await Promise.all([
       this.prisma.college.findMany({
         where,

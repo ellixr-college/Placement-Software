@@ -71,22 +71,60 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold text-strong">Analytics</h1>
-        <p className="text-sm text-subtle">Placement, jobs &amp; student metrics for your college.</p>
+        <p className="text-sm text-subtle">
+          Placement, jobs &amp; student metrics for your college.
+        </p>
       </header>
 
       {/* Headline stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile gradient="ocean" label="Placement rate" value={`${placement?.placementRate ?? 0}%`} hint={`${placement?.placedStudents ?? 0} of ${placement?.verifiedStudents ?? 0} verified`} />
-        <StatTile gradient="sunset" label="Avg package" value={lpa(placement?.avgPackage ?? null)} hint={`Median ${lpa(placement?.medianPackage ?? null)}`} />
-        <StatTile gradient="violet" label="Highest package" value={lpa(placement?.highestPackage ?? null)} hint={`${placement?.offersCount ?? 0} offers`} />
-        <StatTile gradient="primary" label="Conversion" value={`${jobs?.conversionRate ?? 0}%`} hint={`${jobs?.offersReleased ?? 0} offers / ${jobs?.applicationsReceived ?? 0} apps`} />
+        <StatTile
+          gradient="ocean"
+          label="Placement rate"
+          value={`${placement?.placementRate ?? 0}%`}
+          hint={`${placement?.placedStudents ?? 0} of ${placement?.verifiedStudents ?? 0} verified`}
+        />
+        <StatTile
+          gradient="sunset"
+          label="Avg package"
+          value={lpa(placement?.avgPackage ?? null)}
+          hint={`Median ${lpa(placement?.medianPackage ?? null)}`}
+        />
+        <StatTile
+          gradient="violet"
+          label="Highest package"
+          value={lpa(placement?.highestPackage ?? null)}
+          hint={`${placement?.offersCount ?? 0} offers`}
+        />
+        <StatTile
+          gradient="primary"
+          label="Conversion"
+          value={`${jobs?.conversionRate ?? 0}%`}
+          hint={`${jobs?.offersReleased ?? 0} offers / ${jobs?.applicationsReceived ?? 0} apps`}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile label="Students" value={String(students?.total ?? 0)} hint={`${students?.active ?? 0} active`} />
-        <StatTile label="Placed" value={String(students?.placed ?? 0)} hint={`${students?.unplaced ?? 0} unplaced`} />
-        <StatTile label="Jobs posted" value={String(jobs?.jobsPosted ?? 0)} hint={`${jobs?.jobsPublished ?? 0} published`} />
-        <StatTile label="Applications" value={String(jobs?.applicationsReceived ?? 0)} hint="across all jobs" />
+        <StatTile
+          label="Students"
+          value={String(students?.total ?? 0)}
+          hint={`${students?.active ?? 0} active`}
+        />
+        <StatTile
+          label="Placed"
+          value={String(students?.placed ?? 0)}
+          hint={`${students?.unplaced ?? 0} unplaced`}
+        />
+        <StatTile
+          label="Jobs posted"
+          value={String(jobs?.jobsPosted ?? 0)}
+          hint={`${jobs?.jobsPublished ?? 0} published`}
+        />
+        <StatTile
+          label="Applications"
+          value={String(jobs?.applicationsReceived ?? 0)}
+          hint="across all jobs"
+        />
       </div>
 
       {/* Enrichment insights */}
@@ -154,14 +192,18 @@ export default function AnalyticsPage() {
         <div className="space-y-2.5">
           {funnel.map((f) => (
             <div key={f.status} className="flex items-center gap-3">
-              <span className="w-32 shrink-0 text-xs text-subtle">{STATUS_LABEL[f.status] ?? f.status}</span>
+              <span className="w-32 shrink-0 text-xs text-subtle">
+                {STATUS_LABEL[f.status] ?? f.status}
+              </span>
               <div className="h-5 flex-1 overflow-hidden rounded-pill bg-muted">
                 <div
                   className="h-full rounded-pill bg-gradient-ocean"
                   style={{ width: `${(f.count / funnelMax) * 100}%` }}
                 />
               </div>
-              <span className="w-8 shrink-0 text-right text-xs font-medium text-strong">{f.count}</span>
+              <span className="w-8 shrink-0 text-right text-xs font-medium text-strong">
+                {f.count}
+              </span>
             </div>
           ))}
         </div>
@@ -232,7 +274,10 @@ function BreakdownTable({
         <div key={r.label} className="flex items-center gap-3">
           <span className="w-20 shrink-0 truncate text-xs text-strong">{r.label}</span>
           <div className="h-4 flex-1 overflow-hidden rounded-pill bg-muted">
-            <div className="h-full rounded-pill bg-gradient-primary" style={{ width: `${r.rate}%` }} />
+            <div
+              className="h-full rounded-pill bg-gradient-primary"
+              style={{ width: `${r.rate}%` }}
+            />
           </div>
           <span className="w-24 shrink-0 text-right text-xs text-subtle">
             {r.placed}/{r.total} · {r.rate}%

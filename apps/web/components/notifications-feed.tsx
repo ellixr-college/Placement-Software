@@ -82,7 +82,10 @@ export function NotificationsFeed() {
           </p>
         </div>
         {unread > 0 && (
-          <button onClick={markAll} className="text-sm font-medium text-primary-600 hover:underline">
+          <button
+            onClick={markAll}
+            className="text-sm font-medium text-primary-600 hover:underline"
+          >
             Mark all read
           </button>
         )}
@@ -107,12 +110,16 @@ export function NotificationsFeed() {
                   n.readAt ? '' : 'bg-primary-50/50 ring-1 ring-primary-100'
                 }`}
               >
-                <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg ${style.badge}`}>
+                <span
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg ${style.badge}`}
+                >
                   {style.icon}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
-                    <p className={`text-sm ${n.readAt ? 'font-medium text-body' : 'font-semibold text-strong'}`}>
+                    <p
+                      className={`text-sm ${n.readAt ? 'font-medium text-body' : 'font-semibold text-strong'}`}
+                    >
                       {n.title}
                     </p>
                     <span className="shrink-0 text-xs text-subtle">{timeAgo(n.createdAt)}</span>

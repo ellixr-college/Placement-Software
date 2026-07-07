@@ -165,22 +165,22 @@ model Resume {
 
 ## API Endpoints
 
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| POST | `/api/v1/students` | PLACEMENT_OFFICER | Create a single student (also creates STUDENT user) |
-| POST | `/api/v1/students/import` | PLACEMENT_OFFICER | Bulk CSV import (multipart) |
-| GET | `/api/v1/students/import/:jobId` | PLACEMENT_OFFICER | Import job status + row-level error report |
-| GET | `/api/v1/students` | PLACEMENT_OFFICER, COLLEGE_ADMIN | List/search/filter (branch, year, status, verification) |
-| GET | `/api/v1/students/:id` | PLACEMENT_OFFICER, COLLEGE_ADMIN | Student detail |
-| PATCH | `/api/v1/students/:id` | PLACEMENT_OFFICER | Edit academic fields |
-| POST | `/api/v1/students/:id/verify` | PLACEMENT_OFFICER | Verify (→ VERIFIED) or reject (→ REJECTED + reason) |
-| GET | `/api/v1/me/student` | STUDENT | Own student record + profile |
-| PATCH | `/api/v1/me/student/profile` | STUDENT | Update own profile/skills/projects/certs |
-| POST | `/api/v1/me/student/submit` | STUDENT | Submit profile for verification |
-| POST | `/api/v1/resumes/presign` | STUDENT, PLACEMENT_OFFICER | Get presigned upload URL |
-| POST | `/api/v1/resumes` | STUDENT, PLACEMENT_OFFICER | Register uploaded resume |
-| GET | `/api/v1/resumes/:id/url` | STUDENT (own), PLACEMENT_OFFICER | Presigned download URL |
-| GET | `/api/v1/students/:id/resumes` | PLACEMENT_OFFICER | Resume version history |
+| Method | Path                             | Roles                            | Description                                             |
+| ------ | -------------------------------- | -------------------------------- | ------------------------------------------------------- |
+| POST   | `/api/v1/students`               | PLACEMENT_OFFICER                | Create a single student (also creates STUDENT user)     |
+| POST   | `/api/v1/students/import`        | PLACEMENT_OFFICER                | Bulk CSV import (multipart)                             |
+| GET    | `/api/v1/students/import/:jobId` | PLACEMENT_OFFICER                | Import job status + row-level error report              |
+| GET    | `/api/v1/students`               | PLACEMENT_OFFICER, COLLEGE_ADMIN | List/search/filter (branch, year, status, verification) |
+| GET    | `/api/v1/students/:id`           | PLACEMENT_OFFICER, COLLEGE_ADMIN | Student detail                                          |
+| PATCH  | `/api/v1/students/:id`           | PLACEMENT_OFFICER                | Edit academic fields                                    |
+| POST   | `/api/v1/students/:id/verify`    | PLACEMENT_OFFICER                | Verify (→ VERIFIED) or reject (→ REJECTED + reason)     |
+| GET    | `/api/v1/me/student`             | STUDENT                          | Own student record + profile                            |
+| PATCH  | `/api/v1/me/student/profile`     | STUDENT                          | Update own profile/skills/projects/certs                |
+| POST   | `/api/v1/me/student/submit`      | STUDENT                          | Submit profile for verification                         |
+| POST   | `/api/v1/resumes/presign`        | STUDENT, PLACEMENT_OFFICER       | Get presigned upload URL                                |
+| POST   | `/api/v1/resumes`                | STUDENT, PLACEMENT_OFFICER       | Register uploaded resume                                |
+| GET    | `/api/v1/resumes/:id/url`        | STUDENT (own), PLACEMENT_OFFICER | Presigned download URL                                  |
+| GET    | `/api/v1/students/:id/resumes`   | PLACEMENT_OFFICER                | Resume version history                                  |
 
 All endpoints are tenant-scoped via the JWT `collegeId`. Students can only ever read/write their
 **own** record (enforced server-side by matching `request.user.sub` to `Student.userId`).
@@ -188,7 +188,7 @@ All endpoints are tenant-scoped via the JWT `collegeId`. Students can only ever 
 ## Bulk CSV Import Design
 
 - Template columns: `rollNumber, fullName, email, course, branch, graduationYear, cgpa,
-  activeBacklogs, phone`.
+activeBacklogs, phone`.
 - Validation: required fields, email format/uniqueness, numeric ranges (cgpa 0–10, year sane),
   duplicate `rollNumber` within college.
 - Processed row-by-row; result returns `{ created, skipped, errors: [{ row, field, message }] }`.
@@ -199,16 +199,16 @@ All endpoints are tenant-scoped via the JWT `collegeId`. Students can only ever 
 
 ## UI Screens
 
-| Route | Access | Notes |
-|---|---|---|
-| `/students` | PLACEMENT_OFFICER, COLLEGE_ADMIN | Table: search, filters (branch/year/status), pagination |
-| `/students/new` | PLACEMENT_OFFICER | Add single student form |
-| `/students/import` | PLACEMENT_OFFICER | CSV upload, template download, error report view |
-| `/students/[id]` | PLACEMENT_OFFICER, COLLEGE_ADMIN | Detail: profile, resumes, verify/reject actions |
-| `/me/profile` | STUDENT | Multi-section profile editor (personal, academic, skills, projects, certs) |
-| `/me/resume` | STUDENT | Upload resume, view version history, set primary |
-| `/dashboard` (PO widgets) | PLACEMENT_OFFICER | Total / verified / pending / avg profile completion |
-| `/dashboard` (student widgets) | STUDENT | Profile completion %, resume status, verification status |
+| Route                          | Access                           | Notes                                                                      |
+| ------------------------------ | -------------------------------- | -------------------------------------------------------------------------- |
+| `/students`                    | PLACEMENT_OFFICER, COLLEGE_ADMIN | Table: search, filters (branch/year/status), pagination                    |
+| `/students/new`                | PLACEMENT_OFFICER                | Add single student form                                                    |
+| `/students/import`             | PLACEMENT_OFFICER                | CSV upload, template download, error report view                           |
+| `/students/[id]`               | PLACEMENT_OFFICER, COLLEGE_ADMIN | Detail: profile, resumes, verify/reject actions                            |
+| `/me/profile`                  | STUDENT                          | Multi-section profile editor (personal, academic, skills, projects, certs) |
+| `/me/resume`                   | STUDENT                          | Upload resume, view version history, set primary                           |
+| `/dashboard` (PO widgets)      | PLACEMENT_OFFICER                | Total / verified / pending / avg profile completion                        |
+| `/dashboard` (student widgets) | STUDENT                          | Profile completion %, resume status, verification status                   |
 
 ## Profile Completion Logic
 

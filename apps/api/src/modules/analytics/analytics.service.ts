@@ -6,7 +6,13 @@ import type { PrismaClient } from '@ellixr/database';
 const PLACING_STAGES = ['OFFER_ACCEPTED', 'JOINED'] as const;
 const OFFER_STAGES = ['OFFER_RELEASED', 'OFFER_ACCEPTED', 'JOINED'] as const;
 // Rounds-funnel outcome statuses, in progression order.
-const APPLICATION_STATUSES = ['APPLIED', 'IN_PROGRESS', 'SELECTED', 'REJECTED', 'WITHDRAWN'] as const;
+const APPLICATION_STATUSES = [
+  'APPLIED',
+  'IN_PROGRESS',
+  'SELECTED',
+  'REJECTED',
+  'WITHDRAWN',
+] as const;
 
 const num = (x: unknown): number | null => (x == null ? null : Number(x));
 
@@ -32,7 +38,8 @@ export class AnalyticsService {
     ]);
 
     const packages = offers.map((o) => Number(o.offerCtc)).filter((n) => !Number.isNaN(n));
-    const placementRate = verifiedCount > 0 ? Math.round((placedCount / verifiedCount) * 1000) / 10 : 0;
+    const placementRate =
+      verifiedCount > 0 ? Math.round((placedCount / verifiedCount) * 1000) / 10 : 0;
 
     return {
       verifiedStudents: verifiedCount,
@@ -159,14 +166,20 @@ export class AnalyticsService {
     }
     const multipleOfferStudents = [...byStudent.values()]
       .filter((s) => s.jobIds.size > 1)
-      .map((s) => ({ name: s.name, rollNumber: s.rollNumber, offers: s.jobIds.size, bestPackage: s.best }))
+      .map((s) => ({
+        name: s.name,
+        rollNumber: s.rollNumber,
+        offers: s.jobIds.size,
+        bestPackage: s.best,
+      }))
       .sort((a, b) => b.offers - a.offers);
 
     // ── Dream offers: packages ≥ 1.5× the average package ──
     const packages = offerApps.map((a) => num(a.offerCtc)).filter((n): n is number => n != null);
     const avg = packages.length ? mean(packages) : 0;
     const dreamThreshold = avg > 0 ? Math.round(avg * 1.5) : null;
-    const dreamOffers = dreamThreshold != null ? packages.filter((p) => p >= dreamThreshold).length : 0;
+    const dreamOffers =
+      dreamThreshold != null ? packages.filter((p) => p >= dreamThreshold).length : 0;
 
     // ── Repeat recruiters: companies hiring more than one student ──
     const byCompany = new Map<string, number>();

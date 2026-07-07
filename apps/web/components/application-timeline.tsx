@@ -33,10 +33,13 @@ function buildSteps(app: Application): Step[] {
   }
 
   const someRejected = app.rounds.some((r) => r.outcome === 'REJECTED');
-  if (app.status === 'SELECTED') steps.push({ label: 'Selected', sub: 'You got the offer 🎉', state: 'done' });
-  else if (app.status === 'WITHDRAWN') steps.push({ label: 'Withdrawn', sub: 'You withdrew', state: 'rejected' });
+  if (app.status === 'SELECTED')
+    steps.push({ label: 'Selected', sub: 'You got the offer 🎉', state: 'done' });
+  else if (app.status === 'WITHDRAWN')
+    steps.push({ label: 'Withdrawn', sub: 'You withdrew', state: 'rejected' });
   else if (app.status === 'REJECTED') {
-    if (!someRejected) steps.push({ label: 'Not selected', sub: 'Better luck next time', state: 'rejected' });
+    if (!someRejected)
+      steps.push({ label: 'Not selected', sub: 'Better luck next time', state: 'rejected' });
   } else steps.push({ label: 'Result', sub: 'Pending decision', state: 'upcoming' });
 
   return steps;

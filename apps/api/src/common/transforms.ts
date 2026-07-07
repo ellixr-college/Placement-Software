@@ -7,9 +7,7 @@ import { toTitleCase } from '@ellixr/shared';
  * like `@Matches`). Apply BEFORE `@IsOptional()`.
  */
 export const EmptyToUndefined = () =>
-  Transform(({ value }) =>
-    typeof value === 'string' && value.trim() === '' ? undefined : value,
-  );
+  Transform(({ value }) => (typeof value === 'string' && value.trim() === '' ? undefined : value));
 
 /** Title-case a free-text location field (city, state): "bengaluru" → "Bengaluru". */
 export const TitleCase = () =>

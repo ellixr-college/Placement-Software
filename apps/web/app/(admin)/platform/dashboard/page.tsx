@@ -62,8 +62,14 @@ export default function PlatformDashboardPage() {
 
       {/* Secondary metrics (plain tiles) */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile label="Students placed" value={data ? data.placedStudents.toLocaleString() : '—'} />
-        <StatTile label="Verified students" value={data ? data.verifiedStudents.toLocaleString() : '—'} />
+        <StatTile
+          label="Students placed"
+          value={data ? data.placedStudents.toLocaleString() : '—'}
+        />
+        <StatTile
+          label="Verified students"
+          value={data ? data.verifiedStudents.toLocaleString() : '—'}
+        />
         <StatTile label="Applications" value={data ? data.applications.toLocaleString() : '—'} />
         <StatTile label="Active colleges" value={data ? data.activeColleges : '—'} />
       </div>

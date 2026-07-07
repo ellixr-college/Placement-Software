@@ -35,7 +35,10 @@ export class CollegesController {
     @Query('search') search?: string,
   ) {
     const result = await this.colleges.list(Number(page) || 1, Number(limit) || 20, search);
-    return { data: result.items, meta: { total: result.total, page: result.page, limit: result.limit } };
+    return {
+      data: result.items,
+      meta: { total: result.total, page: result.page, limit: result.limit },
+    };
   }
 
   @Get(':id')

@@ -41,7 +41,9 @@ export default function CompaniesPage() {
 
   function loadTracking() {
     if (!user?.isCollegeHead) return;
-    getRecruiterTracking().then(setTracking).catch(() => {});
+    getRecruiterTracking()
+      .then(setTracking)
+      .catch(() => {});
   }
 
   useEffect(() => {
@@ -63,7 +65,9 @@ export default function CompaniesPage() {
           <h1 className="text-2xl font-semibold text-strong">Companies</h1>
           <p className="text-sm text-subtle">{items.length} recruiters</p>
         </div>
-        <Button onClick={() => setShowForm((s) => !s)}>{showForm ? 'Cancel' : 'Add company'}</Button>
+        <Button onClick={() => setShowForm((s) => !s)}>
+          {showForm ? 'Cancel' : 'Add company'}
+        </Button>
       </header>
 
       {showForm && (
@@ -110,7 +114,9 @@ export default function CompaniesPage() {
           placeholder="Search by name or industry…"
           className="h-10 w-full max-w-md rounded-md border border-border bg-white px-4 text-sm outline-none focus:border-primary-400"
         />
-        <Button variant="ghost" onClick={load}>Search</Button>
+        <Button variant="ghost" onClick={load}>
+          Search
+        </Button>
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -128,14 +134,25 @@ export default function CompaniesPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-subtle">Loading…</td></tr>
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-subtle">
+                  Loading…
+                </td>
+              </tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-subtle">No companies yet.</td></tr>
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-subtle">
+                  No companies yet.
+                </td>
+              </tr>
             ) : (
               items.map((c) => (
                 <tr key={c.id} className="border-b border-border last:border-0 hover:bg-app/60">
                   <td className="px-4 py-3">
-                    <Link href={`/companies/${c.id}`} className="font-medium text-strong hover:underline">
+                    <Link
+                      href={`/companies/${c.id}`}
+                      className="font-medium text-strong hover:underline"
+                    >
                       {c.name}
                     </Link>
                     {!c.isActive && <span className="ml-2 text-xs text-subtle">(inactive)</span>}
@@ -169,8 +186,9 @@ function NewCompanyForm({ onCreated }: { onCreated: () => void }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set =
+    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   async function submit() {
     setSaving(true);
@@ -204,28 +222,71 @@ function NewCompanyForm({ onCreated }: { onCreated: () => void }) {
   return (
     <Card className="space-y-4 p-5">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Name *"><input className={inputCls} value={form.name} onChange={set('name')} /></Field>
-        <Field label="Industry"><input className={inputCls} value={form.industry} onChange={set('industry')} /></Field>
-        <Field label="City"><input className={inputCls} value={form.city} onChange={set('city')} placeholder="Bengaluru" /></Field>
-        <Field label="Website"><input className={inputCls} value={form.website} onChange={set('website')} placeholder="https://…" /></Field>
+        <Field label="Name *">
+          <input className={inputCls} value={form.name} onChange={set('name')} />
+        </Field>
+        <Field label="Industry">
+          <input className={inputCls} value={form.industry} onChange={set('industry')} />
+        </Field>
+        <Field label="City">
+          <input
+            className={inputCls}
+            value={form.city}
+            onChange={set('city')}
+            placeholder="Bengaluru"
+          />
+        </Field>
+        <Field label="Website">
+          <input
+            className={inputCls}
+            value={form.website}
+            onChange={set('website')}
+            placeholder="https://…"
+          />
+        </Field>
       </div>
       <Field label="Description">
-        <textarea className={inputCls} rows={2} value={form.description} onChange={set('description')} />
+        <textarea
+          className={inputCls}
+          rows={2}
+          value={form.description}
+          onChange={set('description')}
+        />
       </Field>
 
       <div className="border-t border-border pt-4">
         <p className="mb-3 text-sm font-semibold text-strong">Point of contact (optional)</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="Contact name"><input className={inputCls} value={form.contactName} onChange={set('contactName')} /></Field>
-          <Field label="Designation"><input className={inputCls} value={form.contactDesignation} onChange={set('contactDesignation')} placeholder="HR Manager" /></Field>
+          <Field label="Contact name">
+            <input className={inputCls} value={form.contactName} onChange={set('contactName')} />
+          </Field>
+          <Field label="Designation">
+            <input
+              className={inputCls}
+              value={form.contactDesignation}
+              onChange={set('contactDesignation')}
+              placeholder="HR Manager"
+            />
+          </Field>
           <Field label={`Contact email${form.contactName.trim() ? ' *' : ''}`}>
             <input className={inputCls} value={form.contactEmail} onChange={set('contactEmail')} />
-            {!pocOk && <span className="text-xs text-danger">A contact email is required for the POC.</span>}
-            {form.contactEmail.trim() && !emailOk && <span className="text-xs text-danger">Enter a valid email.</span>}
+            {!pocOk && (
+              <span className="text-xs text-danger">A contact email is required for the POC.</span>
+            )}
+            {form.contactEmail.trim() && !emailOk && (
+              <span className="text-xs text-danger">Enter a valid email.</span>
+            )}
           </Field>
           <Field label="Contact phone">
-            <input className={inputCls} value={form.contactPhone} onChange={set('contactPhone')} placeholder="10-digit mobile" />
-            {!phoneOk && <span className="text-xs text-danger">Enter a valid 10-digit mobile number.</span>}
+            <input
+              className={inputCls}
+              value={form.contactPhone}
+              onChange={set('contactPhone')}
+              placeholder="10-digit mobile"
+            />
+            {!phoneOk && (
+              <span className="text-xs text-danger">Enter a valid 10-digit mobile number.</span>
+            )}
           </Field>
         </div>
       </div>

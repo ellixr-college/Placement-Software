@@ -53,7 +53,9 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
 
   async function advance(stage: string) {
     setError(null);
-    const input: { stage: string; note?: string; rejectionReason?: string; offerCtc?: number } = { stage };
+    const input: { stage: string; note?: string; rejectionReason?: string; offerCtc?: number } = {
+      stage,
+    };
     if (stage === 'REJECTED') {
       const reason = window.prompt('Reason for rejection?');
       if (!reason) return;
@@ -81,22 +83,36 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Link href={`/jobs/${app.job.id}/pipeline`} className="text-sm text-primary-600 hover:underline">← Pipeline</Link>
+      <Link
+        href={`/jobs/${app.job.id}/pipeline`}
+        className="text-sm text-primary-600 hover:underline"
+      >
+        ← Pipeline
+      </Link>
 
       <header className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-strong">{app.student?.fullName ?? 'Applicant'}</h1>
+          <h1 className="text-2xl font-semibold text-strong">
+            {app.student?.fullName ?? 'Applicant'}
+          </h1>
           <p className="text-sm text-subtle">
             {app.student?.rollNumber} · {app.student?.branch} — applied to{' '}
-            <Link href={`/jobs/${app.job.id}`} className="text-primary-600 hover:underline">{app.job.title}</Link> @ {app.job.company.name}
+            <Link href={`/jobs/${app.job.id}`} className="text-primary-600 hover:underline">
+              {app.job.title}
+            </Link>{' '}
+            @ {app.job.company.name}
           </p>
         </div>
         <Badge tint="primary">{app.stage}</Badge>
       </header>
 
       {error && <p className="text-sm text-danger">{error}</p>}
-      {app.rejectionReason && <p className="text-sm text-danger">Rejected: {app.rejectionReason}</p>}
-      {app.offerCtc != null && <p className="text-sm text-success">Offer: ₹{(app.offerCtc / 100000).toFixed(1)} LPA</p>}
+      {app.rejectionReason && (
+        <p className="text-sm text-danger">Rejected: {app.rejectionReason}</p>
+      )}
+      {app.offerCtc != null && (
+        <p className="text-sm text-success">Offer: ₹{(app.offerCtc / 100000).toFixed(1)} LPA</p>
+      )}
 
       {/* Stage actions */}
       <Card className="space-y-3 p-5">
@@ -148,10 +164,12 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
                 <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-400" />
                 <div>
                   <p className="text-strong">
-                    {h.fromStage ? `${h.fromStage} → ` : ''}{h.toStage}
+                    {h.fromStage ? `${h.fromStage} → ` : ''}
+                    {h.toStage}
                   </p>
                   <p className="text-xs text-subtle">
-                    {new Date(h.createdAt).toLocaleString()}{h.note ? ` · ${h.note}` : ''}
+                    {new Date(h.createdAt).toLocaleString()}
+                    {h.note ? ` · ${h.note}` : ''}
                   </p>
                 </div>
               </li>
@@ -200,11 +218,16 @@ function InterviewsCard({ app, onChanged }: { app: Application; onChanged: () =>
       <h2 className="text-sm font-semibold text-strong">Interview rounds</h2>
       {app.interviews.length === 0 && <p className="text-xs text-subtle">No rounds scheduled.</p>}
       {app.interviews.map((r) => (
-        <div key={r.id} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
+        <div
+          key={r.id}
+          className="flex items-center justify-between border-b border-border pb-2 last:border-0"
+        >
           <div>
             <p className="text-sm font-medium text-strong">{r.roundName}</p>
             <p className="text-xs text-subtle">
-              {[r.scheduledAt && new Date(r.scheduledAt).toLocaleString(), r.mode, r.location].filter(Boolean).join(' · ') || '—'}
+              {[r.scheduledAt && new Date(r.scheduledAt).toLocaleString(), r.mode, r.location]
+                .filter(Boolean)
+                .join(' · ') || '—'}
             </p>
           </div>
           <select
@@ -213,18 +236,44 @@ function InterviewsCard({ app, onChanged }: { app: Application; onChanged: () =>
             disabled={busy}
             onChange={(e) => setResult(r.id, e.target.value)}
           >
-            {RESULTS.map((x) => <option key={x} value={x}>{x}</option>)}
+            {RESULTS.map((x) => (
+              <option key={x} value={x}>
+                {x}
+              </option>
+            ))}
           </select>
         </div>
       ))}
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <input className={inputCls} placeholder="Round name *" value={form.roundName} onChange={(e) => setForm({ ...form, roundName: e.target.value })} />
-        <input className={inputCls} type="datetime-local" value={form.scheduledAt} onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })} />
-        <input className={inputCls} placeholder="Mode (e.g. Online)" value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value })} />
-        <input className={inputCls} placeholder="Location / link" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+        <input
+          className={inputCls}
+          placeholder="Round name *"
+          value={form.roundName}
+          onChange={(e) => setForm({ ...form, roundName: e.target.value })}
+        />
+        <input
+          className={inputCls}
+          type="datetime-local"
+          value={form.scheduledAt}
+          onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })}
+        />
+        <input
+          className={inputCls}
+          placeholder="Mode (e.g. Online)"
+          value={form.mode}
+          onChange={(e) => setForm({ ...form, mode: e.target.value })}
+        />
+        <input
+          className={inputCls}
+          placeholder="Location / link"
+          value={form.location}
+          onChange={(e) => setForm({ ...form, location: e.target.value })}
+        />
       </div>
-      <Button size="sm" onClick={add} disabled={busy || !form.roundName.trim()}>Add round</Button>
+      <Button size="sm" onClick={add} disabled={busy || !form.roundName.trim()}>
+        Add round
+      </Button>
     </Card>
   );
 }

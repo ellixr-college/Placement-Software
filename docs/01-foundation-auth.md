@@ -126,6 +126,7 @@ model PasswordResetToken {
 ## Authentication & Authorization Design
 
 ### Token lifecycle
+
 - **Access token**: JWT, 15 min TTL, payload `{ sub: userId, collegeId, role }`, signed with
   `JWT_ACCESS_SECRET`. Sent in `Authorization: Bearer` header, held in memory on the client
   (not localStorage) to limit XSS exfiltration risk.
@@ -136,6 +137,7 @@ model PasswordResetToken {
 - **Password change / admin deactivation**: revokes all refresh tokens for that user immediately.
 
 ### RBAC implementation
+
 - `@Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER)` decorator + `RolesGuard` reads
   `request.user.role` (from verified JWT) and rejects with 403 if not permitted.
 - `@Public()` decorator marks the small allowlist of unauthenticated endpoints
@@ -143,6 +145,7 @@ model PasswordResetToken {
 - `JwtAuthGuard` is registered globally via `APP_GUARD` — **every other endpoint requires auth by default**.
 
 ### Multi-tenant scoping
+
 - `TenantScopeGuard` (or a request-scoped `TenantContext` service) reads `collegeId` from the
   verified JWT and exposes it to services.
 - All tenant-scoped Prisma queries go through repository methods that **require** `collegeId` as a
@@ -153,36 +156,36 @@ model PasswordResetToken {
 
 ## API Endpoints
 
-| Method | Path | Auth | Roles | Description |
-|---|---|---|---|---|
-| POST | `/api/v1/auth/login` | Public | — | Email/password login → access token + refresh cookie |
-| POST | `/api/v1/auth/refresh` | Public (refresh cookie) | — | Rotate refresh token, issue new access token |
-| POST | `/api/v1/auth/logout` | Authenticated | any | Revoke current refresh token |
-| POST | `/api/v1/auth/forgot-password` | Public | — | Send reset email (rate-limited) |
-| POST | `/api/v1/auth/reset-password` | Public | — | Reset password via emailed token |
-| GET | `/api/v1/auth/me` | Authenticated | any | Current user profile + college info |
-| POST | `/api/v1/colleges` | Authenticated | PLATFORM_ADMIN | Create college + initial College Admin user |
-| GET | `/api/v1/colleges` | Authenticated | PLATFORM_ADMIN | List colleges (paginated, searchable) |
-| GET | `/api/v1/colleges/:id` | Authenticated | PLATFORM_ADMIN, COLLEGE_ADMIN (own) | College detail |
-| PATCH | `/api/v1/colleges/:id` | Authenticated | PLATFORM_ADMIN | Update college profile / subscription |
-| PATCH | `/api/v1/colleges/:id/status` | Authenticated | PLATFORM_ADMIN | Activate / suspend college (revokes all sessions for that college) |
-| POST | `/api/v1/users` | Authenticated | COLLEGE_ADMIN | Create Placement Officer / College Admin user (scoped to own college) |
-| GET | `/api/v1/users` | Authenticated | COLLEGE_ADMIN | List users in own college |
-| GET | `/api/v1/users/:id` | Authenticated | COLLEGE_ADMIN | User detail (own college only) |
-| PATCH | `/api/v1/users/:id` | Authenticated | COLLEGE_ADMIN | Update role / active status |
-| DELETE | `/api/v1/users/:id` | Authenticated | COLLEGE_ADMIN | Deactivate user (soft delete, revokes sessions) |
+| Method | Path                           | Auth                    | Roles                               | Description                                                           |
+| ------ | ------------------------------ | ----------------------- | ----------------------------------- | --------------------------------------------------------------------- |
+| POST   | `/api/v1/auth/login`           | Public                  | —                                   | Email/password login → access token + refresh cookie                  |
+| POST   | `/api/v1/auth/refresh`         | Public (refresh cookie) | —                                   | Rotate refresh token, issue new access token                          |
+| POST   | `/api/v1/auth/logout`          | Authenticated           | any                                 | Revoke current refresh token                                          |
+| POST   | `/api/v1/auth/forgot-password` | Public                  | —                                   | Send reset email (rate-limited)                                       |
+| POST   | `/api/v1/auth/reset-password`  | Public                  | —                                   | Reset password via emailed token                                      |
+| GET    | `/api/v1/auth/me`              | Authenticated           | any                                 | Current user profile + college info                                   |
+| POST   | `/api/v1/colleges`             | Authenticated           | PLATFORM_ADMIN                      | Create college + initial College Admin user                           |
+| GET    | `/api/v1/colleges`             | Authenticated           | PLATFORM_ADMIN                      | List colleges (paginated, searchable)                                 |
+| GET    | `/api/v1/colleges/:id`         | Authenticated           | PLATFORM_ADMIN, COLLEGE_ADMIN (own) | College detail                                                        |
+| PATCH  | `/api/v1/colleges/:id`         | Authenticated           | PLATFORM_ADMIN                      | Update college profile / subscription                                 |
+| PATCH  | `/api/v1/colleges/:id/status`  | Authenticated           | PLATFORM_ADMIN                      | Activate / suspend college (revokes all sessions for that college)    |
+| POST   | `/api/v1/users`                | Authenticated           | COLLEGE_ADMIN                       | Create Placement Officer / College Admin user (scoped to own college) |
+| GET    | `/api/v1/users`                | Authenticated           | COLLEGE_ADMIN                       | List users in own college                                             |
+| GET    | `/api/v1/users/:id`            | Authenticated           | COLLEGE_ADMIN                       | User detail (own college only)                                        |
+| PATCH  | `/api/v1/users/:id`            | Authenticated           | COLLEGE_ADMIN                       | Update role / active status                                           |
+| DELETE | `/api/v1/users/:id`            | Authenticated           | COLLEGE_ADMIN                       | Deactivate user (soft delete, revokes sessions)                       |
 
 ## UI Screens
 
-| Route | Access | Notes |
-|---|---|---|
-| `/login` | Public | Email/password form |
-| `/forgot-password` | Public | Request reset email |
-| `/reset-password/[token]` | Public | Set new password |
-| `/platform/colleges` | PLATFORM_ADMIN | List + create college modal |
-| `/platform/colleges/[id]` | PLATFORM_ADMIN | College detail, subscription management |
-| `/settings/team` | COLLEGE_ADMIN | Manage Placement Officer / Admin accounts for own college |
-| `/dashboard` | All authenticated | Placeholder shell, role-based widgets added in later phases |
+| Route                     | Access            | Notes                                                       |
+| ------------------------- | ----------------- | ----------------------------------------------------------- |
+| `/login`                  | Public            | Email/password form                                         |
+| `/forgot-password`        | Public            | Request reset email                                         |
+| `/reset-password/[token]` | Public            | Set new password                                            |
+| `/platform/colleges`      | PLATFORM_ADMIN    | List + create college modal                                 |
+| `/platform/colleges/[id]` | PLATFORM_ADMIN    | College detail, subscription management                     |
+| `/settings/team`          | COLLEGE_ADMIN     | Manage Placement Officer / Admin accounts for own college   |
+| `/dashboard`              | All authenticated | Placeholder shell, role-based widgets added in later phases |
 
 ### Route protection (Next.js)
 

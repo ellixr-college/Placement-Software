@@ -77,7 +77,10 @@ export class ResetAdminPasswordDto {
 
 export class UpdateCollegeDto {
   @IsOptional() @IsString() name?: string;
-  @EmptyToUndefined() @IsOptional() @Matches(PHONE_REGEX, { message: PHONE_MESSAGE }) contactPhone?: string;
+  @EmptyToUndefined()
+  @IsOptional()
+  @Matches(PHONE_REGEX, { message: PHONE_MESSAGE })
+  contactPhone?: string;
   @TitleCase() @IsOptional() @IsString() city?: string;
   @TitleCase() @IsOptional() @IsString() state?: string;
   @IsOptional() @IsString() subscriptionPlan?: string;
