@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
-import { resumeReadiness } from '@ellixr/shared';
 import { useSession } from '../../../../../lib/session';
 import { getMyResume } from '../../../../../lib/resume';
 import {
@@ -13,9 +12,6 @@ import {
   type Student,
   type UpdateOwnProfileInput,
 } from '../../../../../lib/students';
-
-// resumeReadiness checks 6 essentials; show progress as a % of those.
-const RESUME_CHECKS = 6;
 
 /**
  * Student self-profile editor (mobile). Students edit their own academic fields
@@ -31,8 +27,7 @@ export default function StudentProfilePage() {
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [resumePct, setResumePct] = useState<number | null>(null);
-  const [resumeMissing, setResumeMissing] = useState<string[]>([]);
+  const [resumeUploaded, setResumeUploaded] = useState<boolean | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -46,14 +41,10 @@ export default function StudentProfilePage() {
         setLoading(false);
       }
     })();
-    // Track resume completion (not profile fields — those are officer-managed).
+    // Track whether a résumé PDF has been uploaded.
     getMyResume()
-      .then((r) => {
-        const { missing } = resumeReadiness(r.data);
-        setResumePct(Math.round(((RESUME_CHECKS - missing.length) / RESUME_CHECKS) * 100));
-        setResumeMissing(missing);
-      })
-      .catch(() => {});
+      .then((r) => setResumeUploaded(!!r.fileUrl))
+      .catch(() => setResumeUploaded(false));
   }, []);
 
   function patch(p: Partial<UpdateOwnProfileInput>) {
@@ -115,29 +106,21 @@ export default function StudentProfilePage() {
           <StatusBadge status={student.verificationStatus} />
         </div>
 
-        {/* Resume completion (the only thing students need to complete themselves —
+        {/* Résumé upload status (the only thing students upload themselves —
             academic/personal details are managed by the placement office). */}
         <div>
           <div className="flex items-center justify-between text-xs text-subtle">
-            <span>Resume completion</span>
-            <span>{resumePct != null ? `${resumePct}%` : '—'}</span>
+            <span>Résumé upload</span>
+            <span>
+              {resumeUploaded === null ? '—' : resumeUploaded ? 'Uploaded ✓' : 'Not uploaded'}
+            </span>
           </div>
-          <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-app">
-            <div
-              className="h-full rounded-full bg-gradient-primary transition-all"
-              style={{ width: `${resumePct ?? 0}%` }}
-            />
-          </div>
-          {resumeMissing.length > 0 ? (
-            <Link
-              href="/me/resume"
-              className="mt-2 inline-block text-xs font-medium text-primary-600 hover:underline"
-            >
-              Finish your resume — still needed: {resumeMissing.join(', ')} →
-            </Link>
-          ) : (
-            resumePct === 100 && <p className="mt-2 text-xs text-success">Resume complete ✓</p>
-          )}
+          <Link
+            href="/me/resume"
+            className="mt-2 inline-block text-xs font-medium text-primary-600 hover:underline"
+          >
+            {resumeUploaded ? 'Manage your résumé →' : 'Upload your résumé PDF →'}
+          </Link>
         </div>
 
         {student.verificationStatus === 'REJECTED' && student.rejectionReason && (

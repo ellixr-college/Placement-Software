@@ -1,31 +1,21 @@
 'use client';
 
-import type { ResumeData } from '@ellixr/shared';
 import { api } from './api';
 
 export interface MyResume {
-  template: string;
-  data: ResumeData;
   publicSlug: string;
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
   isPublished: boolean;
   updatedAt: string;
 }
 
-export interface UpdateResumeInput {
-  template?: string;
-  isPublished?: boolean;
-  data?: ResumeData;
-}
-
-export interface OfficerResume {
-  template: string;
-  data: ResumeData;
+export interface OfficerResume extends MyResume {
   fullName: string;
-  isPublished: boolean;
-  updatedAt: string;
 }
 
-/** Officer/admin: view any of their students' resumes (completeness aside). */
+/** Officer/admin: view any of their students' resumes. */
 export function getStudentResume(studentId: string): Promise<OfficerResume> {
   return api<OfficerResume>(`/students/${studentId}/resume`);
 }
@@ -34,6 +24,16 @@ export function getMyResume(): Promise<MyResume> {
   return api<MyResume>('/me/resume');
 }
 
-export function saveMyResume(input: UpdateResumeInput): Promise<MyResume> {
-  return api<MyResume>('/me/resume', { method: 'PUT', body: JSON.stringify(input) });
+export function uploadMyResume(file: File): Promise<MyResume> {
+  const form = new FormData();
+  form.append('file', file);
+  return api<MyResume>('/me/resume', { method: 'POST', body: form });
+}
+
+export function updateMyResume(input: { isPublished: boolean }): Promise<MyResume> {
+  return api<MyResume>('/me/resume', { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function deleteMyResume(): Promise<MyResume> {
+  return api<MyResume>('/me/resume', { method: 'DELETE' });
 }

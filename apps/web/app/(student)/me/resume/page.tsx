@@ -1,656 +1,230 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, Card } from '@ellixr/ui';
+import { useConfirm } from '../../../../components/confirm-provider';
 import {
-  emptyResumeData,
-  RESUME_TEMPLATES,
-  resumeReadiness,
-  type ResumeData,
-  type ResumeEducation,
-  type ResumeExperience,
-  type ResumeInternship,
-  type ResumeProject,
-  type ResumeCertification,
-} from '@ellixr/shared';
-import { getMyResume, saveMyResume, type MyResume } from '../../../../lib/resume';
-import { ChipInput } from '../../../../components/chip-input';
-import { ResumeView } from '../../../../components/resume/templates';
-import { COMMON_LANGUAGES, COMMON_SKILLS } from '../../../../lib/skill-suggestions';
+  deleteMyResume,
+  getMyResume,
+  updateMyResume,
+  uploadMyResume,
+  type MyResume,
+} from '../../../../lib/resume';
 
-const LINK_PRESETS = ['LinkedIn', 'GitHub', 'Portfolio', 'Dribbble', 'Behance', 'Twitter/X'];
+const MAX_BYTES = 1 * 1024 * 1024;
 
-export default function ResumeEditorPage() {
-  const [meta, setMeta] = useState<MyResume | null>(null);
-  const [data, setData] = useState<ResumeData>(emptyResumeData());
-  const [template, setTemplate] = useState('professional');
-  const [published, setPublished] = useState(true);
+export default function MyResumePage() {
+  const confirm = useConfirm();
+  const [resume, setResume] = useState<MyResume | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<'edit' | 'view'>('edit');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const r = await getMyResume();
-        setMeta(r);
-        setData(emptyResumeData(r.data));
-        setTemplate(r.template);
-        setPublished(r.isPublished);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load resume');
-      } finally {
-        setLoading(false);
-      }
-    })();
+    load();
   }, []);
 
-  function patch(p: Partial<ResumeData>) {
-    setData((d) => ({ ...d, ...p }));
-    setSaved(false);
-  }
-
-  async function onSave() {
-    setSaving(true);
+  async function load() {
+    setLoading(true);
     setError(null);
     try {
-      // Trim/drop empty multiline entries only at save time — doing it on every
-      // keystroke is what previously ate spaces as you typed.
-      const cleaned: ResumeData = {
-        ...data,
-        achievements: data.achievements.map((s) => s.trim()).filter(Boolean),
-        experience: data.experience.map((e) => ({
-          ...e,
-          bullets: e.bullets.map((b) => b.trim()).filter(Boolean),
-        })),
-        internships: data.internships.map((e) => ({
-          ...e,
-          bullets: e.bullets.map((b) => b.trim()).filter(Boolean),
-        })),
-        links: data.links.filter((l) => l.label.trim() || l.url.trim()),
-      };
-      const r = await saveMyResume({ template, isPublished: published, data: cleaned });
-      setMeta(r);
-      setData(cleaned);
-      setSaved(true);
-      // Show the finished resume (read-only) after a successful save.
-      setMode('view');
-      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+      setResume(await getMyResume());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save');
+      setError(err instanceof Error ? err.message : 'Failed to load resume');
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   }
 
-  if (loading) return <p className="text-subtle">Loading…</p>;
-
-  const link = meta
-    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${meta.publicSlug}`
-    : '';
-  const readiness = resumeReadiness(data);
-
-  // ── View mode: read-only preview after save (Edit returns to the form) ──
-  if (mode === 'view') {
-    return (
-      <div className="space-y-5 pb-4">
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-strong">My resume</h1>
-            <p className="text-sm text-success">Saved ✓</p>
-          </div>
-          <Button onClick={() => setMode('edit')}>Edit</Button>
-        </header>
-
-        {meta && resumeReadiness(data).ready && (
-          <Card className="flex items-center justify-between gap-2 p-4">
-            <code className="flex-1 truncate text-xs text-strong">{link}</code>
-            <button
-              onClick={() => navigator.clipboard?.writeText(link)}
-              className="rounded bg-app px-2 py-1 text-xs font-medium text-primary-600"
-            >
-              Copy
-            </button>
-            <a
-              href={`/r/${meta.publicSlug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded bg-app px-2 py-1 text-xs font-medium text-primary-600"
-            >
-              Open
-            </a>
-          </Card>
-        )}
-
-        <Card className="overflow-hidden p-0">
-          <div className="origin-top scale-[0.92] sm:scale-100">
-            <ResumeView template={template} data={data} />
-          </div>
-        </Card>
-
-        <div className="sticky bottom-24 z-10 flex justify-center">
-          <Button onClick={() => setMode('edit')} className="px-8">
-            Edit resume
-          </Button>
-        </div>
-      </div>
-    );
+  function selectFile() {
+    inputRef.current?.click();
   }
+
+  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      setError('Please upload a PDF file.');
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      setError('Resume must be 1 MB or smaller.');
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+    try {
+      setResume(await uploadMyResume(file));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
+  async function togglePublished() {
+    if (!resume) return;
+    const next = !resume.isPublished;
+    setError(null);
+    try {
+      setResume(await updateMyResume({ isPublished: next }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not update');
+    }
+  }
+
+  async function remove() {
+    if (!resume?.fileUrl) return;
+    const ok = await confirm({
+      title: 'Delete your resume?',
+      message:
+        'This removes the uploaded PDF. Your public link will stay empty until you upload a new one.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (!ok) return;
+    setError(null);
+    try {
+      setResume(await deleteMyResume());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed');
+    }
+  }
+
+  const publicUrl = resume
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${resume.publicSlug}`
+    : '';
 
   return (
     <div className="space-y-5 pb-4">
-      <header className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-strong">My resume</h1>
-          <p className="text-sm text-subtle">
-            Fill in your details, pick a template, and share the link.
-          </p>
-        </div>
-        {meta && readiness.ready && <Button onClick={() => setMode('view')}>Preview</Button>}
+      <header>
+        <h1 className="text-2xl font-semibold text-strong">My resume</h1>
+        <p className="text-sm text-subtle">
+          Upload your résumé as a PDF and share the public link.
+        </p>
       </header>
 
-      {/* Public link */}
-      {meta && (
-        <Card className="space-y-3 p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-strong">Your public link</p>
-            <label className="flex items-center gap-2 text-xs text-subtle">
-              <input
-                type="checkbox"
-                checked={published}
-                disabled={!readiness.ready}
-                onChange={(e) => {
-                  setPublished(e.target.checked);
-                  setSaved(false);
-                }}
-              />
-              Published
-            </label>
-          </div>
+      {error && <p className="text-sm text-danger">{error}</p>}
 
-          {!readiness.ready ? (
-            <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-xs">
+      {loading ? (
+        <p className="text-subtle">Loading…</p>
+      ) : (
+        <Card className="space-y-5 p-5">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={onFileChange}
+          />
+
+          {!resume?.fileUrl ? (
+            <button
+              onClick={selectFile}
+              disabled={uploading}
+              className="flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-app px-6 py-10 text-center transition hover:border-primary-400 hover:bg-primary-50/30 disabled:opacity-60"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                className="mb-3 h-10 w-10 text-subtle"
+              >
+                <path
+                  d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path d="M17 8l-5-5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M12 3v12" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
               <p className="font-medium text-strong">
-                Complete these before your link can go live:
+                {uploading ? 'Uploading…' : 'Click to upload PDF'}
               </p>
-              <ul className="mt-1 list-disc space-y-0.5 pl-4 text-body">
-                {readiness.missing.map((m) => (
-                  <li key={m}>{m}</li>
-                ))}
-              </ul>
-            </div>
+              <p className="mt-1 text-xs text-subtle">PDF only · max 1 MB</p>
+            </button>
           ) : (
             <>
-              <div className="flex items-center gap-2 rounded-md bg-app p-2">
-                <code className="flex-1 truncate text-xs text-strong">{link}</code>
-                <button
-                  onClick={() => navigator.clipboard?.writeText(link)}
-                  className="rounded bg-white px-2 py-1 text-xs font-medium text-primary-600 shadow-sm"
-                >
-                  Copy
-                </button>
-                <a
-                  href={`/r/${meta.publicSlug}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded bg-white px-2 py-1 text-xs font-medium text-primary-600 shadow-sm"
-                >
-                  Open
-                </a>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-danger/10 text-danger">
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" />
+                      <path
+                        d="M14 2v6h6"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth={2}
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-strong">{resume.fileName}</p>
+                    <p className="text-xs text-subtle">{(resume.fileSize / 1024).toFixed(1)} KB</p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Button variant="ghost" size="sm" onClick={selectFile} loading={uploading}>
+                    Replace
+                  </Button>
+                  <Button variant="danger" size="sm" onClick={remove}>
+                    Delete
+                  </Button>
+                </div>
               </div>
-              {!published && (
-                <p className="text-xs text-subtle">
-                  Unpublished — the link returns “not found” until you publish and save.
-                </p>
-              )}
+
+              <div className="overflow-hidden rounded-lg border border-border bg-white">
+                <iframe src={resume.fileUrl} title="Resume preview" className="h-[400px] w-full" />
+              </div>
+
+              <div className="space-y-3 rounded-xl bg-app p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-strong">Public link</span>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-body">
+                    <input
+                      type="checkbox"
+                      checked={resume.isPublished}
+                      onChange={togglePublished}
+                      className="h-4 w-4 accent-primary-600"
+                    />
+                    Published
+                  </label>
+                </div>
+                <code className="block truncate rounded-md bg-white px-3 py-2 text-xs text-strong">
+                  {publicUrl}
+                </code>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigator.clipboard?.writeText(publicUrl)}
+                  >
+                    Copy link
+                  </Button>
+                  <a
+                    href={publicUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center text-sm font-medium text-primary-600 hover:underline"
+                  >
+                    Open public page →
+                  </a>
+                </div>
+                {!resume.isPublished && (
+                  <p className="text-xs text-warning">
+                    Your public link is hidden. Toggle Published to share it.
+                  </p>
+                )}
+              </div>
             </>
           )}
         </Card>
       )}
-
-      {/* Template picker */}
-      <Card className="space-y-2 p-4">
-        <p className="text-sm font-medium text-strong">Template</p>
-        <div className="grid grid-cols-2 gap-2">
-          {RESUME_TEMPLATES.map((t) => (
-            <button
-              key={t}
-              onClick={() => {
-                setTemplate(t);
-                setSaved(false);
-              }}
-              className={`rounded-md border px-3 py-2 text-sm capitalize ${
-                template === t
-                  ? 'border-primary-500 bg-primary-50 text-primary-700'
-                  : 'border-border text-strong'
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      </Card>
-
-      {/* Basics */}
-      <Section title="Basics">
-        <Text label="Full name" value={data.fullName} onChange={(v) => patch({ fullName: v })} />
-        <Text
-          label="Headline"
-          value={data.headline}
-          onChange={(v) => patch({ headline: v })}
-          placeholder="Final-year CSE · Aspiring SDE"
-        />
-        <Text
-          label="Date of birth"
-          type="date"
-          value={data.dateOfBirth}
-          onChange={(v) => patch({ dateOfBirth: v })}
-        />
-        <Text label="Email" value={data.email} onChange={(v) => patch({ email: v })} />
-        <Text label="Phone" value={data.phone} onChange={(v) => patch({ phone: v })} />
-        <Text label="Location" value={data.location} onChange={(v) => patch({ location: v })} />
-      </Section>
-
-      {/* Links — LinkedIn, GitHub, portfolio, etc. (add as many as you like) */}
-      <ArraySection
-        title="Links"
-        items={data.links}
-        onAdd={() => patch({ links: [...data.links, { label: '', url: '' }] })}
-        onRemove={(i) => patch({ links: data.links.filter((_, x) => x !== i) })}
-        extra={
-          <div className="flex flex-wrap gap-1.5">
-            {LINK_PRESETS.filter(
-              (p) => !data.links.some((l) => l.label.toLowerCase() === p.toLowerCase()),
-            ).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => patch({ links: [...data.links, { label: p, url: '' }] })}
-                className="rounded-pill border border-border bg-white px-2.5 py-1 text-xs text-body transition hover:border-primary-400 hover:text-primary-600"
-              >
-                + {p}
-              </button>
-            ))}
-          </div>
-        }
-        render={(l, i) => (
-          <>
-            <Text
-              label="Label"
-              value={l.label}
-              onChange={(v) => patch({ links: replace(data.links, i, { ...l, label: v }) })}
-              placeholder="GitHub"
-            />
-            <Text
-              label="URL"
-              value={l.url}
-              onChange={(v) => patch({ links: replace(data.links, i, { ...l, url: v }) })}
-              placeholder="https://…"
-            />
-          </>
-        )}
-      />
-
-      {/* Summary */}
-      <Section title="Summary">
-        <Area
-          value={data.summary}
-          onChange={(v) => patch({ summary: v })}
-          placeholder="2–3 lines about you."
-        />
-      </Section>
-
-      {/* Skills */}
-      <Section title="Skills">
-        <ChipInput
-          values={data.skills}
-          onChange={(skills) => patch({ skills })}
-          suggestions={COMMON_SKILLS}
-          placeholder="Type a skill and press Enter (e.g. Marketing)"
-        />
-      </Section>
-
-      {/* Languages */}
-      <Section title="Languages">
-        <ChipInput
-          values={data.languages}
-          onChange={(languages) => patch({ languages })}
-          suggestions={COMMON_LANGUAGES}
-          placeholder="Type a language and press Enter (e.g. English)"
-        />
-      </Section>
-
-      {/* Experience */}
-      <ArraySection
-        title="Experience"
-        items={data.experience}
-        onAdd={() => patch({ experience: [...data.experience, blankExperience()] })}
-        onRemove={(i) => patch({ experience: data.experience.filter((_, x) => x !== i) })}
-        render={(e, i) => {
-          const set = (p: Partial<ResumeExperience>) =>
-            patch({ experience: replace(data.experience, i, { ...e, ...p }) });
-          return (
-            <>
-              <Text label="Role" value={e.role} onChange={(v) => set({ role: v })} />
-              <Text label="Company" value={e.company} onChange={(v) => set({ company: v })} />
-              <Text label="Location" value={e.location} onChange={(v) => set({ location: v })} />
-              <div className="grid grid-cols-2 gap-2">
-                <Text
-                  label="Start"
-                  value={e.startDate}
-                  onChange={(v) => set({ startDate: v })}
-                  placeholder="Jun 2025"
-                />
-                <Text
-                  label="End"
-                  value={e.endDate}
-                  onChange={(v) => set({ endDate: v })}
-                  placeholder="Present"
-                />
-              </div>
-              <Area
-                label="Highlights (one per line)"
-                value={e.bullets.join('\n')}
-                onChange={(v) => set({ bullets: v.split('\n') })}
-              />
-            </>
-          );
-        }}
-      />
-
-      {/* Internships */}
-      <ArraySection
-        title="Internships"
-        items={data.internships}
-        onAdd={() => patch({ internships: [...data.internships, blankInternship()] })}
-        onRemove={(i) => patch({ internships: data.internships.filter((_, x) => x !== i) })}
-        render={(e, i) => {
-          const set = (p: Partial<ResumeInternship>) =>
-            patch({ internships: replace(data.internships, i, { ...e, ...p }) });
-          return (
-            <>
-              <Text
-                label="Role"
-                value={e.role}
-                onChange={(v) => set({ role: v })}
-                placeholder="Marketing Intern"
-              />
-              <Text label="Company" value={e.company} onChange={(v) => set({ company: v })} />
-              <Text label="Location" value={e.location} onChange={(v) => set({ location: v })} />
-              <div className="grid grid-cols-2 gap-2">
-                <Text
-                  label="Start"
-                  value={e.startDate}
-                  onChange={(v) => set({ startDate: v })}
-                  placeholder="Jun 2025"
-                />
-                <Text
-                  label="End"
-                  value={e.endDate}
-                  onChange={(v) => set({ endDate: v })}
-                  placeholder="Aug 2025"
-                />
-              </div>
-              <Area
-                label="Highlights (one per line)"
-                value={e.bullets.join('\n')}
-                onChange={(v) => set({ bullets: v.split('\n') })}
-              />
-            </>
-          );
-        }}
-      />
-
-      {/* Projects */}
-      <ArraySection
-        title="Projects"
-        items={data.projects}
-        onAdd={() => patch({ projects: [...data.projects, blankProject()] })}
-        onRemove={(i) => patch({ projects: data.projects.filter((_, x) => x !== i) })}
-        render={(p, i) => {
-          const set = (up: Partial<ResumeProject>) =>
-            patch({ projects: replace(data.projects, i, { ...p, ...up }) });
-          return (
-            <>
-              <Text label="Name" value={p.name} onChange={(v) => set({ name: v })} />
-              <Text
-                label="Link"
-                value={p.link}
-                onChange={(v) => set({ link: v })}
-                placeholder="https://…"
-              />
-              <Area
-                label="Description"
-                value={p.description}
-                onChange={(v) => set({ description: v })}
-              />
-              <Text
-                label="Tech (comma-separated)"
-                value={p.tech.join(', ')}
-                onChange={(v) => set({ tech: splitList(v, ',') })}
-              />
-            </>
-          );
-        }}
-      />
-
-      {/* Education */}
-      <ArraySection
-        title="Education"
-        items={data.education}
-        onAdd={() => patch({ education: [...data.education, blankEducation()] })}
-        onRemove={(i) => patch({ education: data.education.filter((_, x) => x !== i) })}
-        render={(ed, i) => {
-          const set = (up: Partial<ResumeEducation>) =>
-            patch({ education: replace(data.education, i, { ...ed, ...up }) });
-          return (
-            <>
-              <Text
-                label="Institution"
-                value={ed.institution}
-                onChange={(v) => set({ institution: v })}
-              />
-              <Text
-                label="Qualification"
-                value={ed.degree}
-                onChange={(v) => set({ degree: v })}
-                placeholder="10th / 12th / B.Com"
-              />
-              <Text label="Field" value={ed.field} onChange={(v) => set({ field: v })} />
-              <div className="grid grid-cols-2 gap-2">
-                <Text
-                  label="Start year"
-                  value={ed.startYear}
-                  onChange={(v) => set({ startYear: v })}
-                />
-                <Text label="End year" value={ed.endYear} onChange={(v) => set({ endYear: v })} />
-              </div>
-              <Text
-                label="Percentage"
-                value={ed.score}
-                onChange={(v) => set({ score: v })}
-                placeholder="e.g. 85%"
-              />
-            </>
-          );
-        }}
-      />
-
-      {/* Certifications */}
-      <ArraySection
-        title="Certifications"
-        items={data.certifications}
-        onAdd={() =>
-          patch({ certifications: [...data.certifications, { name: '', issuer: '', year: '' }] })
-        }
-        onRemove={(i) => patch({ certifications: data.certifications.filter((_, x) => x !== i) })}
-        render={(c, i) => {
-          const set = (up: Partial<ResumeCertification>) =>
-            patch({ certifications: replace(data.certifications, i, { ...c, ...up }) });
-          return (
-            <>
-              <Text label="Name" value={c.name} onChange={(v) => set({ name: v })} />
-              <Text label="Issuer" value={c.issuer} onChange={(v) => set({ issuer: v })} />
-              <Text label="Year" value={c.year} onChange={(v) => set({ year: v })} />
-            </>
-          );
-        }}
-      />
-
-      {/* Achievements */}
-      <Section title="Achievements">
-        <Area
-          value={data.achievements.join('\n')}
-          onChange={(v) => patch({ achievements: v.split('\n') })}
-          placeholder="One per line"
-        />
-      </Section>
-
-      {error && <p className="text-sm text-danger">{error}</p>}
-
-      {/* Sticky save bar */}
-      <div className="sticky bottom-24 z-10 flex items-center gap-3 rounded-pill bg-white/95 p-2 shadow-nav backdrop-blur">
-        <Button className="flex-1" onClick={onSave} disabled={saving}>
-          {saving ? 'Saving…' : 'Save resume'}
-        </Button>
-        {saved && <span className="pr-2 text-sm text-success">Saved ✓</span>}
-      </div>
-    </div>
-  );
-}
-
-// ── helpers ──
-function replace<T>(arr: T[], i: number, v: T): T[] {
-  return arr.map((x, idx) => (idx === i ? v : x));
-}
-function splitList(v: string, sep: string): string[] {
-  return v
-    .split(sep)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-const blankExperience = (): ResumeExperience => ({
-  company: '',
-  role: '',
-  location: '',
-  startDate: '',
-  endDate: '',
-  bullets: [],
-});
-const blankInternship = (): ResumeInternship => ({
-  company: '',
-  role: '',
-  location: '',
-  startDate: '',
-  endDate: '',
-  bullets: [],
-});
-const blankProject = (): ResumeProject => ({ name: '', description: '', link: '', tech: [] });
-const blankEducation = (): ResumeEducation => ({
-  institution: '',
-  degree: '',
-  field: '',
-  startYear: '',
-  endYear: '',
-  score: '',
-});
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <Card className="space-y-3 p-4">
-      <p className="text-sm font-semibold text-strong">{title}</p>
-      {children}
-    </Card>
-  );
-}
-
-function ArraySection<T>({
-  title,
-  items,
-  onAdd,
-  onRemove,
-  render,
-  extra,
-}: {
-  title: string;
-  items: T[];
-  onAdd: () => void;
-  onRemove: (i: number) => void;
-  render: (item: T, i: number) => React.ReactNode;
-  extra?: React.ReactNode;
-}) {
-  return (
-    <Card className="space-y-3 p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-strong">{title}</p>
-        <button onClick={onAdd} className="text-sm font-medium text-primary-600">
-          + Add
-        </button>
-      </div>
-      {extra}
-      {items.length === 0 && <p className="text-xs text-subtle">None added yet.</p>}
-      {items.map((item, i) => (
-        <div key={i} className="space-y-2 rounded-md border border-border p-3">
-          {render(item, i)}
-          <button onClick={() => onRemove(i)} className="text-xs text-danger">
-            Remove
-          </button>
-        </div>
-      ))}
-    </Card>
-  );
-}
-
-function Text({
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = 'text',
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  type?: string;
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-subtle">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
-      />
-    </div>
-  );
-}
-
-function Area({
-  label,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label?: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <div className="space-y-1">
-      {label && <label className="text-xs font-medium text-subtle">{label}</label>}
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={3}
-        className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary-400"
-      />
     </div>
   );
 }

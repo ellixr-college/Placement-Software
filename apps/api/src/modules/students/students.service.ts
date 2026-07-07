@@ -565,7 +565,7 @@ export class StudentsService {
         include: { user: true },
       });
       const resume = await tx.resume.findUnique({ where: { studentId: student.id } });
-      const completion = computeCompletion(next, resume?.data ?? null);
+      const completion = computeCompletion(next, resume?.fileUrl ?? null);
       if (completion !== next.profileCompletion) {
         return tx.student.update({
           where: { id: student.id },
@@ -771,7 +771,7 @@ export class StudentsService {
       isActive: boolean;
       lastLoginAt: Date | null;
     };
-    resume?: { isComplete: boolean } | null;
+    resume?: { fileUrl: string } | null;
   }) {
     return {
       id: s.id,
@@ -799,7 +799,7 @@ export class StudentsService {
       profileCompletion: s.profileCompletion,
       isActive: s.isActive,
       createdAt: s.createdAt,
-      resumeComplete: s.resume?.isComplete ?? false,
+      resumeComplete: !!s.resume?.fileUrl,
       user: {
         id: s.user.id,
         email: s.user.email,
@@ -813,7 +813,7 @@ export class StudentsService {
 }
 
 // Weighted profile-completion checklist (0–100). Academic fields live on the
-// Student row; skills/summary/projects live in the linked Resume's JSON `data`.
+// Student row; the résumé PDF upload contributes the remaining weight.
 function computeCompletion(
   s: {
     course: string;
@@ -823,23 +823,14 @@ function computeCompletion(
     enrollmentNumber: string | null;
     user: { phone: string | null };
   },
-  resumeData: Prisma.JsonValue | null,
+  resumeFileUrl: string | null,
 ): number {
   let score = 0;
   if (s.user.phone) score += 15;
   if (s.enrollmentNumber) score += 10;
   if (s.course && s.branch && s.graduationYear) score += 20;
   if (s.cgpa != null) score += 10;
-
-  const r = (resumeData && typeof resumeData === 'object' ? resumeData : {}) as Record<
-    string,
-    unknown
-  >;
-  const arr = (k: string): unknown[] => (Array.isArray(r[k]) ? (r[k] as unknown[]) : []);
-  if (typeof r.summary === 'string' && r.summary.trim()) score += 10;
-  if (arr('skills').length >= 3) score += 15;
-  if (arr('experience').length >= 1 || arr('projects').length >= 1) score += 15;
-  if (arr('education').length >= 1) score += 5;
+  if (resumeFileUrl) score += 45;
 
   return Math.min(100, score);
 }

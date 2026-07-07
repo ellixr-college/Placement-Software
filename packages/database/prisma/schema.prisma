@@ -241,20 +241,17 @@ model Student {
   @@map("students")
 }
 
-// A student's resume content + the chosen template. publicSlug is an unguessable
-// capability token: the rendered HTML page at /r/<slug> is viewable without login
-// while isPublished is true.
+// A student's uploaded résumé PDF. publicSlug is an unguessable capability token:
+// the PDF viewer at /r/<slug> is viewable without login while isPublished is true.
 model Resume {
   id          String   @id @default(uuid())
   studentId   String   @unique @map("student_id")
   collegeId   String   @map("college_id")
   publicSlug  String   @unique @map("public_slug")
-  template    String   @default("classic")
-  data        Json
+  fileUrl     String   @map("file_url")
+  fileName    String   @map("file_name")
+  fileSize    Int      @map("file_size")
   isPublished Boolean  @default(true) @map("is_published")
-  // Whether the resume has the essentials filled in (resumeReadiness). Recomputed
-  // on every save so the officer's list can show/count completion cheaply.
-  isComplete  Boolean  @default(false) @map("is_complete")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

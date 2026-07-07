@@ -48,12 +48,14 @@ export function tryRefresh(): Promise<boolean> {
 
 /** Thin fetch wrapper that unwraps the API's { data } | { error } envelope. */
 export async function api<T>(path: string, options: ApiOptions = {}, _retry = false): Promise<T> {
-  const { auth = true, headers, ...rest } = options;
+  const { auth = true, headers, body: requestBody, ...rest } = options;
+  const isFormData = typeof FormData !== 'undefined' && requestBody instanceof FormData;
   const res = await fetch(`${API_URL}${path}`, {
     ...rest,
+    body: requestBody,
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(auth && accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...headers,
     },

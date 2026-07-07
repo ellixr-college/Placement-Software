@@ -49,6 +49,7 @@ export interface AlumniStats {
   mentors: number;
   hiring: number;
   byGraduationYear: { graduationYear: number; count: number }[];
+  byYearCourse: { graduationYear: number; course: string; count: number }[];
   byBranch: { branch: string; count: number }[];
   topCompanies: { company: string; count: number }[];
   facets: { branches: string[]; graduationYears: number[]; companies: string[] };
@@ -57,6 +58,7 @@ export interface AlumniStats {
 export interface AlumniFilters {
   search?: string;
   branch?: string;
+  course?: string;
   graduationYear?: number;
   company?: string;
   tag?: string;

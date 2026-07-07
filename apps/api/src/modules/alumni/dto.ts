@@ -85,6 +85,7 @@ export class UpdateAlumniDto {
 export class ListAlumniQuery {
   @IsOptional() @IsString() search?: string;
   @IsOptional() @IsString() branch?: string;
+  @IsOptional() @IsString() course?: string;
   @IsOptional() @Type(() => Number) @IsInt() graduationYear?: number;
   @IsOptional() @IsString() company?: string;
   @IsOptional() @IsString() tag?: string;

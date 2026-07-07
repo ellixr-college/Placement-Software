@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Button, Card, SectionCard, StatTile } from '@ellixr/ui';
 import { isValidEmail, isValidPhone, toTitleCase } from '@ellixr/shared';
 import { useSession } from '../../../lib/session';
+import { Breadcrumbs } from '../../../components/breadcrumbs';
 import { CopyButton } from '../../../components/copy-button';
 import { BatchCards } from '../../../components/batch-cards';
 import {
@@ -17,6 +18,14 @@ import {
   type AlumniStats,
 } from '../../../lib/alumni';
 
+type ViewMode = 'years' | 'courses' | 'table';
+
+interface ViewState {
+  mode: ViewMode;
+  year?: number;
+  course?: string;
+}
+
 export default function AlumniPage() {
   const { user } = useSession();
   const [items, setItems] = useState<Alumni[]>([]);
@@ -26,8 +35,9 @@ export default function AlumniPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [view, setView] = useState<ViewState>({ mode: 'years' });
 
-  async function load(next: AlumniFilters = filters) {
+  async function load(next: AlumniFilters = filters, nextView: ViewState = view) {
     setLoading(true);
     setError(null);
     try {
@@ -49,20 +59,22 @@ export default function AlumniPage() {
   }
 
   useEffect(() => {
-    load();
     loadStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
+
   function apply(patch: Partial<AlumniFilters>) {
     const next = { ...filters, ...patch };
-    // Drop empty values so they don't hit the query string.
     (Object.keys(next) as (keyof AlumniFilters)[]).forEach((k) => {
       const v = next[k];
       if (v === undefined || v === '' || v === null) delete next[k];
     });
     setFilters(next);
-    load(next);
   }
 
   function toggle<K extends keyof AlumniFilters>(key: K, value: AlumniFilters[K]) {
@@ -87,20 +99,91 @@ export default function AlumniPage() {
       ? `${window.location.origin}/alumni-register/${slug}`
       : null;
 
+  const years = useMemo(
+    () => (stats?.byGraduationYear ?? []).sort((a, b) => b.graduationYear - a.graduationYear),
+    [stats],
+  );
+
+  const coursesForYear = useMemo(() => {
+    if (view.mode === 'years' || view.year == null) return [];
+    return (stats?.byYearCourse ?? [])
+      .filter((yc) => yc.graduationYear === view.year)
+      .sort((a, b) => a.course.localeCompare(b.course));
+  }, [stats, view]);
+
+  function selectYear(year: number) {
+    const nextFilters: AlumniFilters = { graduationYear: year };
+    setSearch('');
+    setFilters(nextFilters);
+    setView({ mode: 'courses', year });
+  }
+
+  function selectCourse(year: number, course: string) {
+    const nextFilters: AlumniFilters = { graduationYear: year, course };
+    setSearch('');
+    setFilters(nextFilters);
+    setView({ mode: 'table', year, course });
+  }
+
+  function backToYears() {
+    setSearch('');
+    setFilters({});
+    setView({ mode: 'years' });
+  }
+
+  function backToCourses() {
+    if (view.year == null) return;
+    setSearch('');
+    setFilters({ graduationYear: view.year });
+    setView({ mode: 'courses', year: view.year });
+  }
+
+  const title = useMemo(() => {
+    if (view.mode === 'years') return 'Alumni';
+    if (view.mode === 'courses') return `Alumni · ${view.year}`;
+    return `Alumni · ${view.year} · ${view.course}`;
+  }, [view]);
+
+  const subtitle = useMemo(() => {
+    if (view.mode === 'years') {
+      return stats
+        ? `${stats.total} graduates · ${years.length} ${years.length === 1 ? 'year' : 'years'}`
+        : 'Loading…';
+    }
+    if (view.mode === 'courses') {
+      return `${coursesForYear.length} ${coursesForYear.length === 1 ? 'course' : 'courses'} in ${view.year}`;
+    }
+    return `${items.length} ${items.length === 1 ? 'alumnus' : 'alumni'} in ${view.course} ${view.year}`;
+  }, [view, stats, years, coursesForYear, items.length]);
+
+  const breadcrumbCrumbs = useMemo(() => {
+    const crumbs: Array<{ label: string; onClick?: () => void }> = [
+      { label: 'Alumni', onClick: backToYears },
+    ];
+    if (view.mode === 'courses') {
+      crumbs.push({ label: String(view.year) });
+    } else if (view.mode === 'table') {
+      crumbs.push({ label: String(view.year), onClick: backToCourses });
+      crumbs.push({ label: view.course ?? '' });
+    }
+    return crumbs;
+  }, [view]);
+
+  const showDirectory = view.mode === 'table' || (view.mode === 'years' && hasFilters);
+
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-strong">Alumni</h1>
-          <p className="text-sm text-subtle">
-            {stats ? `${stats.total} graduates` : `${items.length} graduates`}
-          </p>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <Breadcrumbs crumbs={breadcrumbCrumbs} />
+          <h1 className="text-2xl font-semibold text-strong">{title}</h1>
+          <p className="text-sm text-subtle">{subtitle}</p>
         </div>
         <Button onClick={() => setShowForm(true)}>Add alumnus</Button>
       </header>
 
       {/* Stat strip */}
-      {stats && (
+      {stats && view.mode === 'years' && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatTile gradient="ocean" value={stats.total} label="Total alumni" />
           <StatTile gradient="violet" value={stats.mentors} label="Mentors" />
@@ -108,35 +191,46 @@ export default function AlumniPage() {
         </div>
       )}
 
-      {/* Batches — tap a card to filter the directory to that passout year */}
-      {stats && stats.byGraduationYear.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-medium uppercase text-subtle">Batches</p>
-            {filters.graduationYear != null && (
-              <button
-                onClick={() => apply({ graduationYear: undefined })}
-                className="text-xs text-primary-600 hover:underline"
-              >
-                Clear batch ({filters.graduationYear})
-              </button>
-            )}
-          </div>
-          <BatchCards
-            items={[...stats.byGraduationYear]
-              .sort((a, b) => b.graduationYear - a.graduationYear)
-              .map((y) => ({
+      {/* Year picker */}
+      {view.mode === 'years' && (
+        <>
+          {years.length === 0 ? (
+            <Card className="p-8 text-center text-sm text-subtle">
+              No alumni yet. Add one or share the self-registration link.
+            </Card>
+          ) : (
+            <BatchCards
+              items={years.map((y) => ({
                 key: String(y.graduationYear),
                 title: String(y.graduationYear),
+                category: 'Graduation Year',
                 stats: [{ label: y.count === 1 ? 'alumnus' : 'alumni', value: y.count }],
               }))}
-            onSelect={(k) => apply({ graduationYear: Number(k) })}
-          />
-        </div>
+              onSelect={(k) => selectYear(Number(k))}
+            />
+          )}
+        </>
+      )}
+
+      {/* Course picker */}
+      {view.mode === 'courses' && (
+        <BatchCards
+          items={coursesForYear.map((c) => ({
+            key: `${c.graduationYear}|${c.course}`,
+            title: c.course,
+            category: `${c.graduationYear} · Course`,
+            stats: [{ label: c.count === 1 ? 'alumnus' : 'alumni', value: c.count }],
+          }))}
+          onSelect={(k) => {
+            const course =
+              coursesForYear.find((c) => `${c.graduationYear}|${c.course}` === k)?.course ?? '';
+            selectCourse(view.year!, course);
+          }}
+        />
       )}
 
       {/* Self-registration link to share with graduating batches */}
-      {registerUrl && (
+      {view.mode === 'years' && registerUrl && (
         <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
           <div>
             <p className="text-sm font-medium text-strong">Alumni self-registration link</p>
@@ -166,151 +260,193 @@ export default function AlumniPage() {
         </div>
       )}
 
-      {/* Search */}
-      <div className="flex gap-2">
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && apply({ search: search || undefined })}
-          placeholder="Search by name, email or company…"
-          className="h-10 w-full max-w-md rounded-md border border-border bg-white px-4 text-sm outline-none focus:border-primary-400"
-        />
-        <Button variant="ghost" onClick={() => apply({ search: search || undefined })}>
-          Search
-        </Button>
-      </div>
-
-      {/* Segmentation filters */}
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Chip active={filters.isMentor === true} onClick={() => toggle('isMentor', true)}>
-            Mentors
-          </Chip>
-          <Chip active={filters.isHiring === true} onClick={() => toggle('isHiring', true)}>
-            Hiring
-          </Chip>
-          <Chip active={filters.pending === true} onClick={() => toggle('pending', true)}>
-            Pending approval
-          </Chip>
-          {hasFilters && (
-            <button
-              onClick={() => {
-                setSearch('');
-                setFilters({});
-                load({});
-              }}
-              className="text-xs text-primary-600 hover:underline"
-            >
-              Clear all
-            </button>
-          )}
-        </div>
-
-        {stats && stats.facets.branches.length > 0 && (
-          <FacetRow label="Branch">
-            {stats.facets.branches.map((b) => (
-              <Chip key={b} active={filters.branch === b} onClick={() => toggle('branch', b)}>
-                {b}
-              </Chip>
-            ))}
-          </FacetRow>
-        )}
-      </div>
-
-      {error && <p className="text-sm text-danger">{error}</p>}
-
-      {/* Directory */}
-      <Card className="overflow-hidden p-0">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-border bg-app text-xs uppercase text-subtle">
-            <tr>
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Batch</th>
-              <th className="px-4 py-3 font-medium">Branch</th>
-              <th className="px-4 py-3 font-medium">Now at</th>
-              <th className="px-4 py-3 font-medium">Tags</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-subtle">
-                  Loading…
-                </td>
-              </tr>
-            ) : items.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-subtle">
-                  No alumni match these filters.
-                </td>
-              </tr>
+      {/* Search + filters */}
+      {showDirectory && (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {view.mode === 'table' ? (
+              <button
+                onClick={backToCourses}
+                className="text-sm font-medium text-primary-600 hover:underline"
+              >
+                ← All courses in {view.year}
+              </button>
             ) : (
-              items.map((a) => (
-                <tr key={a.id} className="border-b border-border last:border-0 hover:bg-app/60">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/alumni/${a.id}`}
-                      className="font-medium text-strong hover:underline"
-                    >
-                      {a.fullName}
-                    </Link>
-                    {!a.isActive && <span className="ml-2 text-xs text-subtle">(inactive)</span>}
-                    <p className="text-xs text-subtle">{a.email}</p>
-                  </td>
-                  <td className="px-4 py-3">{a.graduationYear}</td>
-                  <td className="px-4 py-3">{a.branch}</td>
-                  <td className="px-4 py-3">
-                    {a.currentCompany ? (
-                      <>
-                        <span className="text-strong">{a.currentCompany}</span>
-                        {a.currentDesignation && (
-                          <p className="text-xs text-subtle">{a.currentDesignation}</p>
-                        )}
-                      </>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap items-center gap-1">
-                      {!a.isApproved && (
-                        <>
-                          <Badge tint="cream">Pending</Badge>
-                          <button
-                            onClick={() => approve(a)}
-                            className="rounded-pill bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700"
-                          >
-                            Approve
-                          </button>
-                        </>
-                      )}
-                      {a.isMentor && <Badge tint="lavender">Mentor</Badge>}
-                      {a.isHiring && <Badge tint="mint">Hiring</Badge>}
-                    </div>
-                  </td>
-                </tr>
-              ))
+              <span />
             )}
-          </tbody>
-        </table>
-      </Card>
+            <div className="flex gap-2">
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && apply({ search: search || undefined })}
+                placeholder="Search by name, email or company…"
+                className="h-10 w-full max-w-md rounded-md border border-border bg-white px-4 text-sm outline-none focus:border-primary-400"
+              />
+              <Button variant="ghost" onClick={() => apply({ search: search || undefined })}>
+                Search
+              </Button>
+            </div>
+          </div>
+
+          {/* Segmentation filters */}
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Chip active={filters.isMentor === true} onClick={() => toggle('isMentor', true)}>
+                Mentors
+              </Chip>
+              <Chip active={filters.isHiring === true} onClick={() => toggle('isHiring', true)}>
+                Hiring
+              </Chip>
+              <Chip active={filters.pending === true} onClick={() => toggle('pending', true)}>
+                Pending approval
+              </Chip>
+              {hasFilters && (
+                <button
+                  onClick={() => {
+                    setSearch('');
+                    if (view.mode === 'table' && view.year != null && view.course != null) {
+                      setFilters({ graduationYear: view.year, course: view.course });
+                    } else if (view.mode === 'courses' && view.year != null) {
+                      setFilters({ graduationYear: view.year });
+                    } else {
+                      setFilters({});
+                    }
+                  }}
+                  className="text-xs text-primary-600 hover:underline"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
+
+            {stats && stats.facets.branches.length > 0 && (
+              <FacetRow label="Branch">
+                {stats.facets.branches.map((b) => (
+                  <Chip key={b} active={filters.branch === b} onClick={() => toggle('branch', b)}>
+                    {b}
+                  </Chip>
+                ))}
+              </FacetRow>
+            )}
+          </div>
+
+          {error && <p className="text-sm text-danger">{error}</p>}
+
+          {/* Directory */}
+          <Card className="overflow-hidden p-0">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-border bg-app text-xs uppercase text-subtle">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Name</th>
+                  <th className="px-4 py-3 font-medium">Batch</th>
+                  <th className="px-4 py-3 font-medium">Course</th>
+                  <th className="px-4 py-3 font-medium">Branch</th>
+                  <th className="px-4 py-3 font-medium">Now at</th>
+                  <th className="px-4 py-3 font-medium">LinkedIn</th>
+                  <th className="px-4 py-3 font-medium">Tags</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-subtle">
+                      Loading…
+                    </td>
+                  </tr>
+                ) : items.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-subtle">
+                      No alumni match these filters.
+                    </td>
+                  </tr>
+                ) : (
+                  items.map((a) => (
+                    <tr key={a.id} className="border-b border-border last:border-0 hover:bg-app/60">
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/alumni/${a.id}`}
+                          className="font-medium text-strong hover:underline"
+                        >
+                          {a.fullName}
+                        </Link>
+                        {!a.isActive && (
+                          <span className="ml-2 text-xs text-subtle">(inactive)</span>
+                        )}
+                        <p className="text-xs text-subtle">{a.email}</p>
+                      </td>
+                      <td className="px-4 py-3">{a.graduationYear}</td>
+                      <td className="px-4 py-3">{a.course || '—'}</td>
+                      <td className="px-4 py-3">{a.branch}</td>
+                      <td className="px-4 py-3">
+                        {a.currentCompany ? (
+                          <>
+                            <span className="text-strong">{a.currentCompany}</span>
+                            {a.currentDesignation && (
+                              <p className="text-xs text-subtle">{a.currentDesignation}</p>
+                            )}
+                          </>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {a.linkedinUrl ? (
+                          <a
+                            href={a.linkedinUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-primary-600 hover:underline"
+                          >
+                            View
+                          </a>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-1">
+                          {!a.isApproved && (
+                            <>
+                              <Badge tint="cream">Pending</Badge>
+                              <button
+                                onClick={() => approve(a)}
+                                className="rounded-pill bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700"
+                              >
+                                Approve
+                              </button>
+                            </>
+                          )}
+                          {a.isMentor && <Badge tint="lavender">Mentor</Badge>}
+                          {a.isHiring && <Badge tint="mint">Hiring</Badge>}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </Card>
+        </>
+      )}
 
       {/* Segmentation breakdowns */}
-      {stats && (stats.byBranch.length > 0 || stats.topCompanies.length > 0) && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <BreakdownCard
-            title="By branch"
-            rows={stats.byBranch.map((b) => ({ label: b.branch, count: b.count }))}
-            onPick={(label) => toggle('branch', label)}
-          />
-          <BreakdownCard
-            title="Top employers"
-            rows={stats.topCompanies.map((c) => ({ label: c.company, count: c.count }))}
-            onPick={(label) => apply({ company: label })}
-          />
-        </div>
-      )}
+      {stats &&
+        view.mode === 'years' &&
+        (stats.byBranch.length > 0 || stats.topCompanies.length > 0) && (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <BreakdownCard
+              title="By branch"
+              rows={stats.byBranch.map((b) => ({ label: b.branch, count: b.count }))}
+              onPick={(label) => toggle('branch', label)}
+            />
+            <BreakdownCard
+              title="Top employers"
+              rows={stats.topCompanies.map((c) => ({ label: c.company, count: c.count }))}
+              onPick={(label) => apply({ company: label })}
+            />
+          </div>
+        )}
     </div>
   );
 }

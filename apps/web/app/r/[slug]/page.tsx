@@ -1,14 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import type { ResumeData } from '@ellixr/shared';
-import { ResumeView } from '../../../components/resume/templates';
-import { PrintButton } from '../../../components/resume/print-button';
 
 export const dynamic = 'force-dynamic';
 
 interface PublicResume {
-  template: string;
-  data: ResumeData;
+  publicSlug: string;
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
   updatedAt: string;
 }
 
@@ -34,9 +33,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const resume = await fetchResume(slug);
-  const name = resume?.data?.fullName?.trim();
   return {
-    title: name ? `${name} — Resume` : 'Resume',
+    title: resume ? `${resume.fileName} — Resume` : 'Resume',
     robots: { index: false, follow: false },
   };
 }
@@ -47,11 +45,31 @@ export default async function PublicResumePage({ params }: { params: Promise<{ s
   if (!resume) notFound();
 
   return (
-    <div className="min-h-screen bg-neutral-200 py-8 print:bg-white print:py-0">
-      <PrintButton />
-      <div className="mx-auto max-w-[860px] overflow-hidden rounded-lg bg-white shadow-xl print:max-w-none print:rounded-none print:shadow-none">
-        <ResumeView template={resume.template} data={resume.data} />
+    <main className="flex min-h-screen flex-col bg-neutral-200">
+      <header className="sticky top-0 z-10 border-b border-neutral-300 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between">
+          <div className="min-w-0">
+            <h1 className="truncate text-sm font-semibold text-strong">{resume.fileName}</h1>
+            <p className="text-xs text-subtle">Résumé · {(resume.fileSize / 1024).toFixed(1)} KB</p>
+          </div>
+          <a
+            href={resume.fileUrl}
+            download={resume.fileName}
+            className="rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700"
+          >
+            Download PDF
+          </a>
+        </div>
+      </header>
+      <div className="flex-1 p-4 sm:p-6">
+        <div className="mx-auto max-w-5xl overflow-hidden rounded-lg bg-white shadow-xl">
+          <iframe
+            src={resume.fileUrl}
+            title={resume.fileName}
+            className="h-[calc(100vh-140px)] w-full"
+          />
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

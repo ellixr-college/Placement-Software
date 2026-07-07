@@ -76,6 +76,7 @@ export class AlumniService {
     const where: Prisma.AlumniWhereInput = {
       collegeId,
       ...(q.branch ? { branch: q.branch } : {}),
+      ...(q.course ? { course: q.course } : {}),
       ...(q.graduationYear ? { graduationYear: q.graduationYear } : {}),
       ...(q.company ? { currentCompany: { contains: q.company, mode: 'insensitive' } } : {}),
       ...(q.tag ? { tags: { has: q.tag } } : {}),
@@ -129,31 +130,45 @@ export class AlumniService {
    * (branches, years, companies) drive the filter UI; counts give the overview.
    */
   async stats(collegeId: string) {
-    const [total, mentors, hiring, byYearRaw, byBranchRaw, byCompanyRaw] = await Promise.all([
-      this.prisma.alumni.count({ where: { collegeId } }),
-      this.prisma.alumni.count({ where: { collegeId, isMentor: true } }),
-      this.prisma.alumni.count({ where: { collegeId, isHiring: true } }),
-      this.prisma.alumni.groupBy({
-        by: ['graduationYear'],
-        where: { collegeId },
-        _count: { _all: true },
-        orderBy: { graduationYear: 'desc' },
-      }),
-      this.prisma.alumni.groupBy({
-        by: ['branch'],
-        where: { collegeId },
-        _count: { _all: true },
-      }),
-      this.prisma.alumni.groupBy({
-        by: ['currentCompany'],
-        where: { collegeId, currentCompany: { not: null } },
-        _count: { _all: true },
-      }),
-    ]);
+    const [total, mentors, hiring, byYearRaw, byYearCourseRaw, byBranchRaw, byCompanyRaw] =
+      await Promise.all([
+        this.prisma.alumni.count({ where: { collegeId } }),
+        this.prisma.alumni.count({ where: { collegeId, isMentor: true } }),
+        this.prisma.alumni.count({ where: { collegeId, isHiring: true } }),
+        this.prisma.alumni.groupBy({
+          by: ['graduationYear'],
+          where: { collegeId },
+          _count: { _all: true },
+          orderBy: { graduationYear: 'desc' },
+        }),
+        this.prisma.alumni.groupBy({
+          by: ['graduationYear', 'course'],
+          where: { collegeId, course: { not: null } },
+          _count: { _all: true },
+          orderBy: { graduationYear: 'desc' },
+        }),
+        this.prisma.alumni.groupBy({
+          by: ['branch'],
+          where: { collegeId },
+          _count: { _all: true },
+        }),
+        this.prisma.alumni.groupBy({
+          by: ['currentCompany'],
+          where: { collegeId, currentCompany: { not: null } },
+          _count: { _all: true },
+        }),
+      ]);
 
     const byBranch = byBranchRaw
       .map((b) => ({ branch: b.branch, count: b._count._all }))
       .sort((a, b) => b.count - a.count);
+    const byYearCourse = byYearCourseRaw
+      .map((yc) => ({
+        graduationYear: yc.graduationYear,
+        course: yc.course as string,
+        count: yc._count._all,
+      }))
+      .sort((a, b) => (a.course || '').localeCompare(b.course || ''));
     const topCompanies = byCompanyRaw
       .map((c) => ({ company: c.currentCompany as string, count: c._count._all }))
       .sort((a, b) => b.count - a.count)
@@ -167,6 +182,7 @@ export class AlumniService {
         graduationYear: y.graduationYear,
         count: y._count._all,
       })),
+      byYearCourse,
       byBranch,
       topCompanies,
       facets: {
