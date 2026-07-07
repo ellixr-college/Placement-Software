@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsEmail,
@@ -18,6 +19,7 @@ export class CreateUserDto {
   fullName!: string;
 
   @IsEmail()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   email!: string;
 
   @IsIn([UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER])

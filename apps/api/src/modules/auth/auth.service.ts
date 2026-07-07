@@ -17,10 +17,27 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user || !user.isActive) throw new UnauthorizedException('Invalid credentials');
+    const normalized = email.trim().toLowerCase();
+    const user = await this.prisma.user.findFirst({
+      where: { email: { equals: normalized, mode: 'insensitive' } },
+    });
+    // eslint-disable-next-line no-console
+    console.log(
+      `[auth] login attempt for ${normalized}: found=${!!user} active=${user?.isActive ?? false}`,
+    );
+    if (!user) {
+      console.log(`[auth] login failed for ${normalized}: user not found`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    if (!user.isActive) {
+      console.log(`[auth] login failed for ${normalized}: account inactive`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
     const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) throw new UnauthorizedException('Invalid credentials');
+    if (!ok) {
+      console.log(`[auth] login failed for ${normalized}: password mismatch`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
     return user;
   }
 
@@ -53,7 +70,9 @@ export class AuthService {
 
   /** Always returns success to avoid leaking which emails exist. */
   async forgotPassword(email: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findFirst({
+      where: { email: { equals: email.trim().toLowerCase(), mode: 'insensitive' } },
+    });
     if (user && user.isActive) {
       const raw = randomBytes(32).toString('hex');
       const tokenHash = createHash('sha256').update(raw).digest('hex');
