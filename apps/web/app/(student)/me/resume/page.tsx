@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card } from '@ellixr/ui';
 import { useConfirm } from '../../../../components/confirm-provider';
 import {
@@ -15,6 +16,9 @@ const MAX_BYTES = 1 * 1024 * 1024;
 
 export default function MyResumePage() {
   const confirm = useConfirm();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
   const [resume, setResume] = useState<MyResume | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -56,7 +60,11 @@ export default function MyResumePage() {
     setUploading(true);
     setError(null);
     try {
-      setResume(await uploadMyResume(file));
+      const r = await uploadMyResume(file);
+      setResume(r);
+      if (next && r.fileUrl) {
+        router.push(next);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {

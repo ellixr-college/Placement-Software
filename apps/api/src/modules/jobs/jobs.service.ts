@@ -16,7 +16,12 @@ import {
   UpdatePlatformJobDto,
 } from './dto';
 import { NotificationsService } from '../notifications/notifications.service';
-import { checkEligibility, type EligibilityJob, type EligibilityStudent } from './eligibility';
+import {
+  checkEligibility,
+  checkApplyEligibility,
+  type EligibilityJob,
+  type EligibilityStudent,
+} from './eligibility';
 
 const PLACING_STAGES: ApplicationStage[] = ['OFFER_ACCEPTED', 'JOINED'];
 
@@ -270,7 +275,7 @@ export class JobsService {
         isActive: true,
         verificationStatus: 'VERIFIED',
       },
-      include: { user: true },
+      include: { user: true, resume: { select: { id: true } } },
     });
 
     const placedStudentIds = await this.placedStudentIds(collegeId);
@@ -480,7 +485,7 @@ export class JobsService {
     // Show every published job; annotate eligibility. Apply is still gated
     // server-side (see apply()) — students can browse but only apply if eligible.
     return jobs.map((j) => {
-      const { eligible, reasons } = checkEligibility(me, toEligibilityJob(j));
+      const { eligible, reasons } = checkApplyEligibility(me, toEligibilityJob(j));
       return {
         ...this.publicJob(j),
         eligible,
@@ -499,7 +504,7 @@ export class JobsService {
     });
     if (!job || job.status !== 'PUBLISHED') throw new NotFoundException('Job not found');
 
-    const { eligible, reasons } = checkEligibility(
+    const { eligible, reasons } = checkApplyEligibility(
       toEligibilityStudent(student, await this.isStudentPlaced(student.id)),
       toEligibilityJob(job),
     );
@@ -529,7 +534,7 @@ export class JobsService {
     }
 
     // Re-validate eligibility server-side — the feed is not the authority.
-    const { eligible, reasons } = checkEligibility(
+    const { eligible, reasons } = checkApplyEligibility(
       toEligibilityStudent(student, await this.isStudentPlaced(student.id)),
       toEligibilityJob(job),
     );
@@ -577,8 +582,13 @@ export class JobsService {
     return out;
   }
 
-  private async studentForUser(userId: string): Promise<Student> {
-    const student = await this.prisma.student.findUnique({ where: { userId } });
+  private async studentForUser(
+    userId: string,
+  ): Promise<Student & { resume: { id: string } | null }> {
+    const student = await this.prisma.student.findUnique({
+      where: { userId },
+      include: { resume: { select: { id: true } } },
+    });
     if (!student) throw new ForbiddenException('No student profile for this account');
     return student;
   }
@@ -683,6 +693,7 @@ function toEligibilityStudent(
     gender: string | null;
     activeBacklogs: number;
     totalBacklogs: number;
+    resume?: { id: string } | null;
   },
   isPlaced: boolean,
 ): EligibilityStudent {
@@ -699,6 +710,7 @@ function toEligibilityStudent(
     gender: s.gender,
     activeBacklogs: s.activeBacklogs,
     totalBacklogs: s.totalBacklogs,
+    hasResume: !!s.resume,
   };
 }
 

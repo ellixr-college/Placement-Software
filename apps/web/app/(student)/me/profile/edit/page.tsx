@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
 import { PROFILE_STEPS, computeProfileCompletion, isProfileFieldFilled } from '@ellixr/shared';
@@ -14,6 +15,11 @@ import {
   type UpdateOwnProfileInput,
 } from '../../../../../lib/students';
 
+/** Minimum profile readiness needed before we send a student back to apply. */
+function isReadyToApply(student: Student, resumeUploaded: boolean | null): boolean {
+  return !!resumeUploaded && (student.profileCompletion ?? 0) >= 60;
+}
+
 /**
  * Student profile completion wizard. The compulsory fields from the college's
  * profile data sheet are grouped into 5 steps. Students can save progress at
@@ -21,6 +27,9 @@ import {
  */
 export default function StudentProfilePage() {
   const { signOut } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
   const [student, setStudent] = useState<Student | null>(null);
   const [form, setForm] = useState<UpdateOwnProfileInput>({});
   const [step, setStep] = useState(0);
@@ -86,6 +95,9 @@ export default function StudentProfilePage() {
       setForm(toForm(s));
       setSaved(true);
       setTouched(new Set());
+      if (next && isReadyToApply(s, resumeUploaded)) {
+        router.push(next);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save');
     } finally {
@@ -99,6 +111,9 @@ export default function StudentProfilePage() {
     try {
       const s = await submitOwnProfile();
       setStudent(s);
+      if (next && isReadyToApply(s, resumeUploaded)) {
+        router.push(next);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not submit');
     } finally {
@@ -141,7 +156,15 @@ export default function StudentProfilePage() {
         </p>
       </header>
 
-      {/* Overall progress */}
+      {next && (
+        <div className="rounded-md bg-primary-50 px-4 py-3 text-sm text-primary-700">
+          <span className="font-medium">You’re completing your profile to apply for a job.</span>{' '}
+          Fill in the important details and upload your résumé, then you’ll be redirected back to
+          the application.
+        </div>
+      )}
+
+      {/* Overall progress -->
       <Card className="space-y-3 p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-strong">Profile completion</p>
@@ -191,7 +214,11 @@ export default function StudentProfilePage() {
             </span>
           </div>
           <Link
-            href="/me/resume"
+            href={
+              next
+                ? `/me/resume?next=${encodeURIComponent(`/me/profile/edit?next=${encodeURIComponent(next)}`)}`
+                : '/me/resume'
+            }
             className="mt-2 inline-block text-xs font-medium text-primary-600 hover:underline"
           >
             {resumeUploaded ? 'Manage your résumé →' : 'Upload your résumé PDF →'}
@@ -269,6 +296,12 @@ export default function StudentProfilePage() {
           )}
         </div>
       </div>
+
+      {next && isReadyToApply(student, resumeUploaded) && (
+        <Button variant="outline" className="w-full" onClick={() => router.push(next)}>
+          Continue to job application →
+        </Button>
+      )}
 
       <Button variant="outline" className="w-full" onClick={signOut}>
         Sign out

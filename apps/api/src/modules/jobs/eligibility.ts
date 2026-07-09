@@ -15,6 +15,7 @@ export interface EligibilityStudent {
   gender: string | null;
   activeBacklogs: number;
   totalBacklogs: number;
+  hasResume: boolean;
 }
 
 export interface EligibilityJob {
@@ -35,13 +36,16 @@ export interface EligibilityResult {
   reasons: string[];
 }
 
-export function checkEligibility(
+function runEligibilityChecks(
   student: EligibilityStudent,
   job: EligibilityJob,
+  options: { requireVerified?: boolean; requireResume?: boolean },
 ): EligibilityResult {
   const reasons: string[] = [];
 
-  if (student.verificationStatus !== 'VERIFIED') reasons.push('Profile not verified');
+  if (options.requireVerified && student.verificationStatus !== 'VERIFIED') {
+    reasons.push('Profile not verified');
+  }
   if (student.isPlaced) reasons.push('Already placed');
   if (!job.eligibleCourses.includes(student.course)) reasons.push('Course not eligible');
   // Empty eligibleBranches = branch is not a filter (e.g. courses with no branches).
@@ -76,7 +80,7 @@ export function checkEligibility(
     job.eligibleGenders.length > 0 &&
     (!student.gender || !job.eligibleGenders.includes(student.gender))
   ) {
-    reasons.push('Gender not eligible');
+    reasons.push(student.gender ? 'Gender not eligible' : 'Gender not set');
   }
   if (job.maxActiveBacklogs != null && student.activeBacklogs > job.maxActiveBacklogs) {
     reasons.push('Too many active backlogs');
@@ -84,6 +88,26 @@ export function checkEligibility(
   if (job.maxTotalBacklogs != null && student.totalBacklogs > job.maxTotalBacklogs) {
     reasons.push('Too many total backlogs');
   }
+  if (options.requireResume && !student.hasResume) {
+    reasons.push('Resume not uploaded');
+  }
 
   return { eligible: reasons.length === 0, reasons };
+}
+
+/** Strict eligibility check used for officer previews / verification workflows. */
+export function checkEligibility(
+  student: EligibilityStudent,
+  job: EligibilityJob,
+): EligibilityResult {
+  return runEligibilityChecks(student, job, { requireVerified: true, requireResume: false });
+}
+
+/** Application-time eligibility: students can apply once their profile + resume are
+ * complete enough, even if the placement officer has not verified them yet. */
+export function checkApplyEligibility(
+  student: EligibilityStudent,
+  job: EligibilityJob,
+): EligibilityResult {
+  return runEligibilityChecks(student, job, { requireVerified: false, requireResume: true });
 }

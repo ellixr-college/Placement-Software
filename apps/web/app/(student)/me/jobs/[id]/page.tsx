@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Badge, Card } from '@ellixr/ui';
 import {
@@ -14,6 +15,7 @@ import { listMyApplications, type Application } from '../../../../../lib/applica
 import { PdfModal } from '../../../../../components/pdf-modal';
 import { ApplyModal } from '../../../../../components/apply-modal';
 import { ApplicationTimeline } from '../../../../../components/application-timeline';
+import { ProfileIncompleteModal } from '../../../../../components/profile-incomplete-modal';
 
 const STATUS: Record<string, { label: string; tint: 'mint' | 'rose' | 'cream' | 'lavender' }> = {
   APPLIED: { label: 'Applied', tint: 'cream' },
@@ -26,13 +28,27 @@ const STATUS: Record<string, { label: string; tint: 'mint' | 'rose' | 'cream' | 
 const workModeLabel = (m: string | null) =>
   !m ? null : m === 'ONSITE' ? 'Work from office' : m.charAt(0) + m.slice(1).toLowerCase();
 
+/** Reasons that can be fixed by completing the profile / uploading a resume. */
+function isProfileBlocker(reason: string): boolean {
+  const profileReasons = new Set(['Resume not uploaded', 'Profile not verified', 'Gender not set']);
+  if (profileReasons.has(reason)) return true;
+  return (
+    reason.startsWith('Percentage below') ||
+    reason.startsWith('10th below') ||
+    reason.startsWith('12th below') ||
+    reason.startsWith('UG below')
+  );
+}
+
 export default function StudentJobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const [job, setJob] = useState<Job | null>(null);
   const [app, setApp] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [incompleteOpen, setIncompleteOpen] = useState(false);
   const [pdfView, setPdfView] = useState<{ url: string; name?: string | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,8 +71,17 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
 
   function onApplyClick() {
     if (!job) return;
+    if (job.eligible === false) {
+      setIncompleteOpen(true);
+      return;
+    }
     if (job.applicationFormFields && job.applicationFormFields.length > 0) setFormOpen(true);
     else apply();
+  }
+
+  function proceedToProfile() {
+    setIncompleteOpen(false);
+    router.push(`/me/profile/edit?next=/me/jobs/${id}`);
   }
 
   async function apply(responses?: Record<string, string>) {
@@ -81,6 +106,7 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
     Boolean,
   ) as string[];
   const notEligible = job.eligible === false;
+  const onlyProfileBlockers = notEligible && (job.eligibilityReasons ?? []).every(isProfileBlocker);
   const expired =
     !!job.applicationDeadline && new Date(job.applicationDeadline).getTime() < Date.now();
   const applied = !!app;
@@ -201,7 +227,9 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
 
       {notEligible && !applied && (
         <div className="rounded-md bg-tint-cream/50 px-3 py-2 text-xs text-tint-cream-fg">
-          <span className="font-medium">You can&apos;t apply yet.</span>{' '}
+          <span className="font-medium">
+            {onlyProfileBlockers ? 'Complete your profile to apply.' : "You can't apply yet."}
+          </span>{' '}
           {(job.eligibilityReasons ?? []).filter((r) => r !== 'Profile not verified').join(' · ') ||
             'You don&apos;t meet the criteria.'}
         </div>
@@ -223,7 +251,7 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
           >
             Applications closed
           </button>
-        ) : notEligible ? (
+        ) : notEligible && !onlyProfileBlockers ? (
           <button
             disabled
             className="w-full rounded-pill bg-app py-3 text-sm font-semibold text-subtle"
@@ -257,6 +285,14 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
           submitting={applying}
           onCancel={() => setFormOpen(false)}
           onSubmit={(responses) => apply(responses)}
+        />
+      )}
+      {incompleteOpen && job && (
+        <ProfileIncompleteModal
+          job={job}
+          reasons={job.eligibilityReasons}
+          onCancel={() => setIncompleteOpen(false)}
+          onProceed={proceedToProfile}
         />
       )}
     </div>

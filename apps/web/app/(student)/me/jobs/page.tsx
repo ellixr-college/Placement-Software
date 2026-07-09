@@ -7,10 +7,23 @@ import { applyToJob, getJobFeed, getJobPdfObjectUrl, type Job } from '../../../.
 import { PdfModal } from '../../../../components/pdf-modal';
 import { JobCard } from '../../../../components/job-card';
 import { ApplyModal } from '../../../../components/apply-modal';
+import { ProfileIncompleteModal } from '../../../../components/profile-incomplete-modal';
+
+/** Reasons that can be fixed by completing the profile / uploading a resume. */
+function isProfileBlocker(reason: string): boolean {
+  const profileReasons = new Set(['Resume not uploaded', 'Profile not verified', 'Gender not set']);
+  if (profileReasons.has(reason)) return true;
+  return (
+    reason.startsWith('Percentage below') ||
+    reason.startsWith('10th below') ||
+    reason.startsWith('12th below') ||
+    reason.startsWith('UG below')
+  );
+}
 
 /**
- * Student job feed (mobile). Shows only PUBLISHED jobs the authenticated student
- * is eligible for — eligibility is enforced server-side; this is just the view.
+ * Student job feed (mobile). Lists every PUBLISHED job at the student’s college
+ * and lets them apply once their profile + resume are complete enough.
  */
 export default function StudentJobsPage() {
   const router = useRouter();
@@ -19,6 +32,7 @@ export default function StudentJobsPage() {
   const [error, setError] = useState<string | null>(null);
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [formJob, setFormJob] = useState<Job | null>(null);
+  const [incompleteJob, setIncompleteJob] = useState<Job | null>(null);
   const [pdfView, setPdfView] = useState<{ url: string; name?: string | null } | null>(null);
 
   async function load() {
@@ -36,12 +50,22 @@ export default function StudentJobsPage() {
   }, []);
 
   // Jobs with a custom application form open a modal first; others apply directly.
+  // If the student isn't eligible yet, guide them to complete their profile first.
   function onApplyClick(j: Job) {
+    if (j.eligible === false) {
+      setIncompleteJob(j);
+      return;
+    }
     if (j.applicationFormFields && j.applicationFormFields.length > 0) {
       setFormJob(j);
     } else {
       apply(j.id);
     }
+  }
+
+  function proceedToProfile(jobId: string) {
+    setIncompleteJob(null);
+    router.push(`/me/profile/edit?next=/me/jobs/${jobId}`);
   }
 
   async function apply(id: string, responses?: Record<string, string>) {
@@ -89,6 +113,15 @@ export default function StudentJobsPage() {
         />
       )}
 
+      {incompleteJob && (
+        <ProfileIncompleteModal
+          job={incompleteJob}
+          reasons={incompleteJob.eligibilityReasons}
+          onCancel={() => setIncompleteJob(null)}
+          onProceed={() => proceedToProfile(incompleteJob.id)}
+        />
+      )}
+
       {loading ? (
         <p className="text-subtle">Loading…</p>
       ) : jobs.length === 0 ? (
@@ -101,6 +134,8 @@ export default function StudentJobsPage() {
             const notEligible = j.eligible === false;
             const expired =
               !!j.applicationDeadline && new Date(j.applicationDeadline).getTime() < Date.now();
+            const onlyProfileBlockers =
+              notEligible && (j.eligibilityReasons ?? []).every(isProfileBlocker);
             return (
               <JobCard
                 key={j.id}
@@ -125,7 +160,7 @@ export default function StudentJobsPage() {
                     >
                       Closed
                     </button>
-                  ) : notEligible ? (
+                  ) : notEligible && !onlyProfileBlockers ? (
                     <button
                       disabled
                       className="rounded-full bg-app px-4 py-2 text-xs font-semibold text-subtle"
@@ -164,7 +199,11 @@ export default function StudentJobsPage() {
                 )}
                 {notEligible && !j.applied && (
                   <div className="rounded-md bg-app px-3 py-2 text-xs text-body">
-                    <span className="font-medium">You can&apos;t apply yet.</span>{' '}
+                    <span className="font-medium">
+                      {onlyProfileBlockers
+                        ? 'Complete your profile to apply.'
+                        : "You can't apply yet."}
+                    </span>{' '}
                     {(j.eligibilityReasons ?? [])
                       .filter((r) => r !== 'Profile not verified')
                       .join(' · ') || 'You don&apos;t meet the criteria.'}
