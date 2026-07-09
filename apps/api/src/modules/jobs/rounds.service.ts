@@ -135,7 +135,9 @@ export class RoundsService {
     });
     const seq = (last?.seq ?? 0) + 1;
     if (last && last.status === 'OPEN') {
-      throw new BadRequestException(`Decide "${last.title}" before adding another round.`);
+      throw new BadRequestException(
+        `Close "${last.title}" by selecting who advances before adding another round.`,
+      );
     }
     const title = dto.title?.trim() || `Round ${seq}`;
 

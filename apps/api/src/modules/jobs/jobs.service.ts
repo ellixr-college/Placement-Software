@@ -36,6 +36,10 @@ export class JobsService {
     private readonly notifications: NotificationsService,
   ) {}
 
+  private decimalOrNull(v: number | undefined | null): Prisma.Decimal | null {
+    return v != null ? new Prisma.Decimal(v) : null;
+  }
+
   // ─────────────── Placement Officer: job lifecycle ───────────────
 
   async create(collegeId: string, createdById: string, dto: CreateJobDto) {
@@ -54,6 +58,9 @@ export class JobsService {
       ctcMin,
       ctcMax,
       minCgpa,
+      minTenthPercentage,
+      minTwelfthPercentage,
+      minUgPercentage,
       applicationDeadline,
       applicationFormFields,
       ...rest
@@ -64,9 +71,12 @@ export class JobsService {
         companyId: companyId ?? null,
         createdById,
         ...rest,
-        ctcMin: ctcMin != null ? new Prisma.Decimal(ctcMin) : null,
-        ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null,
-        minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null,
+        ctcMin: this.decimalOrNull(ctcMin),
+        ctcMax: this.decimalOrNull(ctcMax),
+        minCgpa: this.decimalOrNull(minCgpa),
+        minTenthPercentage: this.decimalOrNull(minTenthPercentage),
+        minTwelfthPercentage: this.decimalOrNull(minTwelfthPercentage),
+        minUgPercentage: this.decimalOrNull(minUgPercentage),
         applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
         ...(applicationFormFields !== undefined
           ? { applicationFormFields: applicationFormFields as unknown as Prisma.InputJsonValue }
@@ -125,19 +135,32 @@ export class JobsService {
     if (!job) throw new NotFoundException('Job not found');
     if (job.status === 'CLOSED') throw new BadRequestException('Cannot edit a closed job');
 
-    const { ctcMin, ctcMax, minCgpa, applicationDeadline, applicationFormFields, ...rest } = dto;
+    const {
+      ctcMin,
+      ctcMax,
+      minCgpa,
+      minTenthPercentage,
+      minTwelfthPercentage,
+      minUgPercentage,
+      applicationDeadline,
+      applicationFormFields,
+      ...rest
+    } = dto;
     const updated = await this.prisma.job.update({
       where: { id },
       data: {
         ...rest,
-        ...(ctcMin !== undefined
-          ? { ctcMin: ctcMin != null ? new Prisma.Decimal(ctcMin) : null }
+        ...(ctcMin !== undefined ? { ctcMin: this.decimalOrNull(ctcMin) } : {}),
+        ...(ctcMax !== undefined ? { ctcMax: this.decimalOrNull(ctcMax) } : {}),
+        ...(minCgpa !== undefined ? { minCgpa: this.decimalOrNull(minCgpa) } : {}),
+        ...(minTenthPercentage !== undefined
+          ? { minTenthPercentage: this.decimalOrNull(minTenthPercentage) }
           : {}),
-        ...(ctcMax !== undefined
-          ? { ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null }
+        ...(minTwelfthPercentage !== undefined
+          ? { minTwelfthPercentage: this.decimalOrNull(minTwelfthPercentage) }
           : {}),
-        ...(minCgpa !== undefined
-          ? { minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null }
+        ...(minUgPercentage !== undefined
+          ? { minUgPercentage: this.decimalOrNull(minUgPercentage) }
           : {}),
         ...(applicationDeadline !== undefined
           ? { applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null }
@@ -278,6 +301,9 @@ export class JobsService {
       ctcMin,
       ctcMax,
       minCgpa,
+      minTenthPercentage,
+      minTwelfthPercentage,
+      minUgPercentage,
       applicationDeadline,
       applicationFormFields,
       ...rest
@@ -291,9 +317,12 @@ export class JobsService {
         targetCollegeIds,
         createdById,
         ...rest,
-        ctcMin: ctcMin != null ? new Prisma.Decimal(ctcMin) : null,
-        ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null,
-        minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null,
+        ctcMin: this.decimalOrNull(ctcMin),
+        ctcMax: this.decimalOrNull(ctcMax),
+        minCgpa: this.decimalOrNull(minCgpa),
+        minTenthPercentage: this.decimalOrNull(minTenthPercentage),
+        minTwelfthPercentage: this.decimalOrNull(minTwelfthPercentage),
+        minUgPercentage: this.decimalOrNull(minUgPercentage),
         applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
         ...(applicationFormFields !== undefined
           ? { applicationFormFields: applicationFormFields as unknown as Prisma.InputJsonValue }
@@ -344,19 +373,32 @@ export class JobsService {
     if (job.status === 'CLOSED') throw new BadRequestException('Cannot edit a closed job');
     if (dto.targetCollegeIds) await this.assertCollegesExist(dto.targetCollegeIds);
 
-    const { ctcMin, ctcMax, minCgpa, applicationDeadline, applicationFormFields, ...rest } = dto;
+    const {
+      ctcMin,
+      ctcMax,
+      minCgpa,
+      minTenthPercentage,
+      minTwelfthPercentage,
+      minUgPercentage,
+      applicationDeadline,
+      applicationFormFields,
+      ...rest
+    } = dto;
     const updated = await this.prisma.job.update({
       where: { id },
       data: {
         ...rest,
-        ...(ctcMin !== undefined
-          ? { ctcMin: ctcMin != null ? new Prisma.Decimal(ctcMin) : null }
+        ...(ctcMin !== undefined ? { ctcMin: this.decimalOrNull(ctcMin) } : {}),
+        ...(ctcMax !== undefined ? { ctcMax: this.decimalOrNull(ctcMax) } : {}),
+        ...(minCgpa !== undefined ? { minCgpa: this.decimalOrNull(minCgpa) } : {}),
+        ...(minTenthPercentage !== undefined
+          ? { minTenthPercentage: this.decimalOrNull(minTenthPercentage) }
           : {}),
-        ...(ctcMax !== undefined
-          ? { ctcMax: ctcMax != null ? new Prisma.Decimal(ctcMax) : null }
+        ...(minTwelfthPercentage !== undefined
+          ? { minTwelfthPercentage: this.decimalOrNull(minTwelfthPercentage) }
           : {}),
-        ...(minCgpa !== undefined
-          ? { minCgpa: minCgpa != null ? new Prisma.Decimal(minCgpa) : null }
+        ...(minUgPercentage !== undefined
+          ? { minUgPercentage: this.decimalOrNull(minUgPercentage) }
           : {}),
         ...(applicationDeadline !== undefined
           ? { applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null }

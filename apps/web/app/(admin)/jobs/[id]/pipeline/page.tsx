@@ -214,10 +214,14 @@ export default function FunnelPage({ params }: { params: Promise<{ id: string }>
         <button
           onClick={() => canAddRound && setShowAddRound(true)}
           disabled={!canAddRound}
-          title={canAddRound ? 'Add a round' : 'Decide the current round first'}
+          title={
+            canAddRound
+              ? 'Add a round'
+              : `Close ${lastRound?.title ?? 'the current round'} by selecting who advances first`
+          }
           className="rounded-pill border border-dashed border-primary-300 px-4 py-1.5 text-sm font-medium text-primary-600 transition hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          + Add round
+          {canAddRound ? '+ Add round' : `Close ${lastRound?.title ?? 'round'} first`}
         </button>
       </div>
 
