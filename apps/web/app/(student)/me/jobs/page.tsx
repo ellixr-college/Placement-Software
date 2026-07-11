@@ -13,10 +13,8 @@ type Category = 'ALL' | 'NEW' | 'APPLIED' | 'CLOSING_SOON' | 'ELIGIBLE' | 'CLOSE
 
 const CATEGORIES: { key: Category; label: string }[] = [
   { key: 'ALL', label: 'All' },
-  { key: 'NEW', label: 'New this week' },
   { key: 'APPLIED', label: 'Applied' },
   { key: 'CLOSING_SOON', label: 'Closing soon' },
-  { key: 'ELIGIBLE', label: 'Eligible' },
   { key: 'CLOSED', label: 'Closed' },
 ];
 
@@ -28,12 +26,6 @@ const WORK_MODES = [
 ];
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-function isNewThisWeek(job: Job): boolean {
-  const publishedAt = job.publishedAt ? new Date(job.publishedAt).getTime() : 0;
-  if (!publishedAt) return false;
-  return Date.now() - publishedAt <= 7 * MS_PER_DAY;
-}
 
 function isClosingSoon(job: Job): boolean {
   if (!job.applicationDeadline || job.applied) return false;
@@ -53,14 +45,10 @@ function matchesCategory(job: Job, category: Category): boolean {
   switch (category) {
     case 'ALL':
       return true;
-    case 'NEW':
-      return isNewThisWeek(job);
     case 'APPLIED':
       return job.applied === true;
     case 'CLOSING_SOON':
       return isClosingSoon(job);
-    case 'ELIGIBLE':
-      return job.eligible === true && !job.applied;
     case 'CLOSED':
       return isClosed(job);
     default:
@@ -70,14 +58,10 @@ function matchesCategory(job: Job, category: Category): boolean {
 
 function emptyMessage(category: Category): string {
   switch (category) {
-    case 'NEW':
-      return 'No new jobs posted this week. Check back soon!';
     case 'APPLIED':
       return "You haven't applied to any jobs yet.";
     case 'CLOSING_SOON':
       return 'No jobs closing in the next 7 days.';
-    case 'ELIGIBLE':
-      return 'No eligible jobs right now. Complete your profile to unlock more opportunities.';
     case 'CLOSED':
       return 'No closed jobs to show.';
     default:
