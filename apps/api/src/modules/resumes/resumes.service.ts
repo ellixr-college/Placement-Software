@@ -56,6 +56,7 @@ export class ResumesService {
     }
 
     const token = process.env.BLOB_READ_WRITE_TOKEN;
+    const storeId = process.env.BLOB_RESUME_STORE_ID;
     if (!token)
       throw new BadRequestException('File storage is not configured (BLOB_READ_WRITE_TOKEN)');
 
@@ -83,6 +84,7 @@ export class ResumesService {
       {
         access: 'public',
         token,
+        storeId,
         contentType: 'application/pdf',
       },
     );
@@ -123,9 +125,10 @@ export class ResumesService {
     if (!resume || !resume.fileUrl) throw new NotFoundException('No resume to delete');
 
     const token = process.env.BLOB_READ_WRITE_TOKEN;
+    const storeId = process.env.BLOB_RESUME_STORE_ID;
     if (resume.fileUrl && token) {
       try {
-        await del(resume.fileUrl, { token });
+        await del(resume.fileUrl, { token, storeId });
       } catch {
         // Ignore cleanup failures.
       }
