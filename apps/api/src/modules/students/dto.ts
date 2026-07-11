@@ -304,6 +304,10 @@ export class ListStudentsQuery {
   @IsBoolean()
   active?: boolean;
 
+  // Login status: logged_in (active + has lastLoginAt), never (active + no login),
+  // disabled (inactive account).
+  @IsOptional() @IsIn(['logged_in', 'never', 'disabled']) loginStatus?: string;
+
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(200) limit?: number;
 }

@@ -67,6 +67,8 @@ function StudentsList() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [detailsFilter, setDetailsFilter] = useState<'' | 'complete' | 'incomplete'>('');
+  const [resumeFilter, setResumeFilter] = useState<'' | 'uploaded' | 'missing'>('');
+  const [loginFilter, setLoginFilter] = useState<'' | 'logged_in' | 'never' | 'disabled'>('');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +110,8 @@ function StudentsList() {
         course: view.course,
         graduationYear: view.year,
         detailsComplete: detailsFilter === '' ? undefined : detailsFilter === 'complete',
+        resumeComplete: resumeFilter === '' ? undefined : resumeFilter === 'uploaded',
+        loginStatus: loginFilter || undefined,
         page,
         limit: 10,
       });
@@ -119,7 +123,7 @@ function StudentsList() {
     } finally {
       setLoading(false);
     }
-  }, [view, debouncedSearch, detailsFilter, page]);
+  }, [view, debouncedSearch, detailsFilter, resumeFilter, loginFilter, page]);
 
   useEffect(() => {
     if (view.mode === 'table') load();
@@ -172,6 +176,8 @@ function StudentsList() {
     setSearch('');
     setDebouncedSearch('');
     setDetailsFilter('');
+    setResumeFilter('');
+    setLoginFilter('');
     setPage(1);
     setItems([]);
     setMeta(undefined);
@@ -182,6 +188,8 @@ function StudentsList() {
     setSearch('');
     setDebouncedSearch('');
     setDetailsFilter('');
+    setResumeFilter('');
+    setLoginFilter('');
     setPage(1);
     setItems([]);
     setMeta(undefined);
@@ -455,6 +463,31 @@ function StudentsList() {
                 <option value="complete">Details complete</option>
                 <option value="incomplete">Details incomplete</option>
               </select>
+              <select
+                value={resumeFilter}
+                onChange={(e) => {
+                  setPage(1);
+                  setResumeFilter(e.target.value as typeof resumeFilter);
+                }}
+                className="h-10 rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
+              >
+                <option value="">All resumes</option>
+                <option value="uploaded">Resume uploaded</option>
+                <option value="missing">Resume missing</option>
+              </select>
+              <select
+                value={loginFilter}
+                onChange={(e) => {
+                  setPage(1);
+                  setLoginFilter(e.target.value as typeof loginFilter);
+                }}
+                className="h-10 rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
+              >
+                <option value="">All login</option>
+                <option value="logged_in">Logged in</option>
+                <option value="never">Never logged in</option>
+                <option value="disabled">Disabled</option>
+              </select>
               <input
                 type="search"
                 value={search}
@@ -500,7 +533,7 @@ function StudentsList() {
                   </th>
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Reg No.</th>
-                  <th className="px-4 py-3 font-medium">Branch</th>
+                  <th className="px-4 py-3 font-medium">Resume</th>
                   <th className="px-4 py-3 font-medium">Details</th>
                   <th className="px-4 py-3 font-medium">Login</th>
                   <th className="px-4 py-3 text-right font-medium">Actions</th>
@@ -546,19 +579,18 @@ function StudentsList() {
                         <p className="text-xs text-subtle">{s.user.email}</p>
                       </td>
                       <td className="px-4 py-3 text-strong">{s.rollNumber}</td>
-                      <td className="px-4 py-3">{s.branch || '—'}</td>
                       <td className="px-4 py-3">
-                        {s.detailsComplete ? (
-                          <Badge tint="mint">Complete</Badge>
+                        {s.resumeComplete ? (
+                          <span className="text-xs text-success">Uploaded</span>
                         ) : (
-                          <DetailsIncomplete
-                            missing={
-                              s.detailsMissing?.length
-                                ? s.detailsMissing
-                                : ['10th %', '12th %', 'Degree %']
-                            }
-                          />
+                          <span className="text-xs text-warning">Not uploaded</span>
                         )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <DetailsStatus
+                          steps={s.profileSteps}
+                          complete={s.detailsComplete ?? false}
+                        />
                       </td>
                       <td className="px-4 py-3">
                         <LoginCell student={s} />
@@ -717,9 +749,8 @@ function GraduateBatchModal({ onClose, onDone }: { onClose: () => void; onDone: 
   );
 }
 
-/** "Incomplete" details badge with a hover tooltip listing what's still missing.
- * Fixed-positioned so the table card's overflow doesn't clip it. */
-function DetailsIncomplete({ missing }: { missing: string[] }) {
+/** Details badge + fixed tooltip showing the 5 profile sections and which are done. */
+function DetailsStatus({ steps, complete }: { steps: Student['profileSteps']; complete: boolean }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
 
@@ -730,22 +761,28 @@ function DetailsIncomplete({ missing }: { missing: string[] }) {
 
   return (
     <span ref={ref} className="inline-block" onMouseEnter={show} onMouseLeave={() => setPos(null)}>
-      <Badge tint="cream" className="cursor-help">
-        Incomplete
+      <Badge tint={complete ? 'mint' : 'cream'} className="cursor-help">
+        {complete ? 'Complete' : 'Incomplete'}
       </Badge>
-      {pos && missing.length > 0 && (
+      {pos && steps && steps.length > 0 && (
         <div
           style={{ position: 'fixed', top: pos.top, left: pos.left }}
-          className="z-50 w-56 rounded-md border border-border bg-white p-3 text-left shadow-card"
+          className="z-50 w-64 rounded-md border border-border bg-white p-3 text-left shadow-card"
         >
-          <p className="mb-1 text-xs font-semibold text-strong">Still needed</p>
-          <ul className="space-y-0.5">
-            {missing.map((m) => (
-              <li key={m} className="flex items-start gap-1.5 text-xs text-body">
-                <span className="text-danger">•</span>
-                {m}
-              </li>
-            ))}
+          <p className="mb-2 text-xs font-semibold text-strong">Profile completion</p>
+          <ul className="space-y-1.5">
+            {steps.map((step) => {
+              const done = step.completed === step.total;
+              return (
+                <li key={step.key} className="flex items-start gap-2 text-xs">
+                  <span className={done ? 'text-success' : 'text-warning'}>{done ? '✓' : '○'}</span>
+                  <span className="flex-1 text-body">{step.label}</span>
+                  <span className="text-subtle">
+                    {step.completed}/{step.total}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

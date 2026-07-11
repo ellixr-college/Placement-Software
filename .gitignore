@@ -34,3 +34,4 @@ Thumbs.db
 # Misc
 coverage/
 *.tsbuildinfo
+packages/database/scripts/jobs-backup.json

@@ -54,10 +54,21 @@ body {
 
 /* Tap feedback for cards/buttons: <element className="press"> */
 .press {
-  transition: transform 0.12s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.2s ease;
 }
 .press:active {
   transform: scale(0.98);
+}
+
+/* Hide scrollbars for horizontally-scrolling tab bars (mobile) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

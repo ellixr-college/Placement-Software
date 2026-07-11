@@ -78,7 +78,7 @@ export class ResumesService {
     const oldUrl = resume.fileUrl;
     const safe = file.originalname.replace(/[^\w.\-]+/g, '_').slice(-80) || 'resume.pdf';
     const blob = await put(
-      `resumes/${student.collegeId}/${student.id}/${Date.now()}-${safe}`,
+      `resume-storage/${student.collegeId}/${student.id}/${Date.now()}-${safe}`,
       file.buffer,
       {
         access: 'public',

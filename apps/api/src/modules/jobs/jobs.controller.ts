@@ -58,7 +58,7 @@ export class JobsController {
     if (!token)
       throw new BadRequestException('File storage is not configured (BLOB_READ_WRITE_TOKEN)');
     const safe = file.originalname.replace(/[^\w.\-]+/g, '_').slice(-80) || 'job.pdf';
-    const blob = await put(`job-pdfs/${user.collegeId}/${Date.now()}-${safe}`, file.buffer, {
+    const blob = await put(`job-storage/${user.collegeId}/${Date.now()}-${safe}`, file.buffer, {
       access: 'private',
       token,
       contentType: 'application/pdf',
@@ -81,11 +81,15 @@ export class JobsController {
     if (!token)
       throw new BadRequestException('File storage is not configured (BLOB_READ_WRITE_TOKEN)');
     const safe = file.originalname.replace(/[^\w.\-]+/g, '_').slice(-80) || 'offer.pdf';
-    const blob = await put(`offer-letters/${user.collegeId}/${Date.now()}-${safe}`, file.buffer, {
-      access: 'public',
-      token,
-      contentType: 'application/pdf',
-    });
+    const blob = await put(
+      `job-storage/offer-letters/${user.collegeId}/${Date.now()}-${safe}`,
+      file.buffer,
+      {
+        access: 'public',
+        token,
+        contentType: 'application/pdf',
+      },
+    );
     return { data: { url: blob.url, name: file.originalname } };
   }
 

@@ -1,29 +1,100 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge, Card } from '@ellixr/ui';
 import { applyToJob, getJobFeed, getJobPdfObjectUrl, type Job } from '../../../../lib/jobs';
 import { PdfModal } from '../../../../components/pdf-modal';
 import { JobCard } from '../../../../components/job-card';
 import { ApplyModal } from '../../../../components/apply-modal';
-import { ProfileIncompleteModal } from '../../../../components/profile-incomplete-modal';
+import { EligibilityCheckModal } from '../../../../components/eligibility-check-modal';
 
-/** Reasons that can be fixed by completing the profile / uploading a resume. */
-function isProfileBlocker(reason: string): boolean {
-  const profileReasons = new Set(['Resume not uploaded', 'Profile not verified', 'Gender not set']);
-  if (profileReasons.has(reason)) return true;
-  return (
-    reason.startsWith('Percentage below') ||
-    reason.startsWith('10th below') ||
-    reason.startsWith('12th below') ||
-    reason.startsWith('UG below')
-  );
+type Category = 'ALL' | 'NEW' | 'APPLIED' | 'CLOSING_SOON' | 'ELIGIBLE' | 'CLOSED';
+
+const CATEGORIES: { key: Category; label: string }[] = [
+  { key: 'ALL', label: 'All' },
+  { key: 'NEW', label: 'New this week' },
+  { key: 'APPLIED', label: 'Applied' },
+  { key: 'CLOSING_SOON', label: 'Closing soon' },
+  { key: 'ELIGIBLE', label: 'Eligible' },
+  { key: 'CLOSED', label: 'Closed' },
+];
+
+const JOB_TYPES = [
+  { key: '', label: 'All types' },
+  { key: 'FULL_TIME', label: 'Full time' },
+  { key: 'INTERNSHIP', label: 'Internship' },
+  { key: 'INTERNSHIP_PPO', label: 'Internship + PPO' },
+];
+
+const WORK_MODES = [
+  { key: '', label: 'All modes' },
+  { key: 'ONSITE', label: 'On-site' },
+  { key: 'HYBRID', label: 'Hybrid' },
+  { key: 'REMOTE', label: 'Remote' },
+];
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function isNewThisWeek(job: Job): boolean {
+  const publishedAt = job.publishedAt ? new Date(job.publishedAt).getTime() : 0;
+  if (!publishedAt) return false;
+  return Date.now() - publishedAt <= 7 * MS_PER_DAY;
+}
+
+function isClosingSoon(job: Job): boolean {
+  if (!job.applicationDeadline || job.applied) return false;
+  const deadline = new Date(job.applicationDeadline).getTime();
+  const daysLeft = (deadline - Date.now()) / MS_PER_DAY;
+  return daysLeft >= 0 && daysLeft <= 7;
+}
+
+function isClosed(job: Job): boolean {
+  if (job.status === 'CLOSED') return true;
+  if (job.applicationDeadline && new Date(job.applicationDeadline).getTime() < Date.now())
+    return true;
+  return false;
+}
+
+function matchesCategory(job: Job, category: Category): boolean {
+  switch (category) {
+    case 'ALL':
+      return true;
+    case 'NEW':
+      return isNewThisWeek(job);
+    case 'APPLIED':
+      return job.applied === true;
+    case 'CLOSING_SOON':
+      return isClosingSoon(job);
+    case 'ELIGIBLE':
+      return job.eligible === true && !job.applied;
+    case 'CLOSED':
+      return isClosed(job);
+    default:
+      return true;
+  }
+}
+
+function emptyMessage(category: Category): string {
+  switch (category) {
+    case 'NEW':
+      return 'No new jobs posted this week. Check back soon!';
+    case 'APPLIED':
+      return "You haven't applied to any jobs yet.";
+    case 'CLOSING_SOON':
+      return 'No jobs closing in the next 7 days.';
+    case 'ELIGIBLE':
+      return 'No eligible jobs right now. Complete your profile to unlock more opportunities.';
+    case 'CLOSED':
+      return 'No closed jobs to show.';
+    default:
+      return 'No jobs posted at your college yet. Check back soon.';
+  }
 }
 
 /**
- * Student job feed (mobile). Lists every PUBLISHED job at the student’s college
- * and lets them apply once their profile + resume are complete enough.
+ * Student job feed (mobile-first). Browse jobs by category, search, job type,
+ * and work mode — similar to LinkedIn / job-portal filters.
  */
 export default function StudentJobsPage() {
   const router = useRouter();
@@ -32,8 +103,13 @@ export default function StudentJobsPage() {
   const [error, setError] = useState<string | null>(null);
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [formJob, setFormJob] = useState<Job | null>(null);
-  const [incompleteJob, setIncompleteJob] = useState<Job | null>(null);
+  const [eligibilityJob, setEligibilityJob] = useState<Job | null>(null);
   const [pdfView, setPdfView] = useState<{ url: string; name?: string | null } | null>(null);
+
+  const [category, setCategory] = useState<Category>('ALL');
+  const [search, setSearch] = useState('');
+  const [jobType, setJobType] = useState('');
+  const [workMode, setWorkMode] = useState('');
 
   async function load() {
     try {
@@ -49,23 +125,36 @@ export default function StudentJobsPage() {
     load();
   }, []);
 
-  // Jobs with a custom application form open a modal first; others apply directly.
-  // If the student isn't eligible yet, guide them to complete their profile first.
+  const filteredJobs = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return jobs.filter((j) => {
+      if (q) {
+        const company = (j.companyName ?? j.company?.name ?? '').toLowerCase();
+        const title = j.title.toLowerCase();
+        if (!company.includes(q) && !title.includes(q)) return false;
+      }
+      if (jobType && j.jobType !== jobType) return false;
+      if (workMode && j.workMode !== workMode) return false;
+      return matchesCategory(j, category);
+    });
+  }, [jobs, category, search, jobType, workMode]);
+
+  // Always show Apply. If the student isn't eligible yet, collect the missing
+  // profile/resume fields in a modal first, then continue to the application.
   function onApplyClick(j: Job) {
     if (j.eligible === false) {
-      setIncompleteJob(j);
+      setEligibilityJob(j);
       return;
     }
+    continueApply(j);
+  }
+
+  function continueApply(j: Job) {
     if (j.applicationFormFields && j.applicationFormFields.length > 0) {
       setFormJob(j);
     } else {
       apply(j.id);
     }
-  }
-
-  function proceedToProfile(jobId: string) {
-    setIncompleteJob(null);
-    router.push(`/me/profile/edit?next=/me/jobs/${jobId}`);
   }
 
   async function apply(id: string, responses?: Record<string, string>) {
@@ -87,11 +176,80 @@ export default function StudentJobsPage() {
       <header>
         <h1 className="text-xl font-semibold text-strong">Jobs</h1>
         <p className="text-sm text-subtle">
-          {jobs.length} opening{jobs.length === 1 ? '' : 's'} at your college
+          {loading
+            ? 'Loading…'
+            : `${filteredJobs.length} opening${filteredJobs.length === 1 ? '' : 's'}`}
         </p>
       </header>
 
       {error && <p className="text-sm text-danger">{error}</p>}
+
+      {/* Search */}
+      <div className="relative">
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by title or company"
+          className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm text-body placeholder:text-subtle focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+        />
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-subtle">
+          🔍
+        </span>
+      </div>
+
+      {/* Category tabs */}
+      <div className="-mx-4 px-4">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.key}
+              onClick={() => setCategory(c.key)}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                category === c.key
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-white text-body hover:bg-primary-50'
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Secondary filters */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-2">
+          {JOB_TYPES.map((t) => (
+            <button
+              key={t.key || 'ALL_TYPES'}
+              onClick={() => setJobType(t.key)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                jobType === t.key
+                  ? 'bg-strong text-white'
+                  : 'bg-white text-body ring-1 ring-border hover:bg-primary-50'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {WORK_MODES.map((m) => (
+            <button
+              key={m.key || 'ALL_MODES'}
+              onClick={() => setWorkMode(m.key)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                workMode === m.key
+                  ? 'bg-strong text-white'
+                  : 'bg-white text-body ring-1 ring-border hover:bg-primary-50'
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {pdfView && (
         <PdfModal
@@ -113,29 +271,30 @@ export default function StudentJobsPage() {
         />
       )}
 
-      {incompleteJob && (
-        <ProfileIncompleteModal
-          job={incompleteJob}
-          reasons={incompleteJob.eligibilityReasons}
-          onCancel={() => setIncompleteJob(null)}
-          onProceed={() => proceedToProfile(incompleteJob.id)}
+      {eligibilityJob && (
+        <EligibilityCheckModal
+          job={eligibilityJob}
+          open
+          onClose={() => setEligibilityJob(null)}
+          onEligible={() => {
+            const j = eligibilityJob;
+            setEligibilityJob(null);
+            if (j) continueApply(j);
+          }}
         />
       )}
 
       {loading ? (
         <p className="text-subtle">Loading…</p>
-      ) : jobs.length === 0 ? (
-        <Card className="p-6 text-center text-sm text-subtle">
-          No jobs posted at your college yet. Check back soon.
-        </Card>
+      ) : filteredJobs.length === 0 ? (
+        <Card className="p-6 text-center text-sm text-subtle">{emptyMessage(category)}</Card>
       ) : (
         <div className="space-y-4">
-          {jobs.map((j, i) => {
+          {filteredJobs.map((j, i) => {
             const notEligible = j.eligible === false;
             const expired =
               !!j.applicationDeadline && new Date(j.applicationDeadline).getTime() < Date.now();
-            const onlyProfileBlockers =
-              notEligible && (j.eligibilityReasons ?? []).every(isProfileBlocker);
+            const closed = isClosed(j);
             return (
               <JobCard
                 key={j.id}
@@ -143,7 +302,11 @@ export default function StudentJobsPage() {
                 delay={i * 60}
                 onOpen={() => router.push(`/me/jobs/${j.id}`)}
                 topRight={
-                  j.applied ? <Badge tint="mint">{j.myStage ?? 'Applied'}</Badge> : undefined
+                  j.applied ? (
+                    <Badge tint="mint">{j.myStage ?? 'Applied'}</Badge>
+                  ) : closed ? (
+                    <Badge tint="lavender">Closed</Badge>
+                  ) : undefined
                 }
                 footer={
                   j.applied ? (
@@ -153,19 +316,12 @@ export default function StudentJobsPage() {
                     >
                       Applied
                     </button>
-                  ) : expired ? (
+                  ) : expired || closed ? (
                     <button
                       disabled
                       className="rounded-full bg-app px-4 py-2 text-xs font-semibold text-subtle"
                     >
                       Closed
-                    </button>
-                  ) : notEligible && !onlyProfileBlockers ? (
-                    <button
-                      disabled
-                      className="rounded-full bg-app px-4 py-2 text-xs font-semibold text-subtle"
-                    >
-                      Not eligible
                     </button>
                   ) : (
                     <button
@@ -199,14 +355,10 @@ export default function StudentJobsPage() {
                 )}
                 {notEligible && !j.applied && (
                   <div className="rounded-md bg-app px-3 py-2 text-xs text-body">
-                    <span className="font-medium">
-                      {onlyProfileBlockers
-                        ? 'Complete your profile to apply.'
-                        : "You can't apply yet."}
-                    </span>{' '}
+                    <span className="font-medium">Tap Apply to complete required details.</span>{' '}
                     {(j.eligibilityReasons ?? [])
                       .filter((r) => r !== 'Profile not verified')
-                      .join(' · ') || 'You don&apos;t meet the criteria.'}
+                      .join(' · ') || "You don't meet the criteria."}
                   </div>
                 )}
               </JobCard>

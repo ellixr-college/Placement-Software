@@ -282,6 +282,23 @@ export class StudentsService {
   async list(collegeId: string, q: ListStudentsQuery) {
     const page = q.page ?? 1;
     const limit = q.limit ?? 25;
+
+    const loginWhere: Prisma.StudentWhereInput =
+      q.loginStatus === 'logged_in'
+        ? { user: { lastLoginAt: { not: null } } }
+        : q.loginStatus === 'never'
+          ? { isActive: true, user: { lastLoginAt: null } }
+          : q.loginStatus === 'disabled'
+            ? { isActive: false }
+            : {};
+
+    const resumeWhere: Prisma.StudentWhereInput =
+      q.resumeComplete === undefined
+        ? {}
+        : q.resumeComplete
+          ? { resume: { isNot: null } }
+          : { resume: { is: null } };
+
     const where: Prisma.StudentWhereInput = {
       collegeId,
       // Graduated students live in the Alumni directory — hide them here.
@@ -291,6 +308,8 @@ export class StudentsService {
       ...(q.graduationYear ? { graduationYear: q.graduationYear } : {}),
       ...(q.verificationStatus ? { verificationStatus: q.verificationStatus } : {}),
       ...(q.active !== undefined ? { isActive: q.active } : {}),
+      ...loginWhere,
+      ...resumeWhere,
       ...(q.search
         ? {
             OR: [
@@ -318,7 +337,7 @@ export class StudentsService {
       this.prisma.student.count({ where: listWhere }),
       this.prisma.student.findMany({
         where: listWhere,
-        include: { user: true },
+        include: { user: true, resume: { select: { fileUrl: true } } },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,

@@ -174,15 +174,6 @@ export default function StudentHome() {
         </Link>
       )}
 
-      {/* Quick links */}
-      <div className="grid grid-cols-3 gap-3">
-        <QuickLink href="/me/jobs" title="Jobs" sub="Browse & apply" />
-        <QuickLink href="/me/profile" title="Profile" sub="Account & more" />
-        <QuickLink href="/me/resume" title="Resume" sub="Upload · share" />
-        <QuickLink href="/me/internships" title="Internships" sub="Add yours" />
-        <QuickLink href="/me/applications" title="Applications" sub="Track status" />
-      </div>
-
       {/* Next interview hero */}
       {nextInterview ? (
         <div className="rounded-card bg-gradient-primary p-5 text-white shadow-nav">
@@ -256,14 +247,5 @@ function Stat({ value, label }: { value: number; label: string }) {
       <p className="text-2xl font-semibold text-strong">{value}</p>
       <p className="text-xs text-subtle">{label}</p>
     </Card>
-  );
-}
-
-function QuickLink({ href, title, sub }: { href: string; title: string; sub: string }) {
-  return (
-    <Link href={href} className="rounded-card bg-white p-4 shadow-card transition hover:shadow-nav">
-      <p className="text-sm font-semibold text-strong">{title}</p>
-      <p className="mt-1 text-xs text-subtle">{sub}</p>
-    </Link>
   );
 }

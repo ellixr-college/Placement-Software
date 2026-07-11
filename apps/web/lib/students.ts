@@ -175,6 +175,7 @@ export interface ListParams {
   resumeComplete?: boolean;
   detailsComplete?: boolean;
   active?: boolean;
+  loginStatus?: 'logged_in' | 'never' | 'disabled';
   page?: number;
   limit?: number;
 }

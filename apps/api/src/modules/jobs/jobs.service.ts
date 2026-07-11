@@ -463,16 +463,47 @@ export class JobsService {
     };
   }
 
-  // Eligible + published jobs feed for the authenticated student, annotated with
-  // whether they've already applied.
+  // Student job feed: every published job visible to the college, plus closed
+  // jobs the student already applied to (so they can track outcomes). Annotated
+  // with eligibility and application state.
   async studentFeed(userId: string) {
     const student = await this.studentForUser(userId);
 
-    const jobs = await this.prisma.job.findMany({
+    const publishedJobs = await this.prisma.job.findMany({
       where: { status: 'PUBLISHED', ...this.visibleToCollege(student.collegeId) },
       include: { company: true },
       orderBy: { publishedAt: 'desc' },
     });
+
+    // Include closed jobs the student applied to so they remain visible under
+    // "Applied" / "Closed" categories even after the posting closes.
+    const closedAppliedJobIds = await this.prisma.application.findMany({
+      where: {
+        studentId: student.id,
+        job: { status: 'CLOSED', ...this.visibleToCollege(student.collegeId) },
+      },
+      select: { jobId: true },
+    });
+    const closedAppliedIds = new Set(closedAppliedJobIds.map((a) => a.jobId));
+
+    const closedAppliedJobs =
+      closedAppliedIds.size > 0
+        ? await this.prisma.job.findMany({
+            where: { id: { in: [...closedAppliedIds] }, status: 'CLOSED' },
+            include: { company: true },
+            orderBy: { closedAt: 'desc' },
+          })
+        : [];
+
+    // There should be no overlap (statuses are mutually exclusive), but dedupe
+    // defensively and keep published jobs first.
+    const seen = new Set<string>();
+    const jobs: typeof publishedJobs = [];
+    for (const j of [...publishedJobs, ...closedAppliedJobs]) {
+      if (seen.has(j.id)) continue;
+      seen.add(j.id);
+      jobs.push(j);
+    }
 
     const me = toEligibilityStudent(student, await this.isStudentPlaced(student.id));
 
@@ -502,17 +533,23 @@ export class JobsService {
       where: { id: jobId, ...this.visibleToCollege(student.collegeId) },
       include: { company: true },
     });
-    if (!job || job.status !== 'PUBLISHED') throw new NotFoundException('Job not found');
+    if (!job) throw new NotFoundException('Job not found');
+
+    const app = await this.prisma.application.findUnique({
+      where: { jobId_studentId: { jobId, studentId: student.id } },
+      select: { stage: true },
+    });
+
+    // Students can view published jobs, or closed jobs they applied to.
+    if (job.status !== 'PUBLISHED' && !(job.status === 'CLOSED' && app)) {
+      throw new NotFoundException('Job not found');
+    }
 
     const { eligible, reasons } = checkApplyEligibility(
       toEligibilityStudent(student, await this.isStudentPlaced(student.id)),
       toEligibilityJob(job),
     );
 
-    const app = await this.prisma.application.findUnique({
-      where: { jobId_studentId: { jobId, studentId: student.id } },
-      select: { stage: true },
-    });
     return {
       ...this.publicJob(job),
       eligible,

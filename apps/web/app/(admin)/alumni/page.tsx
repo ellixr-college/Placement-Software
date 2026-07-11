@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Badge, Button, Card, SectionCard } from '@ellixr/ui';
+import { Badge, Button, Card } from '@ellixr/ui';
 import { isValidEmail, isValidPhone, toTitleCase } from '@ellixr/shared';
 import { useSession } from '../../../lib/session';
 import { Breadcrumbs } from '../../../components/breadcrumbs';
@@ -182,6 +182,20 @@ export default function AlumniPage() {
         <Button onClick={() => setShowForm(true)}>Add alumnus</Button>
       </header>
 
+      {/* Self-registration link to share with graduating batches */}
+      {view.mode === 'years' && registerUrl && (
+        <Card className="flex flex-wrap items-center justify-between gap-3 bg-strong p-4 text-white">
+          <div>
+            <p className="text-sm font-medium">Alumni self-registration link</p>
+            <p className="text-xs text-white/70">{registerUrl}</p>
+          </div>
+          <CopyButton
+            value={registerUrl}
+            className="border-white/20 bg-white/10 text-white hover:bg-white/20"
+          />
+        </Card>
+      )}
+
       {/* Year picker */}
       {view.mode === 'years' && (
         <>
@@ -218,17 +232,6 @@ export default function AlumniPage() {
             selectCourse(view.year!, course);
           }}
         />
-      )}
-
-      {/* Self-registration link to share with graduating batches */}
-      {view.mode === 'years' && registerUrl && (
-        <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
-          <div>
-            <p className="text-sm font-medium text-strong">Alumni self-registration link</p>
-            <p className="text-xs text-subtle">{registerUrl}</p>
-          </div>
-          <CopyButton value={registerUrl} />
-        </Card>
       )}
 
       {showForm && (
@@ -420,24 +423,6 @@ export default function AlumniPage() {
           </Card>
         </>
       )}
-
-      {/* Segmentation breakdowns */}
-      {stats &&
-        view.mode === 'years' &&
-        (stats.byBranch.length > 0 || stats.topCompanies.length > 0) && (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <BreakdownCard
-              title="By branch"
-              rows={stats.byBranch.map((b) => ({ label: b.branch, count: b.count }))}
-              onPick={(label) => toggle('branch', label)}
-            />
-            <BreakdownCard
-              title="Top employers"
-              rows={stats.topCompanies.map((c) => ({ label: c.company, count: c.count }))}
-              onPick={(label) => apply({ company: label })}
-            />
-          </div>
-        )}
     </div>
   );
 }
@@ -471,46 +456,6 @@ function FacetRow({ label, children }: { label: string; children: React.ReactNod
       <span className="text-xs font-medium uppercase text-subtle">{label}</span>
       {children}
     </div>
-  );
-}
-
-function BreakdownCard({
-  title,
-  rows,
-  onPick,
-}: {
-  title: string;
-  rows: { label: string; count: number }[];
-  onPick: (label: string) => void;
-}) {
-  const max = Math.max(1, ...rows.map((r) => r.count));
-  return (
-    <SectionCard title={title}>
-      {rows.length === 0 ? (
-        <p className="text-xs text-subtle">No data yet.</p>
-      ) : (
-        <div className="space-y-3">
-          {rows.map((r) => (
-            <button
-              key={r.label}
-              onClick={() => onPick(r.label)}
-              className="block w-full text-left"
-            >
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-body hover:text-primary-600">{r.label}</span>
-                <span className="text-subtle">{r.count}</span>
-              </div>
-              <div className="mt-1 h-1.5 overflow-hidden rounded-pill bg-muted">
-                <div
-                  className="h-full rounded-pill bg-gradient-primary"
-                  style={{ width: `${(r.count / max) * 100}%` }}
-                />
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-    </SectionCard>
   );
 }
 
