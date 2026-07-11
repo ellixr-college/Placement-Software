@@ -8,8 +8,9 @@ import { PdfModal } from '../../../../components/pdf-modal';
 import { JobCard } from '../../../../components/job-card';
 import { ApplyModal } from '../../../../components/apply-modal';
 import { EligibilityCheckModal } from '../../../../components/eligibility-check-modal';
+import { InlineSkeleton, ListSkeleton } from '../../../../components/page-skeleton';
 
-type Category = 'ALL' | 'NEW' | 'APPLIED' | 'CLOSING_SOON' | 'ELIGIBLE' | 'CLOSED';
+type Category = 'ALL' | 'APPLIED' | 'CLOSING_SOON' | 'CLOSED';
 
 const CATEGORIES: { key: Category; label: string }[] = [
   { key: 'ALL', label: 'All' },
@@ -150,11 +151,13 @@ export default function StudentJobsPage() {
     <div className="space-y-4">
       <header>
         <h1 className="text-xl font-semibold text-strong">Jobs</h1>
-        <p className="text-sm text-subtle">
-          {loading
-            ? 'Loading…'
-            : `${filteredJobs.length} opening${filteredJobs.length === 1 ? '' : 's'}`}
-        </p>
+        {loading ? (
+          <InlineSkeleton width="w-24" height="h-4" />
+        ) : (
+          <p className="text-sm text-subtle">
+            {`${filteredJobs.length} opening${filteredJobs.length === 1 ? '' : 's'}`}
+          </p>
+        )}
       </header>
 
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -243,7 +246,7 @@ export default function StudentJobsPage() {
       )}
 
       {loading ? (
-        <p className="text-subtle">Loading…</p>
+        <ListSkeleton />
       ) : filteredJobs.length === 0 ? (
         <Card className="p-6 text-center text-sm text-subtle">{emptyMessage(category)}</Card>
       ) : (

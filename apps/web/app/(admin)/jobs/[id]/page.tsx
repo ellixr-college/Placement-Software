@@ -17,6 +17,7 @@ import {
   type Job,
 } from '../../../../lib/jobs';
 import { useConfirm } from '../../../../components/confirm-provider';
+import { DetailSkeleton } from '../../../../components/page-skeleton';
 
 const STATUS_TINT: Record<string, 'lavender' | 'mint' | 'cream' | 'primary'> = {
   DRAFT: 'cream',
@@ -164,7 +165,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     }
   }
 
-  if (loading) return <p className="text-subtle">Loading…</p>;
+  if (loading) return <DetailSkeleton />;
   if (!job) return <p className="text-danger">{error ?? 'Job not found'}</p>;
 
   const workModeLabel = job.workMode

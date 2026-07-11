@@ -11,6 +11,7 @@ import {
   type Company,
   type HiringHistoryItem,
 } from '../../../../lib/companies';
+import { DetailSkeleton } from '../../../../components/page-skeleton';
 
 export default function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -74,7 +75,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
     }
   }
 
-  if (loading) return <p className="text-subtle">Loading…</p>;
+  if (loading) return <DetailSkeleton />;
   if (!company) return <p className="text-danger">{error ?? 'Company not found'}</p>;
 
   return (

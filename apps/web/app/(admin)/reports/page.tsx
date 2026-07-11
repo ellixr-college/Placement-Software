@@ -8,6 +8,7 @@ import {
   REPORT_LABELS,
   type ReportFormat,
 } from '../../../lib/reports';
+import { PageSkeleton } from '../../../components/page-skeleton';
 import { getPlacementMetrics, type PlacementMetrics } from '../../../lib/analytics';
 
 const DESCRIPTIONS: Record<string, string> = {
@@ -58,7 +59,7 @@ export default function ReportsPage() {
     }
   }
 
-  if (loading) return <p className="text-subtle">Loading…</p>;
+  if (loading) return <PageSkeleton />;
 
   const series = placement?.placementOverTime ?? [];
   const max = Math.max(1, ...series.map((s) => s.count));

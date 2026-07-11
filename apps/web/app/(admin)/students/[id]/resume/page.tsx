@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { PageSkeleton } from '../../../../../components/page-skeleton';
 import { getStudentResume, type OfficerResume } from '../../../../../lib/resume';
 
 /** Officer view of a student's résumé — renders the uploaded PDF. */
@@ -32,7 +33,7 @@ export default function StudentResumePage({ params }: { params: Promise<{ id: st
       {error ? (
         <p className="text-sm text-danger">{error}</p>
       ) : !resume ? (
-        <p className="text-subtle">Loading…</p>
+        <PageSkeleton />
       ) : (
         <>
           <div className="flex items-center justify-between rounded-lg border border-border bg-white px-4 py-3 shadow-card">

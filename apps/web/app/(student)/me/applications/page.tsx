@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Badge, Card } from '@ellixr/ui';
 import { useConfirm } from '../../../../components/confirm-provider';
 import { ApplicationTimeline } from '../../../../components/application-timeline';
+import { ListSkeleton } from '../../../../components/page-skeleton';
 import {
   listMyApplications,
   withdrawApplication,
@@ -70,7 +71,7 @@ export default function MyApplicationsPage() {
       {error && <p className="text-sm text-danger">{error}</p>}
 
       {loading ? (
-        <p className="text-subtle">Loading…</p>
+        <ListSkeleton />
       ) : apps.length === 0 ? (
         <Card className="p-6 text-center text-sm text-subtle">
           You haven&apos;t applied to any jobs yet.

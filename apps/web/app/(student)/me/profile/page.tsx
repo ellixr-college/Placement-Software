@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Card } from '@ellixr/ui';
 import { getOwnStudent, type Student } from '../../../../lib/students';
 import { useSession } from '../../../../lib/session';
+import { InlineSkeleton } from '../../../../components/page-skeleton';
 
 /**
  * Student "Profile" hub — an actions menu listing everything the student can do
@@ -37,9 +38,13 @@ export default function ProfileMenuPage() {
           {initial(student?.user.fullName)}
         </div>
         <div className="min-w-0">
-          <p className="truncate text-base font-semibold text-strong">
-            {loading ? 'Loading…' : (student?.user.fullName ?? 'Student')}
-          </p>
+          {loading ? (
+            <InlineSkeleton width="w-32" height="h-5" />
+          ) : (
+            <p className="truncate text-base font-semibold text-strong">
+              {student?.user.fullName ?? 'Student'}
+            </p>
+          )}
           {student && (
             <p className="truncate text-xs text-subtle">
               {student.rollNumber} · {student.course} · {student.graduationYear}

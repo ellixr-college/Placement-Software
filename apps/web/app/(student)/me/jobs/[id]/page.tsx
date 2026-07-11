@@ -16,6 +16,7 @@ import { PdfModal } from '../../../../../components/pdf-modal';
 import { ApplyModal } from '../../../../../components/apply-modal';
 import { ApplicationTimeline } from '../../../../../components/application-timeline';
 import { EligibilityCheckModal } from '../../../../../components/eligibility-check-modal';
+import { DetailSkeleton } from '../../../../../components/page-skeleton';
 
 const STATUS: Record<string, { label: string; tint: 'mint' | 'rose' | 'cream' | 'lavender' }> = {
   APPLIED: { label: 'Applied', tint: 'cream' },
@@ -86,7 +87,7 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
     }
   }
 
-  if (loading) return <p className="text-subtle">Loading…</p>;
+  if (loading) return <DetailSkeleton />;
   if (!job) return <p className="text-danger">{error ?? 'Job not found'}</p>;
 
   const company = job.companyName ?? job.company?.name ?? 'Company';

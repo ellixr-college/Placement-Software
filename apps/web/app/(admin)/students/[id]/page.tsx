@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, Card } from '@ellixr/ui';
 import { useConfirm } from '../../../../components/confirm-provider';
+import { DetailSkeleton } from '../../../../components/page-skeleton';
 import {
   deleteStudent,
   getStudent,
@@ -90,7 +91,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
     }
   }
 
-  if (loading) return <p className="text-subtle">Loading…</p>;
+  if (loading) return <DetailSkeleton />;
   if (!student) return <p className="text-danger">{error ?? 'Student not found'}</p>;
 
   return (

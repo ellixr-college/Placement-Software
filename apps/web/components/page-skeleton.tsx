@@ -12,7 +12,22 @@ function Skeleton({ className, style }: { className?: string; style?: React.CSSP
   );
 }
 
-/** Full-page skeleton for student mobile screens. Mirrors a page header + card layout. */
+/** Classic card skeleton: a rounded block on top + two lines below. */
+export function CardSkeleton({ blocks = 1 }: { blocks?: number }) {
+  return (
+    <Card className="space-y-4 p-5">
+      {Array.from({ length: blocks }).map((_, i) => (
+        <div key={i} className="space-y-3">
+          <Skeleton className="h-32 w-full rounded-xl" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      ))}
+    </Card>
+  );
+}
+
+/** Full-page skeleton for simple form/card pages. */
 export function PageSkeleton({ cardHeight = 320 }: { cardHeight?: number }) {
   return (
     <div className="space-y-5 pb-4">
@@ -74,5 +89,15 @@ export function DetailSkeleton() {
         <Skeleton className="h-40 w-full rounded-xl" />
       </Card>
     </div>
+  );
+}
+
+/** Tiny inline skeleton for buttons, badges, or small areas. */
+export function InlineSkeleton({ width = 'w-20', height = 'h-4' }: { width?: string; height?: string }) {
+  return (
+    <span
+      className={`inline-block ${height} ${width} animate-pulse rounded-md bg-app`}
+      aria-hidden="true"
+    />
   );
 }

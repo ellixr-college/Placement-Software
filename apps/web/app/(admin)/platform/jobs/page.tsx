@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { listColleges, type College } from '../../../../lib/colleges';
 import { JobCard } from '../../../../components/job-card';
+import { ListSkeleton } from '../../../../components/page-skeleton';
 import type { Job } from '../../../../lib/jobs';
 import {
   listPlatformJobs,
@@ -111,7 +112,7 @@ export default function PlatformJobsPage() {
       {error && <p className="text-sm text-danger">{error}</p>}
 
       {loading ? (
-        <p className="text-subtle">Loading…</p>
+        <ListSkeleton />
       ) : items.length === 0 ? (
         <Card className="p-8 text-center text-sm text-subtle">No platform jobs yet.</Card>
       ) : (

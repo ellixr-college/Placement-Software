@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@ellixr/ui';
+import { ListSkeleton } from './page-skeleton';
 import {
   listNotifications,
   markAllNotificationsRead,
@@ -94,7 +95,7 @@ export function NotificationsFeed() {
       {error && <p className="text-sm text-danger">{error}</p>}
 
       {loading ? (
-        <p className="text-subtle">Loading…</p>
+        <ListSkeleton />
       ) : items.length === 0 ? (
         <Card className="p-8 text-center text-sm text-subtle">No notifications yet.</Card>
       ) : (

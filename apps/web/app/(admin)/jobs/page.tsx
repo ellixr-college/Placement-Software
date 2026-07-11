@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { listJobs, publishManyJobs, type Job } from '../../../lib/jobs';
 import { JobCard } from '../../../components/job-card';
+import { ListSkeleton } from '../../../components/page-skeleton';
 
 const STATUS_TINT: Record<string, 'lavender' | 'mint' | 'cream' | 'primary'> = {
   DRAFT: 'cream',
@@ -141,7 +142,7 @@ export default function JobsPage() {
       {error && <p className="text-sm text-danger">{error}</p>}
 
       {loading ? (
-        <p className="text-subtle">Loading…</p>
+        <ListSkeleton />
       ) : items.length === 0 ? (
         <Card className="p-8 text-center text-sm text-subtle">
           No jobs yet. Post one to get started.

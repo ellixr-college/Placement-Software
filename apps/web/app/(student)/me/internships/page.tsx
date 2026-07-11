@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
 import { useConfirm } from '../../../../components/confirm-provider';
+import { ListSkeleton } from '../../../../components/page-skeleton';
 import {
   createMyInternship,
   deleteMyInternship,
@@ -74,7 +75,7 @@ export default function MyInternshipsPage() {
       {error && <p className="text-sm text-danger">{error}</p>}
 
       {loading ? (
-        <p className="text-subtle">Loading…</p>
+        <ListSkeleton />
       ) : items.length === 0 && editing === null ? (
         <Card className="p-6 text-center text-sm text-subtle">
           No internships yet. Add one so your placement office has it on record.

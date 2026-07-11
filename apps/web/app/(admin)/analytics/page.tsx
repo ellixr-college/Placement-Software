@@ -16,6 +16,7 @@ import {
   type PlacementMetrics,
   type StudentMetrics,
 } from '../../../lib/analytics';
+import { PageSkeleton } from '../../../components/page-skeleton';
 
 const lpa = (v: number | null) => (v == null ? '—' : `₹${(v / 100000).toFixed(2)} LPA`);
 
@@ -62,7 +63,7 @@ export default function AnalyticsPage() {
     })();
   }, []);
 
-  if (loading) return <p className="text-subtle">Loading…</p>;
+  if (loading) return <PageSkeleton />;
   if (error) return <p className="text-danger">{error}</p>;
 
   const funnelMax = Math.max(1, ...funnel.map((f) => f.count));

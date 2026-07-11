@@ -10,6 +10,7 @@ import {
   updateInterview,
   type Application,
 } from '../../../../lib/applications';
+import { DetailSkeleton } from '../../../../components/page-skeleton';
 
 // Mirror of the backend TRANSITIONS map so the UI only offers legal next stages.
 const TRANSITIONS: Record<string, string[]> = {
@@ -76,7 +77,7 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
     }
   }
 
-  if (loading) return <p className="text-subtle">Loading…</p>;
+  if (loading) return <DetailSkeleton />;
   if (!app) return <p className="text-danger">{error ?? 'Application not found'}</p>;
 
   const nextStages = TRANSITIONS[app.stage] ?? [];

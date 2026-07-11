@@ -7,6 +7,7 @@ import { Badge, Button, Card } from '@ellixr/ui';
 import { Breadcrumbs } from '../../../components/breadcrumbs';
 import { useConfirm } from '../../../components/confirm-provider';
 import { BatchCards } from '../../../components/batch-cards';
+import { InlineSkeleton, ListSkeleton } from '../../../components/page-skeleton';
 import {
   deleteStudents,
   graduateBatch,
@@ -21,7 +22,7 @@ import {
 
 export default function StudentsPage() {
   return (
-    <Suspense fallback={<p className="text-subtle">Loading…</p>}>
+    <Suspense fallback={<ListSkeleton />}>
       <StudentsList />
     </Suspense>
   );
@@ -542,8 +543,8 @@ function StudentsList() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-subtle">
-                      Loading…
+                    <td colSpan={7} className="px-4 py-8">
+                      <InlineSkeleton width="w-full" height="h-32" />
                     </td>
                   </tr>
                 ) : items.length === 0 ? (

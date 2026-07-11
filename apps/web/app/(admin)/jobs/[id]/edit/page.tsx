@@ -13,6 +13,7 @@ import {
   type CreateJobInput,
   type Job,
 } from '../../../../../lib/jobs';
+import { PageSkeleton } from '../../../../../components/page-skeleton';
 import { listMyCourses, type CollegeCourse } from '../../../../../lib/courses';
 
 const JOB_TYPES = ['FULL_TIME', 'INTERNSHIP', 'INTERNSHIP_PPO'];
@@ -199,7 +200,7 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
     }
   }
 
-  if (loading) return <p className="text-subtle">Loading…</p>;
+  if (loading) return <PageSkeleton />;
   if (!job) return <p className="text-danger">{error ?? 'Job not found'}</p>;
   if (job.isPlatform) {
     return (

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card } from '@ellixr/ui';
 import { Breadcrumbs } from '../../../components/breadcrumbs';
 import { BatchCards } from '../../../components/batch-cards';
+import { ListSkeleton } from '../../../components/page-skeleton';
 import { listInternships, type Internship } from '../../../lib/internships';
 
 interface Year {
@@ -122,7 +123,7 @@ export default function InternshipsPage() {
       {error && <p className="text-sm text-danger">{error}</p>}
 
       {loading ? (
-        <p className="text-subtle">Loading…</p>
+        <ListSkeleton />
       ) : items.length === 0 ? (
         <Card className="p-8 text-center text-sm text-subtle">No internships submitted yet.</Card>
       ) : view.mode === 'years' ? (

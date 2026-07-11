@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
 import { PROFILE_STEPS, computeProfileCompletion, isProfileFieldFilled } from '@ellixr/shared';
 import { useSession } from '../../../../../lib/session';
+import { PageSkeleton } from '../../../../../components/page-skeleton';
 import { getMyResume } from '../../../../../lib/resume';
 import {
   getOwnStudent,
@@ -27,7 +28,7 @@ function isReadyToApply(student: Student, resumeUploaded: boolean | null): boole
  */
 export default function StudentProfilePage() {
   return (
-    <Suspense fallback={<p className="text-subtle">Loading…</p>}>
+    <Suspense fallback={<PageSkeleton />}>
       <StudentProfileEdit />
     </Suspense>
   );
@@ -144,7 +145,7 @@ function StudentProfileEdit() {
     setStep((x) => Math.max(0, x - 1));
   }
 
-  if (loading) return <p className="text-subtle">Loading…</p>;
+  if (loading) return <PageSkeleton />;
   if (!student) return <p className="text-danger">{error ?? 'Profile not found'}</p>;
 
   const locked = student.verificationStatus === 'SUBMITTED';

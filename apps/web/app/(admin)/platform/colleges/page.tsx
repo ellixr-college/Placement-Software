@@ -7,6 +7,7 @@ import { PasswordInput } from '../../../../components/password-input';
 import { CopyButton } from '../../../../components/copy-button';
 import { CoursesPanel } from '../../../../components/courses-panel';
 import { useConfirm } from '../../../../components/confirm-provider';
+import { InlineSkeleton } from '../../../../components/page-skeleton';
 import {
   createCollege,
   listColleges,
@@ -199,8 +200,8 @@ export default function PlatformCollegesPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-subtle">
-                  Loading…
+                <td colSpan={5} className="px-4 py-8">
+                  <InlineSkeleton width="w-full" height="h-32" />
                 </td>
               </tr>
             ) : items.length === 0 ? (

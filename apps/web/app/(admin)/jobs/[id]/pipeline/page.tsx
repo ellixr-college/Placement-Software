@@ -4,6 +4,7 @@ import { use, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { useConfirm } from '../../../../../components/confirm-provider';
+import { ListSkeleton } from '../../../../../components/page-skeleton';
 import { getJob, uploadOfferLetter, type Job } from '../../../../../lib/jobs';
 import {
   createRound,
@@ -50,7 +51,7 @@ export default function FunnelPage({ params }: { params: Promise<{ id: string }>
 
   useEffect(() => setPicked(new Set()), [tab]);
 
-  if (loading) return <p className="text-subtle">Loading…</p>;
+  if (loading) return <ListSkeleton />;
   if (!funnel) return <p className="text-danger">{error ?? 'Not found'}</p>;
 
   const lastRound = funnel.rounds[funnel.rounds.length - 1];

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button, Card, SectionCard } from '@ellixr/ui';
 import { isValidEmail, isValidPhone } from '@ellixr/shared';
 import { useSession } from '../../../lib/session';
+import { InlineSkeleton } from '../../../components/page-skeleton';
 import {
   createCompany,
   getRecruiterTracking,
@@ -135,8 +136,8 @@ export default function CompaniesPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-subtle">
-                  Loading…
+                <td colSpan={5} className="px-4 py-8">
+                  <InlineSkeleton width="w-full" height="h-32" />
                 </td>
               </tr>
             ) : items.length === 0 ? (

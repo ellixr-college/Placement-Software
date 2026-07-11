@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ProgressBar, SectionCard, StatTile } from '@ellixr/ui';
 import { useSession } from '../../../../lib/session';
+import { InlineSkeleton } from '../../../../components/page-skeleton';
 import { getPlatformOverview, type PlatformOverview } from '../../../../lib/platform-analytics';
 
 export default function PlatformDashboardPage() {
@@ -77,7 +78,7 @@ export default function PlatformDashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <SectionCard title="Students by college" subtitle="Top colleges by registered students">
           {!data ? (
-            <p className="text-sm text-subtle">Loading…</p>
+            <InlineSkeleton width="w-full" height="h-32" />
           ) : data.studentsByCollege.length === 0 ? (
             <p className="text-sm text-subtle">No students registered yet.</p>
           ) : (
@@ -97,7 +98,7 @@ export default function PlatformDashboardPage() {
 
         <SectionCard title="Placements by batch" subtitle="Secured placements per graduation year">
           {!data ? (
-            <p className="text-sm text-subtle">Loading…</p>
+            <InlineSkeleton width="w-full" height="h-32" />
           ) : data.placementsByBatch.length === 0 ? (
             <p className="text-sm text-subtle">No placements recorded yet.</p>
           ) : (

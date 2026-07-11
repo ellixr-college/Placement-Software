@@ -6,6 +6,7 @@ import { Badge, Card } from '@ellixr/ui';
 import { getOwnStudent, type Student } from '../../../lib/students';
 import { listMyApplications, type Application } from '../../../lib/applications';
 import { NotificationBell } from '../../../components/notification-bell';
+import { ListSkeleton } from '../../../components/page-skeleton';
 import { useSession } from '../../../lib/session';
 
 const TERMINAL = ['JOINED', 'REJECTED', 'WITHDRAWN'];
@@ -86,7 +87,7 @@ export default function StudentHome() {
     })();
   }, []);
 
-  if (loading) return <p className="text-subtle">Loading…</p>;
+  if (loading) return <ListSkeleton />;
   if (error) return <p className="text-danger">{error}</p>;
 
   const firstName = student?.user.fullName?.split(' ')[0] ?? 'there';

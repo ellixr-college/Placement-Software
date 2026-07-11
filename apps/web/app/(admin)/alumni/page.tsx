@@ -8,6 +8,7 @@ import { useSession } from '../../../lib/session';
 import { Breadcrumbs } from '../../../components/breadcrumbs';
 import { CopyButton } from '../../../components/copy-button';
 import { BatchCards } from '../../../components/batch-cards';
+import { InlineSkeleton, ListSkeleton } from '../../../components/page-skeleton';
 import {
   approveAlumni,
   createAlumni,
@@ -148,7 +149,7 @@ export default function AlumniPage() {
     if (view.mode === 'years') {
       return stats
         ? `${stats.total} graduates · ${years.length} ${years.length === 1 ? 'year' : 'years'}`
-        : 'Loading…';
+        : <InlineSkeleton width="w-24" height="h-4" />;
     }
     if (view.mode === 'courses') {
       return `${coursesForYear.length} ${coursesForYear.length === 1 ? 'course' : 'courses'} in ${view.year}`;
@@ -344,8 +345,8 @@ export default function AlumniPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-subtle">
-                      Loading…
+                    <td colSpan={7} className="px-4 py-8">
+                      <InlineSkeleton width="w-full" height="h-32" />
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
