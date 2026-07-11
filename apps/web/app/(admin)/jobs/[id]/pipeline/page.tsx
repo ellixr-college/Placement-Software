@@ -194,6 +194,15 @@ export default function FunnelPage({ params }: { params: Promise<{ id: string }>
       {/* Visual round-by-round funnel */}
       {funnel.rounds.length > 0 && <FunnelChart funnel={funnel} />}
 
+      {/* Hint when a round must be closed before adding another */}
+      {!canAddRound && lastRound && (
+        <div className="rounded-xl bg-app p-3 text-xs text-body">
+          <span className="font-medium text-strong">Close {lastRound.title} first.</span> Select who
+          advances, then tap <span className="font-medium text-strong">Advance &amp; close</span>.
+          The rest will be rejected.
+        </div>
+      )}
+
       {/* Round stepper */}
       <div className="flex flex-wrap items-center gap-2">
         {tabs.map((t) => (
@@ -463,15 +472,20 @@ function RoundView({
       </Card>
 
       {open && round.participants.length > 0 && (
-        <div className="sticky bottom-4 flex items-center justify-between gap-3 rounded-pill border border-border bg-white/95 p-2 pl-4 shadow-nav backdrop-blur">
-          <span className="text-sm text-body">
-            <span className="font-semibold text-strong">{picked.size}</span> advance ·{' '}
-            {round.participants.length - picked.size} will be rejected
-          </span>
-          <Button onClick={onDecide} loading={busy}>
-            {isLast ? 'Advance & close' : 'Advance & close round'}
-          </Button>
-        </div>
+        <>
+          <p className="text-xs text-subtle">
+            Tick students to advance. Unticked students will be rejected when you close the round.
+          </p>
+          <div className="sticky bottom-4 flex items-center justify-between gap-3 rounded-pill border border-border bg-white/95 p-2 pl-4 shadow-nav backdrop-blur">
+            <span className="text-sm text-body">
+              <span className="font-semibold text-strong">{picked.size}</span> advance ·{' '}
+              {round.participants.length - picked.size} will be rejected
+            </span>
+            <Button onClick={onDecide} loading={busy}>
+              {isLast ? 'Advance & close' : 'Advance & close round'}
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );
