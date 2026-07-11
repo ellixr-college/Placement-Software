@@ -20,7 +20,7 @@ import type { JwtPayload } from '@ellixr/shared';
 import { CurrentUser, Roles } from '../../common/decorators';
 import { JobsService } from './jobs.service';
 import { ApplicationsService } from './applications.service';
-import { ApplyDto, CreateJobDto, ListJobsQuery, UpdateJobDto } from './dto';
+import { ApplyDto, BulkPublishDto, CreateJobDto, ListJobsQuery, UpdateJobDto } from './dto';
 
 // Minimal shape of a multer upload (avoids depending on @types/multer).
 interface UploadedPdf {
@@ -153,6 +153,12 @@ export class JobsController {
   @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER)
   async publish(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return { data: await this.jobs.publish(this.collegeId(user), id) };
+  }
+
+  @Post('publish-many')
+  @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER)
+  async publishMany(@CurrentUser() user: JwtPayload, @Body() dto: BulkPublishDto) {
+    return { data: await this.jobs.publishMany(this.collegeId(user), dto.ids) };
   }
 
   @Post(':id/close')

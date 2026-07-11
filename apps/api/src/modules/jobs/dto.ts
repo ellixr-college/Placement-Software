@@ -32,6 +32,10 @@ export class ApplyDto {
   @IsOptional() @IsObject() formResponses?: Record<string, string>;
 }
 
+export class BulkPublishDto {
+  @IsArray() @ArrayNotEmpty() @IsString({ each: true }) ids!: string[];
+}
+
 export class CreateJobDto {
   @IsString() @MinLength(2) title!: string;
   // Company is now optional & independent of job posting — either link an existing

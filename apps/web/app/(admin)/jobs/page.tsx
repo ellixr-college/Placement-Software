@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Badge, Button, Card } from '@ellixr/ui';
-import { listJobs, type Job } from '../../../lib/jobs';
+import { listJobs, publishManyJobs, type Job } from '../../../lib/jobs';
 import { JobCard } from '../../../components/job-card';
 
 const STATUS_TINT: Record<string, 'lavender' | 'mint' | 'cream' | 'primary'> = {
@@ -18,7 +18,9 @@ export default function JobsPage() {
   const [items, setItems] = useState<Job[]>([]);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
+  const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     (async () => {
@@ -34,6 +36,58 @@ export default function JobsPage() {
     })();
   }, [status]);
 
+  // Clear selection when switching tabs so stale ids don't persist.
+  useEffect(() => {
+    setSelected(new Set());
+  }, [status]);
+
+  const draftIds = useMemo(
+    () => items.filter((j) => j.status === 'DRAFT' && !j.isPlatform).map((j) => j.id),
+    [items],
+  );
+  const allDraftsSelected = draftIds.length > 0 && draftIds.every((id) => selected.has(id));
+
+  function toggleOne(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllDrafts() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allDraftsSelected) {
+        for (const id of draftIds) next.delete(id);
+      } else {
+        for (const id of draftIds) next.add(id);
+      }
+      return next;
+    });
+  }
+
+  async function handlePublishSelected() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setPublishing(true);
+    setError(null);
+    try {
+      const { count } = await publishManyJobs(ids);
+      setSelected(new Set());
+      setItems(await listJobs(status));
+      // eslint-disable-next-line no-alert
+      alert(`${count} job${count === 1 ? '' : 's'} published successfully`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to publish selected jobs');
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  const selectedCount = selected.size;
+
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
@@ -46,18 +100,42 @@ export default function JobsPage() {
         </Link>
       </header>
 
-      <div className="flex gap-2">
-        {['', 'DRAFT', 'PUBLISHED', 'CLOSED'].map((s) => (
-          <button
-            key={s || 'ALL'}
-            onClick={() => setStatus(s)}
-            className={`rounded-pill px-4 py-1.5 text-sm font-medium ${
-              status === s ? 'bg-primary-600 text-white' : 'bg-white text-body hover:bg-primary-50'
-            }`}
-          >
-            {s || 'All'}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex gap-2">
+          {['', 'DRAFT', 'PUBLISHED', 'CLOSED'].map((s) => (
+            <button
+              key={s || 'ALL'}
+              onClick={() => setStatus(s)}
+              className={`rounded-pill px-4 py-1.5 text-sm font-medium ${
+                status === s ? 'bg-primary-600 text-white' : 'bg-white text-body hover:bg-primary-50'
+              }`}
+            >
+              {s || 'All'}
+            </button>
+          ))}
+        </div>
+
+        {selectedCount > 0 && (
+          <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-2 shadow-card">
+            <span className="text-sm font-medium text-strong">
+              {selectedCount} selected
+            </span>
+            <Button
+              size="sm"
+              onClick={handlePublishSelected}
+              disabled={publishing}
+            >
+              {publishing ? 'Publishing…' : 'Publish all'}
+            </Button>
+            <button
+              onClick={() => setSelected(new Set())}
+              disabled={publishing}
+              className="text-xs font-medium text-subtle hover:text-body disabled:opacity-50"
+            >
+              Clear
+            </button>
+          </div>
+        )}
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
@@ -72,6 +150,7 @@ export default function JobsPage() {
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {items.map((j, i) => {
             const applicants = j.applicationCount ?? 0;
+            const isDraft = j.status === 'DRAFT' && !j.isPlatform;
             return (
               <JobCard
                 key={j.id}
@@ -79,6 +158,21 @@ export default function JobsPage() {
                 delay={i * 60}
                 hideCtc
                 onOpen={() => router.push(`/jobs/${j.id}`)}
+                selection={
+                  isDraft ? (
+                    <label
+                      className="flex cursor-pointer items-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-border text-primary-600 focus:ring-primary-500"
+                        checked={selected.has(j.id)}
+                        onChange={() => toggleOne(j.id)}
+                      />
+                    </label>
+                  ) : undefined
+                }
                 topRight={
                   <div className="flex items-center gap-1.5">
                     {j.isPlatform && <Badge tint="lavender">Platform</Badge>}
@@ -100,6 +194,22 @@ export default function JobsPage() {
               </JobCard>
             );
           })}
+        </div>
+      )}
+
+      {/* Floating select-all bar for drafts */}
+      {status !== 'PUBLISHED' && status !== 'CLOSED' && draftIds.length > 0 && (
+        <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-card">
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-body">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-border text-primary-600 focus:ring-primary-500"
+              checked={allDraftsSelected}
+              onChange={toggleAllDrafts}
+            />
+            Select all draft jobs
+          </label>
+          <span className="text-xs text-subtle">({draftIds.length} drafts)</span>
         </div>
       )}
     </div>

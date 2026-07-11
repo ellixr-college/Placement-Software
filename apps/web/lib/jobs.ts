@@ -169,6 +169,10 @@ export function publishJob(id: string): Promise<{ job: Job; eligibleCount: numbe
   return api(`/jobs/${id}/publish`, { method: 'POST' });
 }
 
+export function publishManyJobs(ids: string[]): Promise<{ count: number; jobs: Job[] }> {
+  return api('/jobs/publish-many', { method: 'POST', body: JSON.stringify({ ids }) });
+}
+
 export function closeJob(id: string): Promise<Job> {
   return api(`/jobs/${id}/close`, { method: 'POST' });
 }

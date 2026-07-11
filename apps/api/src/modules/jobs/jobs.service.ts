@@ -215,6 +215,59 @@ export class JobsService {
     return { job: this.publicJob(updated), eligibleCount: eligible.length };
   }
 
+  async publishMany(collegeId: string, ids: string[]) {
+    const uniqueIds = [...new Set(ids)];
+    const jobs = await this.prisma.job.findMany({
+      where: { id: { in: uniqueIds }, collegeId },
+      include: { company: true },
+    });
+    if (jobs.length !== uniqueIds.length) {
+      throw new NotFoundException('One or more jobs not found');
+    }
+
+    const invalid = jobs.filter((j) => j.status !== 'DRAFT');
+    if (invalid.length > 0) {
+      throw new BadRequestException(
+        `Only draft jobs can be published. ${invalid.length} selected job(s) are not drafts.`,
+      );
+    }
+
+    const now = new Date();
+    const [, updated] = await this.prisma.$transaction([
+      this.prisma.job.updateMany({
+        where: { id: { in: uniqueIds }, collegeId, status: 'DRAFT' },
+        data: { status: 'PUBLISHED', publishedAt: now },
+      }),
+      this.prisma.job.findMany({
+        where: { id: { in: uniqueIds }, collegeId },
+        include: { company: true, _count: { select: { applications: true } } },
+      }),
+    ]);
+
+    // Send a single batched notification per newly published job to all active students.
+    const students = await this.prisma.student.findMany({
+      where: { collegeId, isActive: true },
+      select: { userId: true },
+    });
+    if (students.length > 0) {
+      const userIds = students.map((s) => s.userId);
+      for (const j of updated) {
+        const companyName = j.company?.name ?? j.companyName ?? null;
+        await this.notifications.notifyMany(userIds, collegeId, {
+          type: 'GENERAL',
+          title: 'New job posted',
+          body: companyName ? `${j.title} · ${companyName}` : j.title,
+          link: '/me/jobs',
+        });
+      }
+    }
+
+    return {
+      count: updated.length,
+      jobs: updated.map((j) => this.publicJob(j)),
+    };
+  }
+
   // Resolve a job's (private) PDF reference for streaming — scoped to jobs the
   // caller's college can see (own + platform jobs targeted to them).
   async pdfRef(collegeId: string, id: string) {

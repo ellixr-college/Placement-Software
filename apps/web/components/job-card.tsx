@@ -42,6 +42,7 @@ export function JobCard({
   job,
   onOpen,
   topRight,
+  selection,
   footer,
   children,
   delay = 0,
@@ -50,6 +51,8 @@ export function JobCard({
   job: Job;
   onOpen?: () => void;
   topRight?: React.ReactNode;
+  // Optional selection control (e.g. bulk-publish checkbox) rendered beside posted date.
+  selection?: React.ReactNode;
   footer?: React.ReactNode;
   children?: React.ReactNode;
   delay?: number;
@@ -103,9 +106,12 @@ export function JobCard({
 
       {/* posted pill + status/badge slot */}
       <div className="relative flex items-start justify-between">
-        <span className="rounded-full bg-app px-3 py-1 text-xs font-medium text-subtle">
-          {job.publishedAt ? postedAgo(job.publishedAt) : postedAgo(job.createdAt)}
-        </span>
+        <div className="flex items-center gap-2">
+          {selection}
+          <span className="rounded-full bg-app px-3 py-1 text-xs font-medium text-subtle">
+            {job.publishedAt ? postedAgo(job.publishedAt) : postedAgo(job.createdAt)}
+          </span>
+        </div>
         {topRight}
       </div>
 
