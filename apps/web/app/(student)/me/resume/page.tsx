@@ -129,7 +129,7 @@ function MyResume() {
       {loading ? (
         <PageSkeleton cardHeight={180} />
       ) : (
-        <Card className="space-y-5 p-5">
+        <Card className="max-w-full space-y-5 overflow-hidden p-5">
           <input
             ref={inputRef}
             type="file"
@@ -166,7 +166,7 @@ function MyResume() {
             </button>
           ) : (
             <>
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-danger/10 text-danger">
                     <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
@@ -181,11 +181,11 @@ function MyResume() {
                     </svg>
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-strong">{resume.fileName}</p>
+                    <p className="break-words font-medium text-strong">{resume.fileName}</p>
                     <p className="text-xs text-subtle">{(resume.fileSize / 1024).toFixed(1)} KB</p>
                   </div>
                 </div>
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 gap-2 sm:justify-end">
                   <Button variant="ghost" size="sm" onClick={selectFile} loading={uploading}>
                     Replace
                   </Button>
@@ -196,11 +196,15 @@ function MyResume() {
               </div>
 
               <div className="overflow-hidden rounded-lg border border-border bg-white">
-                <iframe src={resume.fileUrl} title="Resume preview" className="h-[400px] w-full" />
+                <iframe
+                  src={resume.fileUrl}
+                  title="Resume preview"
+                  className="h-64 w-full sm:h-80 md:h-[400px]"
+                />
               </div>
 
               <div className="space-y-3 rounded-xl bg-app p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-sm font-medium text-strong">Public link</span>
                   <label className="flex cursor-pointer items-center gap-2 text-sm text-body">
                     <input
@@ -212,10 +216,10 @@ function MyResume() {
                     Published
                   </label>
                 </div>
-                <code className="block truncate rounded-md bg-white px-3 py-2 text-xs text-strong">
+                <code className="block max-w-full truncate rounded-md bg-white px-3 py-2 text-xs text-strong">
                   {publicUrl}
                 </code>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant="ghost"
                     size="sm"

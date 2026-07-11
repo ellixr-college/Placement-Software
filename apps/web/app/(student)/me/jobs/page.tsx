@@ -20,13 +20,6 @@ const CATEGORIES: { key: Category; label: string }[] = [
   { key: 'CLOSED', label: 'Closed' },
 ];
 
-const JOB_TYPES = [
-  { key: '', label: 'All types' },
-  { key: 'FULL_TIME', label: 'Full time' },
-  { key: 'INTERNSHIP', label: 'Internship' },
-  { key: 'INTERNSHIP_PPO', label: 'Internship + PPO' },
-];
-
 const WORK_MODES = [
   { key: '', label: 'All modes' },
   { key: 'ONSITE', label: 'On-site' },
@@ -108,7 +101,6 @@ export default function StudentJobsPage() {
 
   const [category, setCategory] = useState<Category>('ALL');
   const [search, setSearch] = useState('');
-  const [jobType, setJobType] = useState('');
   const [workMode, setWorkMode] = useState('');
 
   async function load() {
@@ -133,11 +125,10 @@ export default function StudentJobsPage() {
         const title = j.title.toLowerCase();
         if (!company.includes(q) && !title.includes(q)) return false;
       }
-      if (jobType && j.jobType !== jobType) return false;
       if (workMode && j.workMode !== workMode) return false;
       return matchesCategory(j, category);
     });
-  }, [jobs, category, search, jobType, workMode]);
+  }, [jobs, category, search, workMode]);
 
   // Always show Apply. If the student isn't eligible yet, collect the missing
   // profile/resume fields in a modal first, then continue to the application.
@@ -214,28 +205,11 @@ export default function StudentJobsPage() {
               {c.label}
             </button>
           ))}
-        </div>
       </div>
 
-      {/* Secondary filters */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap gap-2">
-          {JOB_TYPES.map((t) => (
-            <button
-              key={t.key || 'ALL_TYPES'}
-              onClick={() => setJobType(t.key)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                jobType === t.key
-                  ? 'bg-strong text-white'
-                  : 'bg-white text-body ring-1 ring-border hover:bg-primary-50'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {WORK_MODES.map((m) => (
+      {/* Work mode filter */}
+      <div className="flex flex-wrap gap-2">
+        {WORK_MODES.map((m) => (
             <button
               key={m.key || 'ALL_MODES'}
               onClick={() => setWorkMode(m.key)}
