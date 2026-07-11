@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card } from '@ellixr/ui';
 import { useConfirm } from '../../../../components/confirm-provider';
@@ -15,6 +15,14 @@ import {
 const MAX_BYTES = 1 * 1024 * 1024;
 
 export default function MyResumePage() {
+  return (
+    <Suspense fallback={<p className="text-subtle">Loading…</p>}>
+      <MyResume />
+    </Suspense>
+  );
+}
+
+function MyResume() {
   const confirm = useConfirm();
   const router = useRouter();
   const searchParams = useSearchParams();
