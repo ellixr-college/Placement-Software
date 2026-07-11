@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card } from '@ellixr/ui';
 import { useConfirm } from '../../../../components/confirm-provider';
+import { PageSkeleton } from '../../../../components/page-skeleton';
 import {
   deleteMyResume,
   getMyResume,
@@ -16,7 +17,7 @@ const MAX_BYTES = 1 * 1024 * 1024;
 
 export default function MyResumePage() {
   return (
-    <Suspense fallback={<p className="text-subtle">Loading…</p>}>
+    <Suspense fallback={<PageSkeleton cardHeight={180} />}>
       <MyResume />
     </Suspense>
   );
@@ -126,7 +127,7 @@ function MyResume() {
       {error && <p className="text-sm text-danger">{error}</p>}
 
       {loading ? (
-        <p className="text-subtle">Loading…</p>
+        <PageSkeleton cardHeight={180} />
       ) : (
         <Card className="space-y-5 p-5">
           <input
