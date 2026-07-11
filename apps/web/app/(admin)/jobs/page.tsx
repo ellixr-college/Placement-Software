@@ -141,6 +141,15 @@ export default function JobsPage() {
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
+      {/* Tip for officers */}
+      {!loading && draftIds.length > 0 && (
+        <div className="rounded-xl bg-app p-3 text-xs text-body">
+          <span className="font-medium text-strong">Tip:</span> Draft jobs are not visible to
+          students. Select drafts and tap <span className="font-medium text-strong">Publish all</span>{' '}
+          to make them live.
+        </div>
+      )}
+
       {loading ? (
         <ListSkeleton />
       ) : items.length === 0 ? (

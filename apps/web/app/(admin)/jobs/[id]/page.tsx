@@ -219,6 +219,29 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
+      {/* Status-based tip */}
+      {!isPlatform && job.status === 'DRAFT' && (
+        <div className="rounded-xl bg-app p-3 text-xs text-body">
+          <span className="font-medium text-strong">Draft:</span> Students can't see this yet. Tap{' '}
+          <span className="font-medium text-strong">Publish</span> to notify eligible students and
+          start accepting applications.
+        </div>
+      )}
+      {!isPlatform && job.status === 'PUBLISHED' && (
+        <div className="rounded-xl bg-app p-3 text-xs text-body">
+          <span className="font-medium text-strong">Live:</span> Students can apply. Once the
+          deadline passes, go to{' '}
+          <span className="font-medium text-strong">Manage applicants &amp; rounds</span> to run
+          interview rounds.
+        </div>
+      )}
+      {!isPlatform && job.status === 'CLOSED' && (
+        <div className="rounded-xl bg-app p-3 text-xs text-body">
+          <span className="font-medium text-strong">Closed:</span> No new applications. Existing
+          applicants remain in their current stage.
+        </div>
+      )}
+
       {/* Hero */}
       <Card className="overflow-hidden p-0">
         <div className="flex items-start gap-4 p-6">
