@@ -1,6 +1,7 @@
 'use client';
 
 import { api } from './api';
+import type { RoundType } from './rounds';
 
 export interface InterviewRound {
   id: string;
@@ -24,6 +25,8 @@ export interface StageHistoryEntry {
 export interface ApplicationRoundStep {
   seq: number;
   title: string;
+  roundType: RoundType | null;
+  description: string | null;
   scheduledAt: string | null;
   roundStatus: 'OPEN' | 'DECIDED';
   outcome: 'PENDING' | 'ADVANCED' | 'REJECTED';

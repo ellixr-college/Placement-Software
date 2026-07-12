@@ -306,6 +306,11 @@ enum WorkMode {
   REMOTE
 }
 
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+}
+
 // COLLEGE jobs belong to one college (collegeId set, companyId references a
 // tenant Company). PLATFORM jobs are posted by a Platform Admin and broadcast to
 // the colleges listed in targetCollegeIds (collegeId null, free-text companyName).
@@ -349,6 +354,15 @@ enum RoundOutcome {
   PENDING
   ADVANCED
   REJECTED
+}
+
+enum RoundType {
+  APTITUDE
+  TECHNICAL
+  CODING
+  HR
+  GROUP_DISCUSSION
+  OTHER
 }
 
 // Overall progress of an application through the funnel. Drives the student's
@@ -494,6 +508,8 @@ model JobRound {
   collegeId   String      @map("college_id")
   seq         Int
   title       String
+  roundType   RoundType?  @map("round_type")
+  description String?
   scheduledAt DateTime?   @map("scheduled_at")
   status      RoundStatus @default(OPEN)
   createdById String      @map("created_by_id")
@@ -625,7 +641,9 @@ model Internship {
   studentId       String           @map("student_id")
   companyName     String           @map("company_name")
   role            String
-  workMode        WorkMode?        @map("work_mode")
+  employmentType  EmploymentType?  @map("employment_type")
+  domain          String?
+  skills          String?
   location        String
   isPaid          Boolean          @default(false) @map("is_paid")
   stipend         Decimal?         @db.Decimal(12, 2)

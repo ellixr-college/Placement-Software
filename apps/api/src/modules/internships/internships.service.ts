@@ -1,9 +1,16 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PRISMA } from '../../common/prisma.module';
 import { Prisma } from '@ellixr/database';
 import type { Internship, PrismaClient } from '@ellixr/database';
 import { CreateInternshipDto, UpdateInternshipDto } from './dto';
 
+const MAX_INTERNSHIPS_PER_STUDENT = 3;
 const dec = (v: Prisma.Decimal | null) => (v != null ? Number(v) : null);
 const toDec = (v?: number) => (v != null ? new Prisma.Decimal(v) : null);
 
@@ -26,7 +33,9 @@ export class InternshipsService {
       studentId: i.studentId,
       companyName: i.companyName,
       role: i.role,
-      workMode: i.workMode,
+      employmentType: i.employmentType,
+      domain: i.domain,
+      skills: i.skills,
       location: i.location,
       isPaid: i.isPaid,
       stipend: dec(i.stipend),
@@ -74,13 +83,25 @@ export class InternshipsService {
 
   async createOwn(userId: string, dto: CreateInternshipDto) {
     const student = await this.studentForUser(userId);
+
+    const existingCount = await this.prisma.internship.count({
+      where: { studentId: student.id },
+    });
+    if (existingCount >= MAX_INTERNSHIPS_PER_STUDENT) {
+      throw new BadRequestException(
+        `You can add up to ${MAX_INTERNSHIPS_PER_STUDENT} internships.`,
+      );
+    }
+
     const created = await this.prisma.internship.create({
       data: {
         collegeId: student.collegeId,
         studentId: student.id,
         companyName: dto.companyName.trim(),
         role: dto.role.trim(),
-        workMode: dto.workMode,
+        employmentType: dto.employmentType,
+        domain: dto.domain,
+        skills: dto.skills,
         location: dto.location,
         isPaid: dto.isPaid ?? false,
         stipend: toDec(dto.stipend),
@@ -110,7 +131,9 @@ export class InternshipsService {
       data: {
         ...(dto.companyName ? { companyName: dto.companyName.trim() } : {}),
         ...(dto.role ? { role: dto.role.trim() } : {}),
-        ...(dto.workMode !== undefined ? { workMode: dto.workMode } : {}),
+        ...(dto.employmentType !== undefined ? { employmentType: dto.employmentType } : {}),
+        ...(dto.domain !== undefined ? { domain: dto.domain } : {}),
+        ...(dto.skills !== undefined ? { skills: dto.skills } : {}),
         ...(dto.location !== undefined ? { location: dto.location } : {}),
         ...(dto.isPaid !== undefined ? { isPaid: dto.isPaid } : {}),
         ...(dto.stipend !== undefined ? { stipend: toDec(dto.stipend) } : {}),
@@ -129,16 +152,6 @@ export class InternshipsService {
       },
     });
     return this.toPublic(updated);
-  }
-
-  async removeOwn(userId: string, id: string) {
-    const student = await this.studentForUser(userId);
-    const existing = await this.prisma.internship.findFirst({
-      where: { id, studentId: student.id },
-    });
-    if (!existing) throw new NotFoundException('Internship not found');
-    await this.prisma.internship.delete({ where: { id } });
-    return { success: true };
   }
 
   // ─────────────── Officer / Admin (read-only) ───────────────

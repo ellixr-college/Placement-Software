@@ -19,13 +19,6 @@ const CATEGORIES: { key: Category; label: string }[] = [
   { key: 'CLOSED', label: 'Closed' },
 ];
 
-const WORK_MODES = [
-  { key: '', label: 'All modes' },
-  { key: 'ONSITE', label: 'On-site' },
-  { key: 'HYBRID', label: 'Hybrid' },
-  { key: 'REMOTE', label: 'Remote' },
-];
-
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function isClosingSoon(job: Job): boolean {
@@ -71,8 +64,7 @@ function emptyMessage(category: Category): string {
 }
 
 /**
- * Student job feed (mobile-first). Browse jobs by category, search, job type,
- * and work mode — similar to LinkedIn / job-portal filters.
+ * Student job feed (mobile-first). Browse jobs by category and search by company.
  */
 export default function StudentJobsPage() {
   const router = useRouter();
@@ -86,7 +78,6 @@ export default function StudentJobsPage() {
 
   const [category, setCategory] = useState<Category>('ALL');
   const [search, setSearch] = useState('');
-  const [workMode, setWorkMode] = useState('');
 
   async function load() {
     try {
@@ -107,13 +98,11 @@ export default function StudentJobsPage() {
     return jobs.filter((j) => {
       if (q) {
         const company = (j.companyName ?? j.company?.name ?? '').toLowerCase();
-        const title = j.title.toLowerCase();
-        if (!company.includes(q) && !title.includes(q)) return false;
+        if (!company.includes(q)) return false;
       }
-      if (workMode && j.workMode !== workMode) return false;
       return matchesCategory(j, category);
     });
-  }, [jobs, category, search, workMode]);
+  }, [jobs, category, search]);
 
   // Always show Apply. If the student isn't eligible yet, collect the missing
   // profile/resume fields in a modal first, then continue to the application.
@@ -168,7 +157,7 @@ export default function StudentJobsPage() {
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by title or company"
+          placeholder="Search by company"
           className="w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm text-body placeholder:text-subtle focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
         />
         <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-subtle">
@@ -190,23 +179,6 @@ export default function StudentJobsPage() {
               }`}
             >
               {c.label}
-            </button>
-          ))}
-      </div>
-
-      {/* Work mode filter */}
-      <div className="flex flex-wrap gap-2">
-        {WORK_MODES.map((m) => (
-            <button
-              key={m.key || 'ALL_MODES'}
-              onClick={() => setWorkMode(m.key)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                workMode === m.key
-                  ? 'bg-strong text-white'
-                  : 'bg-white text-body ring-1 ring-border hover:bg-primary-50'
-              }`}
-            >
-              {m.label}
             </button>
           ))}
         </div>

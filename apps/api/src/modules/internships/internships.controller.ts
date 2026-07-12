@@ -1,13 +1,4 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { UserRole } from '@ellixr/shared';
 import type { JwtPayload } from '@ellixr/shared';
 import { CurrentUser, Roles } from '../../common/decorators';
@@ -32,7 +23,7 @@ export class InternshipsController {
   }
 }
 
-/** Student: manage own internship submissions. */
+/** Student: manage own internship submissions (create/edit only; no delete). */
 @Controller('me/internships')
 @Roles(UserRole.STUDENT)
 export class MeInternshipsController {
@@ -55,10 +46,5 @@ export class MeInternshipsController {
     @Body() dto: UpdateInternshipDto,
   ) {
     return { data: await this.internships.updateOwn(user.sub, id, dto) };
-  }
-
-  @Delete(':id')
-  async remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
-    return { data: await this.internships.removeOwn(user.sub, id) };
   }
 }

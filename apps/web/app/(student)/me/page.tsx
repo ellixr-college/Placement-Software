@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Card } from '@ellixr/ui';
 import { getOwnStudent, type Student } from '../../../lib/students';
@@ -73,19 +73,37 @@ export default function StudentHome() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [s, a] = await Promise.all([getOwnStudent(), listMyApplications()]);
-        setStudent(s);
-        setApps(a);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load your dashboard');
-      } finally {
-        setLoading(false);
-      }
-    })();
+  const load = useCallback(async () => {
+    try {
+      const [s, a] = await Promise.all([getOwnStudent(), listMyApplications()]);
+      setStudent(s);
+      setApps(a);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load your dashboard');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Reload when the user returns via browser back-button (bfcache) or refocuses
+  // the tab, so application counts/trackers are never stale after applying.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) load();
+    };
+    const onFocus = () => load();
+    window.addEventListener('pageshow', onPageShow);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [load]);
 
   if (loading) return <ListSkeleton />;
   if (error) return <p className="text-danger">{error}</p>;

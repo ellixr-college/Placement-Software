@@ -1,5 +1,6 @@
 'use client';
 
+import { roundTypeLabel } from '../lib/rounds';
 import type { Application } from '../lib/applications';
 
 type StepState = 'done' | 'current' | 'rejected' | 'upcoming';
@@ -7,6 +8,8 @@ type StepState = 'done' | 'current' | 'rejected' | 'upcoming';
 interface Step {
   label: string;
   sub?: string;
+  detail?: string | null;
+  typeLabel?: string | null;
   when?: string | null;
   state: StepState;
 }
@@ -29,7 +32,14 @@ function buildSteps(app: Application): Step[] {
       state = 'current';
       sub = r.roundStatus === 'OPEN' ? 'In progress' : 'Awaiting result';
     }
-    steps.push({ label: r.title, sub, when: r.scheduledAt, state });
+    steps.push({
+      label: r.title,
+      sub,
+      detail: r.description,
+      typeLabel: r.roundType ? roundTypeLabel(r.roundType) : null,
+      when: r.scheduledAt,
+      state,
+    });
   }
 
   const someRejected = app.rounds.some((r) => r.outcome === 'REJECTED');
@@ -54,10 +64,9 @@ export function ApplicationTimeline({ app }: { app: Application }) {
         const last = i === steps.length - 1;
         return (
           <li key={i} className="animate-rise flex gap-3" style={{ animationDelay: `${i * 60}ms` }}>
-            {/* date / time */}
+            {/* date */}
             <div className="w-16 shrink-0 pt-0.5 text-right">
               <p className="text-xs font-semibold text-strong">{s.when ? fmtDate(s.when) : ''}</p>
-              <p className="text-[10px] text-subtle">{s.when ? fmtTime(s.when) : ''}</p>
             </div>
 
             {/* dot + connector */}
@@ -73,7 +82,13 @@ export function ApplicationTimeline({ app }: { app: Application }) {
             {/* content */}
             <div className={`pb-6 ${last ? 'pb-0' : ''}`}>
               <p className={`text-sm font-semibold ${labelColor(s.state)}`}>{s.label}</p>
+              {s.typeLabel && (
+                <span className="inline-block rounded bg-app px-1.5 py-0.5 text-[10px] font-medium text-subtle">
+                  {s.typeLabel}
+                </span>
+              )}
               {s.sub && <p className="text-xs text-subtle">{s.sub}</p>}
+              {s.detail && <p className="mt-1 text-xs text-body">{s.detail}</p>}
             </div>
           </li>
         );
@@ -100,7 +115,4 @@ function labelColor(state: StepState): string {
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { day: '2-digit', month: 'short' });
-}
-function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }

@@ -13,9 +13,12 @@ import {
   getFunnel,
   placeApplicant,
   rejectApplicant,
+  roundTypeLabel,
+  ROUND_TYPES,
   type Funnel,
   type FunnelRound,
   type FunnelStudent,
+  type RoundType,
 } from '../../../../../lib/rounds';
 
 export default function FunnelPage({ params }: { params: Promise<{ id: string }> }) {
@@ -76,13 +79,20 @@ export default function FunnelPage({ params }: { params: Promise<{ id: string }>
       : []),
   ];
 
-  async function addRound(title: string, scheduledAt: string) {
+  async function addRound(input: {
+    title: string;
+    roundType: RoundType | '';
+    description: string;
+    scheduledAt: string;
+  }) {
     setBusy(true);
     setError(null);
     try {
       const r = (await createRound(id, {
-        title: title.trim() || undefined,
-        scheduledAt: scheduledAt || undefined,
+        title: input.title.trim() || undefined,
+        roundType: input.roundType || undefined,
+        description: input.description.trim() || undefined,
+        scheduledAt: input.scheduledAt || undefined,
       })) as { id: string };
       setShowAddRound(false);
       await load(false);
@@ -180,7 +190,10 @@ export default function FunnelPage({ params }: { params: Promise<{ id: string }>
         <Link href={`/jobs/${id}`} className="text-sm text-primary-600 hover:underline">
           ← {job?.title ?? 'Job'}
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold text-strong">Applicants &amp; rounds</h1>
+        <p className="mt-1 text-sm font-medium text-subtle">
+          {job ? (job.companyName ?? job.company?.name ?? 'Company') : ''}
+        </p>
+        <h1 className="mt-0.5 text-2xl font-semibold text-strong">Applicants &amp; rounds</h1>
         <div className="mt-1 flex flex-wrap gap-x-4 text-sm text-subtle">
           <span>{funnel.applicantsTotal} applied</span>
           <span>{funnel.inProgress} in progress</span>
@@ -369,12 +382,18 @@ function RoundView({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-sm text-subtle">
+          {round.roundType && (
+            <span className="mr-2 rounded-md bg-app px-2 py-0.5 text-xs font-medium text-body">
+              {roundTypeLabel(round.roundType)}
+            </span>
+          )}
           {round.scheduledAt && (
             <span className={round.overdue ? 'font-medium text-danger' : ''}>
               {round.overdue ? '⚠ Was due ' : 'Scheduled '}
-              {new Date(round.scheduledAt).toLocaleString(undefined, {
-                dateStyle: 'medium',
-                timeStyle: 'short',
+              {new Date(round.scheduledAt).toLocaleDateString(undefined, {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
               })}
             </span>
           )}
@@ -470,6 +489,12 @@ function RoundView({
           </tbody>
         </table>
       </Card>
+
+      {round.description && (
+        <div className="rounded-md bg-app p-3 text-sm text-body">
+          <span className="font-medium text-strong">Details:</span> {round.description}
+        </div>
+      )}
 
       {open && round.participants.length > 0 && (
         <>
@@ -717,9 +742,16 @@ function AddRoundForm({
   nextLabel: string;
   busy: boolean;
   onCancel: () => void;
-  onSubmit: (title: string, scheduledAt: string) => void;
+  onSubmit: (input: {
+    title: string;
+    roundType: RoundType | '';
+    description: string;
+    scheduledAt: string;
+  }) => void;
 }) {
   const [title, setTitle] = useState('');
+  const [roundType, setRoundType] = useState<RoundType | ''>('');
+  const [description, setDescription] = useState('');
   const [when, setWhen] = useState('');
   const cls =
     'h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400';
@@ -737,15 +769,35 @@ function AddRoundForm({
           />
         </label>
         <label className="block space-y-1">
-          <span className="text-xs font-medium text-subtle">Date &amp; time (optional)</span>
-          <input
-            type="datetime-local"
+          <span className="text-xs font-medium text-subtle">Round type</span>
+          <select
             className={cls}
-            value={when}
-            onChange={(e) => setWhen(e.target.value)}
-          />
+            value={roundType}
+            onChange={(e) => setRoundType(e.target.value as RoundType | '')}
+          >
+            <option value="">Select type</option>
+            {ROUND_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {roundTypeLabel(t)}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
+      <label className="block space-y-1">
+        <span className="text-xs font-medium text-subtle">Description / instructions</span>
+        <textarea
+          className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary-400"
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Venue, link, prerequisites, or any other details students should know…"
+        />
+      </label>
+      <label className="block space-y-1 sm:w-1/2">
+        <span className="text-xs font-medium text-subtle">Date (optional)</span>
+        <input type="date" className={cls} value={when} onChange={(e) => setWhen(e.target.value)} />
+      </label>
       <p className="text-xs text-subtle">
         {nextLabel === 'Round 1'
           ? 'Everyone who applied enters this round.'
@@ -753,7 +805,14 @@ function AddRoundForm({
       </p>
       <div className="flex gap-2">
         <Button
-          onClick={() => onSubmit(title, when ? new Date(when).toISOString() : '')}
+          onClick={() =>
+            onSubmit({
+              title,
+              roundType,
+              description,
+              scheduledAt: when ? new Date(when).toISOString() : '',
+            })
+          }
           loading={busy}
         >
           Add round

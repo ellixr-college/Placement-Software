@@ -5,7 +5,7 @@ import { Card } from '@ellixr/ui';
 import { Breadcrumbs } from '../../../components/breadcrumbs';
 import { BatchCards } from '../../../components/batch-cards';
 import { ListSkeleton } from '../../../components/page-skeleton';
-import { listInternships, type Internship } from '../../../lib/internships';
+import { employmentTypeLabel, listInternships, type Internship } from '../../../lib/internships';
 
 interface Year {
   key: string;
@@ -192,7 +192,8 @@ export default function InternshipsPage() {
                   <th className="px-4 py-3 font-medium">Company</th>
                   <th className="px-4 py-3 font-medium">Role</th>
                   <th className="px-4 py-3 font-medium">Location</th>
-                  <th className="px-4 py-3 font-medium">Mode</th>
+                  <th className="px-4 py-3 font-medium">Type</th>
+                  <th className="px-4 py-3 font-medium">Domain</th>
                   <th className="px-4 py-3 font-medium">Duration</th>
                   <th className="px-4 py-3 font-medium">Stipend</th>
                   <th className="px-4 py-3 font-medium">Point of Contact</th>
@@ -201,7 +202,7 @@ export default function InternshipsPage() {
               <tbody>
                 {tableItems.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-subtle">
+                    <td colSpan={10} className="px-4 py-8 text-center text-subtle">
                       No internships found for this batch.
                     </td>
                   </tr>
@@ -220,7 +221,10 @@ export default function InternshipsPage() {
                       </td>
                       <td className="px-4 py-3 align-top">{i.role}</td>
                       <td className="px-4 py-3 align-top">{i.location || '—'}</td>
-                      <td className="px-4 py-3 align-top">{i.workMode ?? '—'}</td>
+                      <td className="px-4 py-3 align-top">
+                        {employmentTypeLabel(i.employmentType) ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 align-top">{i.domain ?? '—'}</td>
                       <td className="px-4 py-3 align-top">
                         {i.startDate ? fmt(i.startDate) : '—'}
                         {i.endDate ? ` → ${fmt(i.endDate)}` : i.startDate ? ' → Present' : ''}

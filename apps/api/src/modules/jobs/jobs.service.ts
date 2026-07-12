@@ -206,7 +206,7 @@ export class JobsService {
           type: 'GENERAL',
           title: 'New job posted',
           body: companyName ? `${updated.title} · ${companyName}` : updated.title,
-          link: '/me/jobs',
+          link: `/me/jobs/${id}`,
         },
       );
     }
@@ -257,7 +257,7 @@ export class JobsService {
           type: 'GENERAL',
           title: 'New job posted',
           body: companyName ? `${j.title} · ${companyName}` : j.title,
-          link: '/me/jobs',
+          link: `/me/jobs/${j.id}`,
         });
       }
     }

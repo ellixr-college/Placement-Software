@@ -3,22 +3,28 @@ import {
   ArrayNotEmpty,
   IsArray,
   IsDateString,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
   Min,
   MinLength,
 } from 'class-validator';
+import { RoundType } from '@ellixr/database';
 import { EmptyToUndefined } from '../../common/transforms';
 
 export class CreateRoundDto {
   // Defaults to "Round N" server-side when omitted.
   @IsOptional() @IsString() @MinLength(1) title?: string;
+  @IsOptional() @IsEnum(RoundType) roundType?: RoundType;
+  @IsOptional() @IsString() description?: string;
   @EmptyToUndefined() @IsOptional() @IsDateString() scheduledAt?: string;
 }
 
 export class UpdateRoundDto {
   @IsOptional() @IsString() @MinLength(1) title?: string;
+  @IsOptional() @IsEnum(RoundType) roundType?: RoundType;
+  @IsOptional() @IsString() description?: string;
   @EmptyToUndefined() @IsOptional() @IsDateString() scheduledAt?: string;
 }
 

@@ -101,6 +101,8 @@ export class RoundsService {
         id: r.id,
         seq: r.seq,
         title: r.title,
+        roundType: r.roundType,
+        description: r.description,
         scheduledAt: r.scheduledAt,
         status: r.status,
         overdue: !!r.scheduledAt && r.status === 'OPEN' && r.scheduledAt.getTime() < Date.now(),
@@ -147,6 +149,8 @@ export class RoundsService {
         collegeId,
         seq,
         title,
+        roundType: dto.roundType ?? null,
+        description: dto.description ?? null,
         scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
         createdById,
       },
@@ -186,6 +190,25 @@ export class RoundsService {
       ]);
     }
 
+    // Notify every enrolled applicant that a new round has been created.
+    const company = this.companyName(job);
+    const enrolledApps = await this.prisma.application.findMany({
+      where: { id: { in: cohort } },
+      include: { student: { select: { userId: true } } },
+    });
+    await Promise.all(
+      enrolledApps.map((a) =>
+        this.notifications.notify({
+          userId: a.student.userId,
+          collegeId,
+          type: 'APPLICATION_STAGE_CHANGED',
+          title: `New round — ${job.title}`,
+          body: `${title} has been scheduled${round.scheduledAt ? ` on ${round.scheduledAt.toLocaleDateString()}` : ''} for ${job.title} at ${company}.`,
+          link: `/me/jobs/${jobId}`,
+        }),
+      ),
+    );
+
     return { ...round, enrolled: cohort.length };
   }
 
@@ -199,6 +222,8 @@ export class RoundsService {
       where: { id: roundId },
       data: {
         ...(dto.title !== undefined ? { title: dto.title.trim() || round.title } : {}),
+        ...(dto.roundType !== undefined ? { roundType: dto.roundType ?? null } : {}),
+        ...(dto.description !== undefined ? { description: dto.description ?? null } : {}),
         ...(dto.scheduledAt !== undefined
           ? { scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null }
           : {}),
@@ -288,7 +313,7 @@ export class RoundsService {
           type: 'APPLICATION_STAGE_CHANGED',
           title: `Cleared ${round.title} — ${company}`,
           body: `You've advanced past ${round.title} for ${job.title}.`,
-          link: '/me/applications',
+          link: `/me/jobs/${job.id}`,
         }),
       ),
       ...rejected.map((p) =>
@@ -298,7 +323,7 @@ export class RoundsService {
           type: 'APPLICATION_STAGE_CHANGED',
           title: `Update — ${job.title}`,
           body: `You were not selected in ${round.title} for ${job.title} at ${company}.`,
-          link: '/me/applications',
+          link: `/me/jobs/${job.id}`,
         }),
       ),
     ]);
@@ -335,7 +360,7 @@ export class RoundsService {
       type: 'OFFER_RELEASED',
       title: `Selected — ${this.companyName(job)} 🎉`,
       body: `Congratulations! You've been selected for ${job.title}.`,
-      link: '/me/applications',
+      link: `/me/jobs/${job.id}`,
     });
 
     return { success: true };
@@ -365,7 +390,7 @@ export class RoundsService {
       type: 'APPLICATION_STAGE_CHANGED',
       title: `Update — ${job.title}`,
       body: `Your application for ${job.title} at ${this.companyName(job)} was not taken forward.`,
-      link: '/me/applications',
+      link: `/me/jobs/${job.id}`,
     });
     return { success: true };
   }

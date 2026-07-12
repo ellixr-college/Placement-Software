@@ -5,6 +5,24 @@ import { api } from './api';
 export type RoundOutcome = 'PENDING' | 'ADVANCED' | 'REJECTED';
 export type RoundStatus = 'OPEN' | 'DECIDED';
 
+export const ROUND_TYPES = [
+  'APTITUDE',
+  'TECHNICAL',
+  'CODING',
+  'HR',
+  'GROUP_DISCUSSION',
+  'OTHER',
+] as const;
+export type RoundType = (typeof ROUND_TYPES)[number];
+
+export const roundTypeLabel = (t: RoundType | null | undefined) => {
+  if (!t) return null;
+  return t
+    .split('_')
+    .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+    .join(' ');
+};
+
 export interface FunnelStudent {
   applicationId: string;
   studentId: string;
@@ -27,6 +45,8 @@ export interface FunnelRound {
   id: string;
   seq: number;
   title: string;
+  roundType: RoundType | null;
+  description: string | null;
   scheduledAt: string | null;
   status: RoundStatus;
   overdue: boolean;
@@ -54,13 +74,15 @@ export interface PendingResult {
 
 export const getFunnel = (jobId: string) => api<Funnel>(`/jobs/${jobId}/funnel`);
 
-export const createRound = (jobId: string, input: { title?: string; scheduledAt?: string }) =>
-  api(`/jobs/${jobId}/rounds`, { method: 'POST', body: JSON.stringify(input) });
+export const createRound = (
+  jobId: string,
+  input: { title?: string; roundType?: RoundType; description?: string; scheduledAt?: string },
+) => api(`/jobs/${jobId}/rounds`, { method: 'POST', body: JSON.stringify(input) });
 
 export const updateRound = (
   jobId: string,
   roundId: string,
-  input: { title?: string; scheduledAt?: string },
+  input: { title?: string; roundType?: RoundType; description?: string; scheduledAt?: string },
 ) => api(`/jobs/${jobId}/rounds/${roundId}`, { method: 'PATCH', body: JSON.stringify(input) });
 
 export const deleteRound = (jobId: string, roundId: string) =>

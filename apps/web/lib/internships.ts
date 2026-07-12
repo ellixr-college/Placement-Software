@@ -2,15 +2,22 @@
 
 import { api } from './api';
 
-export const WORK_MODES = ['ONSITE', 'HYBRID', 'REMOTE'] as const;
-export type WorkMode = (typeof WORK_MODES)[number];
+export const EMPLOYMENT_TYPES = ['FULL_TIME', 'PART_TIME'] as const;
+export type EmploymentType = (typeof EMPLOYMENT_TYPES)[number];
+
+export const employmentTypeLabel = (t: EmploymentType | null | undefined) => {
+  if (!t) return null;
+  return t === 'FULL_TIME' ? 'Full-time' : 'Part-time';
+};
 
 export interface Internship {
   id: string;
   studentId: string;
   companyName: string;
   role: string;
-  workMode: WorkMode | null;
+  employmentType: EmploymentType | null;
+  domain: string | null;
+  skills: string | null;
   location: string;
   isPaid: boolean;
   stipend: number | null;
@@ -34,7 +41,9 @@ export interface Internship {
 export interface InternshipInput {
   companyName: string;
   role: string;
-  workMode?: WorkMode;
+  employmentType?: EmploymentType;
+  domain?: string;
+  skills?: string;
   location: string;
   isPaid?: boolean;
   stipend?: number;
@@ -56,9 +65,6 @@ export const createMyInternship = (input: InternshipInput) =>
 
 export const updateMyInternship = (id: string, input: Partial<InternshipInput>) =>
   api<Internship>(`/me/internships/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
-
-export const deleteMyInternship = (id: string) =>
-  api<{ success: boolean }>(`/me/internships/${id}`, { method: 'DELETE' });
 
 // ─── Officer / College Admin (read-only) ───
 export const listInternships = () => api<Internship[]>('/internships');

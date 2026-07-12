@@ -171,7 +171,9 @@ export class ApplicationsService {
       where: { id: applicationId, collegeId },
       include: {
         student: { select: { userId: true } },
-        job: { select: { title: true, companyName: true, company: { select: { name: true } } } },
+        job: {
+          select: { id: true, title: true, companyName: true, company: { select: { name: true } } },
+        },
       },
     });
     if (!app) throw new NotFoundException('Application not found');
@@ -230,7 +232,7 @@ export class ApplicationsService {
         target === 'REJECTED'
           ? `Your application for ${app.job.title} at ${companyName} was not taken forward.`
           : `${app.job.title} at ${companyName} moved to ${target.replace(/_/g, ' ')}.`,
-      link: '/me/applications',
+      link: `/me/jobs/${app.job.id}`,
     });
 
     return updated;
@@ -243,7 +245,9 @@ export class ApplicationsService {
       where: { id: applicationId, collegeId },
       include: {
         student: { select: { userId: true } },
-        job: { select: { title: true, companyName: true, company: { select: { name: true } } } },
+        job: {
+          select: { id: true, title: true, companyName: true, company: { select: { name: true } } },
+        },
       },
     });
     if (!app) throw new NotFoundException('Application not found');
@@ -271,7 +275,7 @@ export class ApplicationsService {
       type: 'INTERVIEW_SCHEDULED',
       title: `Interview scheduled — ${companyName}`,
       body: `${dto.roundName} for ${app.job.title}${whenText}.`,
-      link: '/me/applications',
+      link: `/me/jobs/${app.job.id}`,
     });
 
     return round;
@@ -322,7 +326,14 @@ export class ApplicationsService {
       formResponses?: Prisma.JsonValue;
       rounds?: Array<{
         outcome: string;
-        round: { seq: number; title: string; scheduledAt: Date | null; status: string };
+        round: {
+          seq: number;
+          title: string;
+          roundType: string | null;
+          description: string | null;
+          scheduledAt: Date | null;
+          status: string;
+        };
       }>;
       job: {
         id: string;
@@ -366,6 +377,8 @@ export class ApplicationsService {
       rounds: (a.rounds ?? []).map((r) => ({
         seq: r.round.seq,
         title: r.round.title,
+        roundType: r.round.roundType,
+        description: r.round.description,
         scheduledAt: r.round.scheduledAt,
         roundStatus: r.round.status,
         outcome: r.outcome,
