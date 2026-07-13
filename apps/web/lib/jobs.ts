@@ -126,16 +126,23 @@ export interface CreateJobInput {
   applicationDeadline?: string;
 }
 
-/** CTC range as "₹X–Y LPA". Treats null/0 as undisclosed (avoids "₹0.0–0.0 LPA"). */
+const lpa = (n: number) => (n / 100000).toFixed(2).replace(/\.?0+$/, '');
+
+/** CTC range as "₹X–Y LPA". Treats null/0/negative as undisclosed (avoids "₹0.0–0.0 LPA"). */
 export function formatCtc(min: number | null | undefined, max: number | null | undefined): string {
   const lo = min && min > 0 ? min : null;
   const hi = max && max > 0 ? max : null;
   if (lo == null && hi == null) return 'Not disclosed';
-  const lpa = (n: number) => (n / 100000).toFixed(2).replace(/\.?0+$/, '');
   if (lo != null && hi != null) {
     return lo === hi ? `₹${lpa(lo)} LPA` : `₹${lpa(lo)}–${lpa(hi)} LPA`;
   }
   return `₹${lpa((lo ?? hi)!)} LPA`;
+}
+
+/** Single CTC value as "₹X LPA". Treats null/0/negative as "—". */
+export function formatLpa(value: number | null | undefined): string {
+  if (value == null || value <= 0) return '—';
+  return `₹${lpa(value)} LPA`;
 }
 
 export interface EligibleStudent {

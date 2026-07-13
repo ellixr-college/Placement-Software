@@ -4,7 +4,7 @@ import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Badge, Card } from '@ellixr/ui';
-import { applyToJob, formatCtc, getJob, type Job } from '../../../../../lib/jobs';
+import { applyToJob, formatCtc, formatLpa, getJob, type Job } from '../../../../../lib/jobs';
 import { listMyApplications, type Application } from '../../../../../lib/applications';
 import { PdfModal } from '../../../../../components/pdf-modal';
 import { ApplyModal } from '../../../../../components/apply-modal';
@@ -119,7 +119,7 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
                 🎉 You&apos;ve been selected!
               </span>
               {app.offerCtc != null && (
-                <span className="text-sm text-body">₹{(app.offerCtc / 100000).toFixed(2)} LPA</span>
+                <span className="text-sm text-body">{formatLpa(app.offerCtc)}</span>
               )}
               {app.offerLetterUrl && (
                 <a

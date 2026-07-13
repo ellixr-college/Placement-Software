@@ -274,6 +274,7 @@ function InternshipForm({
             onChange={set('stipend')}
             placeholder="15000"
             disabled={!form.isPaid}
+            min="0"
           />
         </Labeled>
       </div>

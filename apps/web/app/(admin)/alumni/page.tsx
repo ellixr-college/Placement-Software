@@ -565,6 +565,7 @@ function NewAlumniForm({ onCreated, onCancel }: { onCreated: () => void; onCance
             value={form.joiningYear}
             onChange={set('joiningYear')}
             placeholder="Year they joined the course"
+            min="0"
           />
         </Field>
         <Field label="Passout year *">
@@ -573,6 +574,7 @@ function NewAlumniForm({ onCreated, onCancel }: { onCreated: () => void; onCance
             className={inputCls}
             value={form.graduationYear}
             onChange={set('graduationYear')}
+            min="0"
           />
         </Field>
         <Field label="Branch *">

@@ -9,6 +9,7 @@ import {
   withdrawApplication,
   type Application,
 } from '../../../../lib/applications';
+import { formatLpa } from '../../../../lib/jobs';
 import { mutate, useApi } from '../../../../lib/use-api';
 
 const STATUS: Record<string, { label: string; tint: 'mint' | 'rose' | 'cream' | 'lavender' }> = {
@@ -100,9 +101,7 @@ export default function MyApplicationsPage() {
                     🎉 You&apos;ve been selected!
                   </span>
                   {a.offerCtc != null && (
-                    <span className="text-sm text-body">
-                      ₹{(a.offerCtc / 100000).toFixed(2)} LPA
-                    </span>
+                    <span className="text-sm text-body">{formatLpa(a.offerCtc)}</span>
                   )}
                   {a.offerLetterUrl && (
                     <a

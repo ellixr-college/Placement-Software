@@ -13,6 +13,7 @@ import {
   type StudentMetrics,
 } from '../../../lib/analytics';
 import { listPendingResults, type PendingResult } from '../../../lib/rounds';
+import { formatLpa } from '../../../lib/jobs';
 
 /** Placement Officer / College Admin home — real tenant metrics. */
 export default function DashboardPage() {
@@ -39,7 +40,10 @@ export default function DashboardPage() {
   }, [loading, user]);
 
   const firstName = user?.fullName?.split(' ')[0] ?? 'there';
-  const lpa = (v: number | null) => (v == null ? '—' : `₹${(v / 100000).toFixed(1)}L`);
+  const lpa = (v: number | null) => {
+    const formatted = formatLpa(v);
+    return formatted === '—' ? '—' : formatted.replace(' LPA', 'L');
+  };
 
   return (
     <div className="space-y-8">

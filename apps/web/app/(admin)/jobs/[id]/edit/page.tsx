@@ -303,6 +303,7 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
             value={details.ctc}
             onChange={setD('ctc')}
             placeholder="600000"
+            min="0"
           />
           <span className="text-xs text-subtle">Shown to students on the job — required.</span>
         </Field>
@@ -424,6 +425,7 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
                   value={details.minUg}
                   onChange={setD('minUg')}
                   placeholder="60"
+                  min="0"
                 />
               </Field>
               <Field label="Min PG %">
@@ -433,6 +435,7 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
                   value={details.minPg}
                   onChange={setD('minPg')}
                   placeholder="60"
+                  min="0"
                 />
               </Field>
             </div>

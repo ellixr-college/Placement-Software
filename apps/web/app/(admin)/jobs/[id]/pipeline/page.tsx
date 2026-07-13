@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Badge, Button, Card } from '@ellixr/ui';
 import { useConfirm } from '../../../../../components/confirm-provider';
 import { ListSkeleton } from '../../../../../components/page-skeleton';
-import { getJob, uploadOfferLetter, type Job } from '../../../../../lib/jobs';
+import { formatLpa, getJob, uploadOfferLetter, type Job } from '../../../../../lib/jobs';
 import {
   createRound,
   decideRound,
@@ -287,9 +287,7 @@ export default function FunnelPage({ params }: { params: Promise<{ id: string }>
           action={(s) => (
             <div className="flex items-center gap-3">
               {s.offerCtc != null && (
-                <span className="text-sm font-medium text-strong">
-                  ₹{(s.offerCtc / 100000).toFixed(2)} LPA
-                </span>
+                <span className="text-sm font-medium text-strong">{formatLpa(s.offerCtc)}</span>
               )}
               {s.offerLetterUrl ? (
                 <a
@@ -881,6 +879,7 @@ function PlaceModal({
             value={ctc}
             onChange={(e) => setCtc(e.target.value)}
             placeholder="600000"
+            min="0"
           />
         </label>
         <div className="space-y-1">

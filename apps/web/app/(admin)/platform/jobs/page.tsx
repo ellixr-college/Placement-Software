@@ -338,6 +338,7 @@ function NewPlatformJobForm({
             value={form.experienceMin}
             onChange={set('experienceMin')}
             placeholder="0"
+            min="0"
           />
         </Field>
         <Field label="Max experience (yrs)">
@@ -347,6 +348,7 @@ function NewPlatformJobForm({
             value={form.experienceMax}
             onChange={set('experienceMax')}
             placeholder="3"
+            min="0"
           />
         </Field>
       </div>
@@ -360,10 +362,22 @@ function NewPlatformJobForm({
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="CTC min (₹/yr)">
-          <input className={inputCls} type="number" value={form.ctcMin} onChange={set('ctcMin')} />
+          <input
+            className={inputCls}
+            type="number"
+            value={form.ctcMin}
+            onChange={set('ctcMin')}
+            min="0"
+          />
         </Field>
         <Field label="CTC max (₹/yr)">
-          <input className={inputCls} type="number" value={form.ctcMax} onChange={set('ctcMax')} />
+          <input
+            className={inputCls}
+            type="number"
+            value={form.ctcMax}
+            onChange={set('ctcMax')}
+            min="0"
+          />
         </Field>
       </div>
 
@@ -402,6 +416,7 @@ function NewPlatformJobForm({
                 value={form.minCgpa}
                 onChange={set('minCgpa')}
                 placeholder="60"
+                min="0"
               />
             </Field>
             <Field label="Max active backlogs">
@@ -410,6 +425,7 @@ function NewPlatformJobForm({
                 type="number"
                 value={form.maxActiveBacklogs}
                 onChange={set('maxActiveBacklogs')}
+                min="0"
               />
             </Field>
             <Field label="Max total backlogs">
@@ -418,6 +434,7 @@ function NewPlatformJobForm({
                 type="number"
                 value={form.maxTotalBacklogs}
                 onChange={set('maxTotalBacklogs')}
+                min="0"
               />
             </Field>
           </div>

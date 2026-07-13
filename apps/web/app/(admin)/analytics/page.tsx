@@ -17,8 +17,9 @@ import {
   type StudentMetrics,
 } from '../../../lib/analytics';
 import { PageSkeleton } from '../../../components/page-skeleton';
+import { formatLpa } from '../../../lib/jobs';
 
-const lpa = (v: number | null) => (v == null ? '—' : `₹${(v / 100000).toFixed(2)} LPA`);
+const lpa = formatLpa;
 
 const STATUS_LABEL: Record<string, string> = {
   APPLIED: 'Applied',

@@ -59,6 +59,7 @@ export class CreateJobDto {
   @ArrayNotEmpty()
   @Type(() => Number)
   @IsInt({ each: true })
+  @Min(1950, { each: true })
   graduationYears!: number[];
 
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) minCgpa?: number;
@@ -97,7 +98,12 @@ export class UpdateJobDto {
   @IsOptional() @IsArray() @IsString({ each: true }) eligibleCourses?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) eligibleBranches?: string[];
 
-  @IsOptional() @IsArray() @Type(() => Number) @IsInt({ each: true }) graduationYears?: number[];
+  @IsOptional()
+  @IsArray()
+  @Type(() => Number)
+  @IsInt({ each: true })
+  @Min(1950, { each: true })
+  graduationYears?: number[];
 
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) minCgpa?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) minTenthPercentage?: number;
@@ -143,6 +149,7 @@ export class CreatePlatformJobDto {
   @ArrayNotEmpty()
   @Type(() => Number)
   @IsInt({ each: true })
+  @Min(1950, { each: true })
   graduationYears!: number[];
 
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) minCgpa?: number;
@@ -183,7 +190,12 @@ export class UpdatePlatformJobDto {
   @IsOptional() @IsArray() @IsString({ each: true }) eligibleCourses?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) eligibleBranches?: string[];
 
-  @IsOptional() @IsArray() @Type(() => Number) @IsInt({ each: true }) graduationYears?: number[];
+  @IsOptional()
+  @IsArray()
+  @Type(() => Number)
+  @IsInt({ each: true })
+  @Min(1950, { each: true })
+  graduationYears?: number[];
 
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) minCgpa?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) minTenthPercentage?: number;

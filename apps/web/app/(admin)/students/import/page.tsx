@@ -159,6 +159,7 @@ export default function ImportStudentsPage() {
                 value={graduationYear}
                 onChange={(e) => setGraduationYear(e.target.value)}
                 placeholder={String(CURRENT_YEAR + 1)}
+                min="0"
               />
             </label>
             <label className="space-y-1">

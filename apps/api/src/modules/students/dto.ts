@@ -281,7 +281,7 @@ export class ListStudentsQuery {
   @IsOptional() @IsString() branch?: string;
   @IsOptional() @IsString() course?: string;
 
-  @IsOptional() @Type(() => Number) @IsInt() graduationYear?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) graduationYear?: number;
 
   @IsOptional()
   @IsIn(Object.values(VerificationStatus))

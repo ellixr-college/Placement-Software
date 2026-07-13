@@ -10,6 +10,7 @@ import {
   updateInterview,
   type Application,
 } from '../../../../lib/applications';
+import { formatLpa } from '../../../../lib/jobs';
 import { DetailSkeleton } from '../../../../components/page-skeleton';
 
 // Mirror of the backend TRANSITIONS map so the UI only offers legal next stages.
@@ -112,7 +113,7 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
         <p className="text-sm text-danger">Rejected: {app.rejectionReason}</p>
       )}
       {app.offerCtc != null && (
-        <p className="text-sm text-success">Offer: ₹{(app.offerCtc / 100000).toFixed(1)} LPA</p>
+        <p className="text-sm text-success">Offer: {formatLpa(app.offerCtc)}</p>
       )}
 
       {/* Stage actions */}

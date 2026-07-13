@@ -249,6 +249,7 @@ function EditAlumniForm({
             value={form.joiningYear}
             onChange={set('joiningYear')}
             placeholder="Year they joined the course"
+            min="0"
           />
         </Field>
         <Field label="Passout year *">
@@ -257,6 +258,7 @@ function EditAlumniForm({
             className={inputCls}
             value={form.graduationYear}
             onChange={set('graduationYear')}
+            min="0"
           />
         </Field>
         <Field label="Branch *">

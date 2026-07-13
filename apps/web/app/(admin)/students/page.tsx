@@ -723,6 +723,7 @@ function GraduateBatchModal({ onClose, onDone }: { onClose: () => void; onDone: 
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
                 className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:border-primary-400"
+                min="0"
               />
             </label>
             <label className="flex items-start gap-2 text-xs text-body">

@@ -144,6 +144,7 @@ function RegisterForm({
             value={form.joiningYear}
             onChange={set('joiningYear')}
             placeholder="Year you joined the course"
+            min="0"
           />
         </Field>
         <Field label="Passout year *">
@@ -152,6 +153,7 @@ function RegisterForm({
             className={inputCls}
             value={form.graduationYear}
             onChange={set('graduationYear')}
+            min="0"
           />
         </Field>
         <Field label="Branch *">
