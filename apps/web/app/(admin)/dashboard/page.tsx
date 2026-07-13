@@ -128,9 +128,9 @@ export default function DashboardPage() {
 
       <SectionCard title="Welcome to Ellixr" subtitle="Your placement command center">
         <p className="text-sm text-body">
-          Manage students, companies, jobs, the ATS pipeline, alumni, and analytics from the left
-          navigation. Head to <span className="font-medium text-strong">Analytics</span> for the
-          full breakdown by branch, batch and recruiter.
+          Manage students, companies, jobs, the ATS pipeline, alumni, and reports from the left
+          navigation. Head to <span className="font-medium text-strong">Reports</span> for the full
+          breakdown by branch, batch and recruiter.
         </p>
       </SectionCard>
     </div>
