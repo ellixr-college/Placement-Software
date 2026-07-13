@@ -555,9 +555,14 @@ export class JobsService {
     });
     const appliedMap = new Map(myApps.map((a) => [a.jobId, a.stage]));
 
-    // Show every published job; annotate eligibility. Apply is still gated
-    // server-side (see apply()) — students can browse but only apply if eligible.
-    return jobs.map((j) => {
+    // Only surface jobs that match the student's hard criteria (course, graduation
+    // year). Jobs the student has already applied to are always shown so they can
+    // track their applications even if a criteria changes later.
+    const visibleJobs = jobs.filter(
+      (j) => appliedMap.has(j.id) || matchesStudentCourseAndYear(student, j),
+    );
+
+    return visibleJobs.map((j) => {
       const { eligible, reasons } = checkApplyEligibility(me, toEligibilityJob(j));
       return {
         ...this.publicJob(j),
@@ -797,6 +802,23 @@ function toEligibilityStudent(
     totalBacklogs: s.totalBacklogs,
     hasResume: !!s.resume,
   };
+}
+
+// Hard filters used to decide which jobs appear in a student's feed. These are
+// criteria the student cannot fix in the apply-time eligibility modal, so we hide
+// non-matching jobs entirely (unless they already applied).
+function matchesStudentCourseAndYear(
+  student: { course: string | null; graduationYear: number },
+  job: { eligibleCourses: string[]; graduationYears: number[] },
+): boolean {
+  const courses = job.eligibleCourses ?? [];
+  if (courses.length > 0) {
+    const normalized = courses.map((c) => c.trim().toLowerCase());
+    if (!normalized.includes(student.course?.trim().toLowerCase() ?? '')) return false;
+  }
+  const years = job.graduationYears ?? [];
+  if (years.length > 0 && !years.includes(student.graduationYear)) return false;
+  return true;
 }
 
 function toEligibilityJob(j: {

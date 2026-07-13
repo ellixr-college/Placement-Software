@@ -39,7 +39,7 @@ export interface EligibilityResult {
 function runEligibilityChecks(
   student: EligibilityStudent,
   job: EligibilityJob,
-  options: { requireVerified?: boolean; requireResume?: boolean; checkCourse?: boolean },
+  options: { requireVerified?: boolean; requireResume?: boolean },
 ): EligibilityResult {
   const reasons: string[] = [];
 
@@ -49,17 +49,13 @@ function runEligibilityChecks(
   if (student.isPlaced) reasons.push('Already placed');
   // Course / branch / gender comparisons are case-insensitive and tolerate whitespace.
   // Empty arrays mean "no filter" (common for quick/no-criteria jobs).
-  // Course is NOT checked at application time (students may apply across courses),
-  // but remains part of the stricter officer preview / eligibility report.
-  if (options.checkCourse) {
-    const courses = job.eligibleCourses ?? [];
-    const normalizedCourses = courses.map((c) => c.trim().toLowerCase());
-    if (
-      courses.length > 0 &&
-      !normalizedCourses.includes(student.course?.trim().toLowerCase() ?? '')
-    ) {
-      reasons.push('Course not eligible');
-    }
+  const courses = job.eligibleCourses ?? [];
+  const normalizedCourses = courses.map((c) => c.trim().toLowerCase());
+  if (
+    courses.length > 0 &&
+    !normalizedCourses.includes(student.course?.trim().toLowerCase() ?? '')
+  ) {
+    reasons.push('Course not eligible');
   }
   // Branch is intentionally NOT a restriction — students may apply across branches.
   if (job.graduationYears.length > 0 && !job.graduationYears.includes(student.graduationYear)) {
@@ -112,7 +108,7 @@ export function checkEligibility(
   student: EligibilityStudent,
   job: EligibilityJob,
 ): EligibilityResult {
-  return runEligibilityChecks(student, job, { requireVerified: true, requireResume: false, checkCourse: true });
+  return runEligibilityChecks(student, job, { requireVerified: true, requireResume: false });
 }
 
 /** Application-time eligibility: students can apply once their profile + resume are
@@ -121,5 +117,5 @@ export function checkApplyEligibility(
   student: EligibilityStudent,
   job: EligibilityJob,
 ): EligibilityResult {
-  return runEligibilityChecks(student, job, { requireVerified: false, requireResume: true, checkCourse: false });
+  return runEligibilityChecks(student, job, { requireVerified: false, requireResume: true });
 }
