@@ -6,7 +6,7 @@
 
 Make Ellixr deployable to real colleges: analytics dashboards, exportable reports, audit logging,
 monitoring, the cron scheduler (powering Phase 4's birthday/reminder jobs), and full deployment to
-Vercel + Railway + Neon + R2 + Resend.
+Vercel + Render + Supabase + Vercel Blob.
 
 ## Scope
 
@@ -129,16 +129,16 @@ Scheduler (Railway cron or `@nestjs/schedule`):
 ### Deployment targets
 
 - **Web** → Vercel (Next.js 15). Env: `NEXT_PUBLIC_API_URL`, Sentry DSN.
-- **API** → Railway (NestJS). Env: `DATABASE_URL`, JWT secrets, `RESEND_API_KEY`, `R2_*`, Sentry DSN.
-- **Database** → Neon PostgreSQL (connection pooling enabled).
-- **Storage** → Cloudflare R2 (private bucket; access only via presigned URLs).
-- **Email** → Resend (verified sending domain + SPF/DKIM).
+- **API** → Render (NestJS). Env: `DATABASE_URL`, JWT secrets, `BLOB_READ_WRITE_TOKEN`, Sentry DSN.
+- **Database** → Supabase Postgres (connection limit capped to 3 per API instance).
+- **Storage** → Vercel Blob (public blobs gated by the app).
+- **Email** → Deferred in V1; per-college SMTP planned for Phase 4.
 
 ### Hardening / ops
 
 - [ ] Sentry on web + api; PII/secret scrubbing configured.
 - [ ] Prisma migrations run on deploy (`migrate deploy`); no `db push` in prod.
-- [ ] DB backups (Neon point-in-time) verified; documented restore.
+- [ ] DB backups (Supabase point-in-time) verified; documented restore.
 - [ ] Production secrets in platform env stores (not in repo); rotate JWT secrets procedure documented.
 - [ ] CORS locked to production web origin; `helmet`, rate limiting, HTTPS-only cookies confirmed.
 - [ ] Health-check endpoints (`/health`) for Railway; uptime monitoring.
@@ -156,8 +156,8 @@ ellixr/
 │   └── api/        (Railway)
 └── packages/
     ├── auth/
-    ├── database/   (Neon / Prisma)
-    ├── storage/    (Cloudflare R2)
+    ├── database/   (Supabase Postgres / Prisma)
+    ├── storage/    (Vercel Blob)
     ├── ui/
     ├── analytics/
     ├── notifications/  (Resend)
@@ -179,5 +179,5 @@ ellixr/
 - Audit logs capturing sensitive changes.
 - Cron jobs (birthdays, reminders) running.
 - Sentry monitoring active.
-- **Production-ready multi-tenant SaaS** deployed across Vercel + Railway + Neon + R2 + Resend,
+- **Production-ready multi-tenant SaaS** deployed across Vercel + Render + Supabase + Vercel Blob,
   scalable to multiple colleges with 1000+ students each.

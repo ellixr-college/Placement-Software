@@ -46,7 +46,7 @@ one auth/session, one coral theme, and one `packages/ui` component library.
 | ---------- | ------------------------------------------------------------ |
 | Frontend   | Next.js 15 (App Router), TypeScript, Tailwind CSS, Shadcn UI |
 | Backend    | NestJS (modular monolith)                                    |
-| Database   | PostgreSQL (Neon)                                            |
+| Database   | Supabase Postgres                                            |
 | ORM        | Prisma (schema, migrations, generated client)                |
 | Storage    | Cloudflare R2 (resumes, alumni import files, export files)   |
 | Email      | Resend                                                       |

@@ -25,7 +25,7 @@ Ellixr is a multi-tenant SaaS platform for colleges and universities to manage p
 | Node       | >= 20                                                                                                                             |
 | Frontend   | Next.js 15 (App Router), React 18, TypeScript 5.6, Tailwind CSS 3.4                                                               |
 | Backend    | NestJS 10 modular monolith, REST API under `/api/v1`                                                                              |
-| Database   | CockroachDB (`provider = "cockroachdb"` in Prisma)                                                                                |
+| Database   | Supabase Postgres (`provider = "postgresql"` in Prisma)                                                                           |
 | ORM        | Prisma 5.20                                                                                                                       |
 | Validation | `class-validator` + `class-transformer` DTOs on API; zod schemas in `packages/shared`                                             |
 | Storage    | Vercel Blob (`@vercel/blob`) for PDFs/resumes in current code; Cloudflare R2 stub lives in `packages/storage` but is not wired up |
@@ -281,7 +281,7 @@ Read [`SECURITY.md`](./SECURITY.md) before any production deployment.
 | `JWT_ACCESS_SECRET`   | any                     | unique 48+ byte random           |
 | `JWT_REFRESH_SECRET`  | any                     | different unique 48+ byte random |
 | `WEB_ORIGIN`          | `http://localhost:3000` | exact deployed origin            |
-| `DATABASE_URL`        | local/cloud             | cloud, `sslmode=verify-full`     |
+| `DATABASE_URL`        | local/cloud             | cloud, `sslmode=require`         |
 | `SEED_ADMIN_PASSWORD` | weak ok                 | strong, rotate after first login |
 
 ### Already enforced in code
@@ -317,11 +317,11 @@ Read [`SECURITY.md`](./SECURITY.md) before any production deployment.
 
 The free deployment stack is documented in [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 
-| Piece    | Host                           | Config file            |
-| -------- | ------------------------------ | ---------------------- |
-| Database | CockroachDB Cloud (free Basic) | `.env` `DATABASE_URL`  |
-| API      | Render free Web Service        | `render.yaml`          |
-| Web      | Vercel Hobby                   | `apps/web/vercel.json` |
+| Piece    | Host                          | Config file            |
+| -------- | ----------------------------- | ---------------------- |
+| Database | Supabase Postgres (free tier) | `.env` `DATABASE_URL`  |
+| API      | Render free Web Service       | `render.yaml`          |
+| Web      | Vercel Hobby                  | `apps/web/vercel.json` |
 
 ### Render build/start (from `render.yaml`)
 
@@ -357,7 +357,7 @@ When reading `docs/`, be aware the implementation has diverged in places:
 
 | Topic         | Docs say        | Code does                                                          |
 | ------------- | --------------- | ------------------------------------------------------------------ |
-| Database      | PostgreSQL/Neon | CockroachDB (`provider = "cockroachdb"`)                           |
+| Database      | PostgreSQL/Neon | Supabase Postgres (`provider = "postgresql"`)                      |
 | API hosting   | Railway         | Render                                                             |
 | Storage       | Cloudflare R2   | Vercel Blob (`@vercel/blob`); `packages/storage` is a dormant stub |
 | Email         | Resend          | Deferred; per-college SMTP planned                                 |

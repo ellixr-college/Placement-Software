@@ -4,36 +4,44 @@ Host the whole app for **$0/month**. Three pieces, tied together by the same-ori
 BFF proxy (the browser only ever talks to the web origin; Next.js forwards
 `/api/v1/*` to the API server-side, so the auth cookie stays first-party).
 
-| Piece         | Host                               | Cost        | Catch                                          |
-| ------------- | ---------------------------------- | ----------- | ---------------------------------------------- |
-| Database      | **CockroachDB Cloud** (Basic/free) | $0          | 50M Request Units/month free                   |
-| API (NestJS)  | **Render** free Web Service        | $0, no card | sleeps after ~15 min idle (cold start ~30–50s) |
-| Web (Next.js) | **Vercel** Hobby                   | $0, no card | none                                           |
+| Piece         | Host                              | Cost        | Catch                                          |
+| ------------- | --------------------------------- | ----------- | ---------------------------------------------- |
+| Database      | **Supabase Postgres** (free tier) | $0          | 500 MB storage / 60 connections                |
+| API (NestJS)  | **Render** free Web Service       | $0, no card | sleeps after ~15 min idle (cold start ~30–50s) |
+| Web (Next.js) | **Vercel** Hobby                  | $0, no card | none                                           |
 
 Config files in this repo: [`render.yaml`](render.yaml) (API), [`apps/web/vercel.json`](apps/web/vercel.json) (web).
 Pre-flight requirements live in [`SECURITY.md`](SECURITY.md).
 
 ---
 
-## Step 1 — Database (CockroachDB Cloud)
+## Step 1 — Database (Supabase Postgres)
 
-1. Use your existing cluster (or create a free Basic one). **Connect → General connection string** → copy it (`...sslmode=verify-full`).
-2. From your machine, point the root `.env` `DATABASE_URL` at the **production** cluster, then create the schema + first admin **once**:
+1. Create a free Supabase project at [supabase.com](https://supabase.com). Pick a region close to your users (e.g. `ap-south-1` / Mumbai).
+2. Project Settings → Database → Connection string → **URI**. Copy the Postgres URI.
+3. Paste it into the root `.env` as `DATABASE_URL`. Add these query params if they are not already in the URI:
+   - `sslmode=require`
+   - `connection_limit=3`
+   - `pool_timeout=10`
+     Example:
+   ```
+   DATABASE_URL="postgresql://postgres:PASSWORD@db.xxxxx.supabase.co:5432/postgres?sslmode=require&connection_limit=3&pool_timeout=10"
+   ```
+4. From your machine, create the schema + first admin **once**:
    ```bash
    pnpm db:push     # creates all tables (incl. audit_logs)
    pnpm db:seed     # creates the Platform Admin from SEED_ADMIN_* in .env
    ```
-3. Keep the cluster's spend limit at **$0** so it pauses (never bills) if you ever exceed the free 50M RU.
 
-> Tip: for day-to-day local dev, run CockroachDB locally so cloud RUs are only spent by real traffic:
-> `docker run -d -p 26257:26257 cockroachdb/cockroach start-single-node --insecure`
-> then `DATABASE_URL="postgresql://root@localhost:26257/defaultdb?sslmode=disable"`.
+> Tip: for day-to-day local dev you can keep using the same Supabase project, or run Postgres locally with Docker:
+> `docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:16`
+> then `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres?schema=public"`.
 
 ## Step 2 — API → Render
 
 1. Render Dashboard → **New → Blueprint** → select this repo. It reads [`render.yaml`](render.yaml) and creates the `ellixr-api` web service (free plan, Singapore region — closest to the Mumbai DB).
 2. The blueprint **generates** `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` for you. Set the two `sync:false` vars in the dashboard:
-   - `DATABASE_URL` → the production CockroachDB string
+   - `DATABASE_URL` → the production Supabase Postgres URI
    - `WEB_ORIGIN` → leave blank for now; fill in after Step 3
 3. Deploy. Note the API URL, e.g. `https://ellixr-api.onrender.com`. Confirm `https://ellixr-api.onrender.com/api/v1/health` returns `{ "data": ... }`.
 
@@ -67,7 +75,7 @@ Build/start (already in the blueprint):
 | `COOKIE_SECURE` | `true` |
 | `JWT_ACCESS_SECRET` | generated (48+ byte random) |
 | `JWT_REFRESH_SECRET` | generated, **different** |
-| `DATABASE_URL` | prod CockroachDB string |
+| `DATABASE_URL` | prod Supabase Postgres URI |
 | `WEB_ORIGIN` | the Vercel URL |
 | `PORT` | injected by Render |
 
@@ -80,7 +88,8 @@ Build/start (already in the blueprint):
 ## Keeping it free & fast
 
 - **Cold starts:** Render free sleeps after ~15 min idle. To keep it warm, add a free cron at **cron-job.org** hitting `https://<api>/api/v1/health` every 10 min (fits within Render's ~750 free instance-hours/month).
-- **DB Request Units:** the notification bell polls **hourly**, **pauses while the tab is hidden**, and **goes quiet 8pm–6am**, so idle tabs barely touch the DB. The other big RU spenders are **schema pushes** and `prisma db push --force-reset` (full wipe) — avoid running those against the cloud cluster casually; use a local cluster for dev.
+- **DB connections:** Supabase free gives ~60 connections. The app caps Prisma to 3 per instance (`connection_limit=3`), so one API instance uses very few. If you ever scale horizontally, keep total instances × 3 well under 60.
+- **Storage:** JD PDFs, offer letters, and résumés are stored as **public** Vercel Blobs. Access is gated by the app — the URLs are unguessable.
 - **HTTPS** is on by default on both Vercel and Render — required by `COOKIE_SECURE=true`.
 
 ## Rate limiting & scaling out

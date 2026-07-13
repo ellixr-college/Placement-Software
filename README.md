@@ -12,7 +12,7 @@ phase documents.
 
 ## Stack
 
-Next.js 15 · NestJS · CockroachDB (Cockroach Labs) · Prisma · Cloudflare R2 · Resend · pnpm + Turborepo.
+Next.js 15 · NestJS · Supabase Postgres · Prisma · Vercel Blob · pnpm + Turborepo.
 
 ## Structure
 
