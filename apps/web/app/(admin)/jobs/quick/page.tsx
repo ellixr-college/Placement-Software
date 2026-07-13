@@ -156,8 +156,8 @@ export default function QuickPostPage() {
 
       <div className="rounded-xl bg-app p-3 text-xs text-body">
         <span className="font-medium text-strong">Tip:</span> Required fields are title, CTC,
-        eligible courses, and graduation years. Save as a draft to review later, or publish to notify
-        students right away.
+        eligible courses, and graduation years. Save as a draft to review later, or publish to
+        notify students right away.
       </div>
 
       <Card className="space-y-4 p-5">

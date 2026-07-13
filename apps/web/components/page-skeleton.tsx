@@ -93,7 +93,13 @@ export function DetailSkeleton() {
 }
 
 /** Tiny inline skeleton for buttons, badges, or small areas. */
-export function InlineSkeleton({ width = 'w-20', height = 'h-4' }: { width?: string; height?: string }) {
+export function InlineSkeleton({
+  width = 'w-20',
+  height = 'h-4',
+}: {
+  width?: string;
+  height?: string;
+}) {
   return (
     <span
       className={`inline-block ${height} ${width} animate-pulse rounded-md bg-app`}

@@ -147,9 +147,11 @@ export default function AlumniPage() {
 
   const subtitle = useMemo(() => {
     if (view.mode === 'years') {
-      return stats
-        ? `${stats.total} graduates · ${years.length} ${years.length === 1 ? 'year' : 'years'}`
-        : <InlineSkeleton width="w-24" height="h-4" />;
+      return stats ? (
+        `${stats.total} graduates · ${years.length} ${years.length === 1 ? 'year' : 'years'}`
+      ) : (
+        <InlineSkeleton width="w-24" height="h-4" />
+      );
     }
     if (view.mode === 'courses') {
       return `${coursesForYear.length} ${coursesForYear.length === 1 ? 'course' : 'courses'} in ${view.year}`;

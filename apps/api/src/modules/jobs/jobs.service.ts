@@ -558,7 +558,8 @@ export class JobsService {
       jobs.push(j);
     }
 
-    const me = toEligibilityStudent(student, await this.isStudentPlaced(student.id));
+    const isPlaced = await this.isStudentPlaced(student.id);
+    const me = toEligibilityStudent(student, isPlaced);
 
     const myApps = await this.prisma.application.findMany({
       where: { studentId: student.id, jobId: { in: jobs.map((j) => j.id) } },
@@ -598,8 +599,9 @@ export class JobsService {
       throw new NotFoundException('Job not found');
     }
 
+    const isPlaced = await this.isStudentPlaced(student.id);
     const { eligible, reasons } = checkApplyEligibility(
-      toEligibilityStudent(student, await this.isStudentPlaced(student.id)),
+      toEligibilityStudent(student, isPlaced),
       toEligibilityJob(job),
     );
 
@@ -624,8 +626,9 @@ export class JobsService {
     }
 
     // Re-validate eligibility server-side — the feed is not the authority.
+    const isPlaced = await this.isStudentPlaced(student.id);
     const { eligible, reasons } = checkApplyEligibility(
-      toEligibilityStudent(student, await this.isStudentPlaced(student.id)),
+      toEligibilityStudent(student, isPlaced),
       toEligibilityJob(job),
     );
     if (!eligible) throw new ForbiddenException(`Not eligible: ${reasons.join(', ')}`);

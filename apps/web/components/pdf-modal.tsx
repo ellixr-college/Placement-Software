@@ -5,8 +5,9 @@ import { useEffect, useRef, useState } from 'react';
 /**
  * Full-screen PDF preview. Renders every page to a <canvas> with pdf.js so the
  * JD is readable inline on phones (a plain <iframe>/<embed> PDF won't render on
- * most mobile browsers). `url` is an object URL from getJobPdfObjectUrl; the
- * caller revokes it on close. Download/Open links stay as an escape hatch.
+ * most mobile browsers). `url` is the public Vercel Blob URL; the caller is
+ * responsible for managing the modal lifecycle. Download/Open links stay as an
+ * escape hatch.
  *
  * The worker is served from /public/pdf.worker.min.js (copied from pdfjs-dist —
  * re-copy it if the pdfjs-dist version is bumped).

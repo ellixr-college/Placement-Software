@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge, Card } from '@ellixr/ui';
-import { applyToJob, getJobFeed, getJobPdfObjectUrl, type Job } from '../../../../lib/jobs';
+import { applyToJob, getJobFeed, type Job } from '../../../../lib/jobs';
+import { mutate } from '../../../../lib/use-api';
 import { PdfModal } from '../../../../components/pdf-modal';
 import { JobCard } from '../../../../components/job-card';
 import { ApplyModal } from '../../../../components/apply-modal';
 import { EligibilityCheckModal } from '../../../../components/eligibility-check-modal';
 import { InlineSkeleton, ListSkeleton } from '../../../../components/page-skeleton';
+import { useApi } from '../../../../lib/use-api';
 
 type Category = 'ALL' | 'APPLIED' | 'CLOSING_SOON' | 'CLOSED';
 
@@ -63,14 +65,14 @@ function emptyMessage(category: Category): string {
   }
 }
 
+const JOBS_KEY = '/student/jobs';
+
 /**
  * Student job feed (mobile-first). Browse jobs by category and search by company.
  */
 export default function StudentJobsPage() {
   const router = useRouter();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: jobs, error, isLoading } = useApi<Job[]>(JOBS_KEY, getJobFeed);
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [formJob, setFormJob] = useState<Job | null>(null);
   const [eligibilityJob, setEligibilityJob] = useState<Job | null>(null);
@@ -79,21 +81,8 @@ export default function StudentJobsPage() {
   const [category, setCategory] = useState<Category>('ALL');
   const [search, setSearch] = useState('');
 
-  async function load() {
-    try {
-      setJobs(await getJobFeed());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load jobs');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
-
   const filteredJobs = useMemo(() => {
+    if (!jobs) return [];
     const q = search.trim().toLowerCase();
     return jobs.filter((j) => {
       if (q) {
@@ -104,8 +93,6 @@ export default function StudentJobsPage() {
     });
   }, [jobs, category, search]);
 
-  // Always show Apply. If the student isn't eligible yet, collect the missing
-  // profile/resume fields in a modal first, then continue to the application.
   function onApplyClick(j: Job) {
     if (j.eligible === false) {
       setEligibilityJob(j);
@@ -124,13 +111,15 @@ export default function StudentJobsPage() {
 
   async function apply(id: string, responses?: Record<string, string>) {
     setApplyingId(id);
-    setError(null);
     try {
       await applyToJob(id, responses);
       setFormJob(null);
-      await load();
+      // Refetch jobs and the home dashboard application counts.
+      await mutate(JOBS_KEY);
+      await mutate('/student/applications');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not apply');
+      // Error is surfaced by the ApplyModal or EligibilityCheckModal callers.
+      throw err;
     } finally {
       setApplyingId(null);
     }
@@ -140,7 +129,7 @@ export default function StudentJobsPage() {
     <div className="space-y-4">
       <header>
         <h1 className="text-xl font-semibold text-strong">Jobs</h1>
-        {loading ? (
+        {isLoading ? (
           <InlineSkeleton width="w-24" height="h-4" />
         ) : (
           <p className="text-sm text-subtle">
@@ -149,7 +138,7 @@ export default function StudentJobsPage() {
         )}
       </header>
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <p className="text-sm text-danger">{error.message}</p>}
 
       {/* Search */}
       <div className="relative">
@@ -185,14 +174,7 @@ export default function StudentJobsPage() {
       </div>
 
       {pdfView && (
-        <PdfModal
-          url={pdfView.url}
-          name={pdfView.name}
-          onClose={() => {
-            URL.revokeObjectURL(pdfView.url);
-            setPdfView(null);
-          }}
-        />
+        <PdfModal url={pdfView.url} name={pdfView.name} onClose={() => setPdfView(null)} />
       )}
 
       {formJob && (
@@ -217,7 +199,7 @@ export default function StudentJobsPage() {
         />
       )}
 
-      {loading ? (
+      {isLoading ? (
         <ListSkeleton />
       ) : filteredJobs.length === 0 ? (
         <Card className="p-6 text-center text-sm text-subtle">{emptyMessage(category)}</Card>
@@ -274,11 +256,11 @@ export default function StudentJobsPage() {
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
-                      setError(null);
                       try {
-                        setPdfView({ url: await getJobPdfObjectUrl(j.id), name: j.pdfName });
+                        setPdfView({ url: j.pdfUrl!, name: j.pdfName });
                       } catch (err) {
-                        setError(err instanceof Error ? err.message : 'Could not open PDF');
+                        // Surface inline if the modal can't open.
+                        alert(err instanceof Error ? err.message : 'Could not open PDF');
                       }
                     }}
                     className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-primary-700 hover:underline"

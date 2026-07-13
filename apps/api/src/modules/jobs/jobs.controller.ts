@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -13,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
-import { get as blobGet, put } from '@vercel/blob';
+import { put } from '@vercel/blob';
 import { Res } from '@nestjs/common';
 import { UserRole } from '@ellixr/shared';
 import type { JwtPayload } from '@ellixr/shared';
@@ -46,6 +47,9 @@ export class JobsController {
 
   // Upload a Job Description PDF to Vercel Blob; returns its public URL to attach
   // to a job (used by the "quick post" flow). Officer/admin only.
+  // NOTE: stored as public because the linked Vercel Blob store is public.
+  // Access is gated by the API: the PDF URL is only exposed to authenticated
+  // viewers through /jobs/:id/pdf and the job detail responses.
   @Post('upload-pdf')
   @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER)
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
@@ -59,7 +63,7 @@ export class JobsController {
       throw new BadRequestException('File storage is not configured (BLOB_READ_WRITE_TOKEN)');
     const safe = file.originalname.replace(/[^\w.\-]+/g, '_').slice(-80) || 'job.pdf';
     const blob = await put(`job-storage/${user.collegeId}/${Date.now()}-${safe}`, file.buffer, {
-      access: 'private',
+      access: 'public',
       token,
       contentType: 'application/pdf',
     });
@@ -93,24 +97,19 @@ export class JobsController {
     return { data: { url: blob.url, name: file.originalname } };
   }
 
-  // Stream the (private) JD PDF to an authenticated viewer. The blob store is
-  // private, so files aren't publicly reachable — the API fetches with the token
-  // and relays the bytes. Any student/officer of the owning college may view.
+  // Redirect to the JD PDF. Job PDFs are stored as public Vercel Blobs
+  // (unguessable URLs) so the API enforces access control and then sends the
+  // caller to the actual file. Any student/officer of the owning college may view.
   @Get(':id/pdf')
   @Roles(UserRole.COLLEGE_ADMIN, UserRole.PLACEMENT_OFFICER, UserRole.STUDENT)
   async pdf(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Res() res: Response) {
     const ref = await this.jobs.pdfRef(this.collegeId(user), id);
-    const token = process.env.BLOB_READ_WRITE_TOKEN;
-    if (!token) throw new BadRequestException('File storage is not configured');
-    const result = await blobGet(ref.pdfUrl, { access: 'private', token });
-    if (!result || !result.stream) throw new BadRequestException('PDF not found');
-    const buffer = Buffer.from(await new Response(result.stream as ReadableStream).arrayBuffer());
-    res.setHeader('Content-Type', 'application/pdf');
+    if (!ref.pdfUrl) throw new NotFoundException('No PDF for this job');
     res.setHeader(
       'Content-Disposition',
       `inline; filename="${(ref.pdfName ?? 'job.pdf').replace(/"/g, '')}"`,
     );
-    res.send(buffer);
+    res.redirect(ref.pdfUrl);
   }
 
   // GET /jobs — officer management list OR student eligible feed, by role.

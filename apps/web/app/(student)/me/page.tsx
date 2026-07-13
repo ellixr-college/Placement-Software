@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Card } from '@ellixr/ui';
 import { getOwnStudent, type Student } from '../../../lib/students';
@@ -8,6 +7,7 @@ import { listMyApplications, type Application } from '../../../lib/applications'
 import { NotificationBell } from '../../../components/notification-bell';
 import { ListSkeleton } from '../../../components/page-skeleton';
 import { useSession } from '../../../lib/session';
+import { useApi } from '../../../lib/use-api';
 
 const TERMINAL = ['JOINED', 'REJECTED', 'WITHDRAWN'];
 const PLACING = ['OFFER_RELEASED', 'OFFER_ACCEPTED', 'JOINED'];
@@ -68,45 +68,13 @@ const fmtDateTime = (d: Date) =>
 
 export default function StudentHome() {
   const { signOut } = useSession();
-  const [student, setStudent] = useState<Student | null>(null);
-  const [apps, setApps] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: student } = useApi<Student>('/student/me', getOwnStudent);
+  const { data: apps, isLoading: appsLoading } = useApi<Application[]>(
+    '/student/applications',
+    listMyApplications,
+  );
 
-  const load = useCallback(async () => {
-    try {
-      const [s, a] = await Promise.all([getOwnStudent(), listMyApplications()]);
-      setStudent(s);
-      setApps(a);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load your dashboard');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  // Reload when the user returns via browser back-button (bfcache) or refocuses
-  // the tab, so application counts/trackers are never stale after applying.
-  useEffect(() => {
-    const onPageShow = (e: PageTransitionEvent) => {
-      if (e.persisted) load();
-    };
-    const onFocus = () => load();
-    window.addEventListener('pageshow', onPageShow);
-    window.addEventListener('focus', onFocus);
-    return () => {
-      window.removeEventListener('pageshow', onPageShow);
-      window.removeEventListener('focus', onFocus);
-    };
-  }, [load]);
-
-  if (loading) return <ListSkeleton />;
-  if (error) return <p className="text-danger">{error}</p>;
+  if (appsLoading || !apps) return <ListSkeleton />;
 
   const firstName = student?.user.fullName?.split(' ')[0] ?? 'there';
   const active = apps.filter((a) => !TERMINAL.includes(a.stage));

@@ -1,22 +1,17 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Badge, Card } from '@ellixr/ui';
-import {
-  applyToJob,
-  formatCtc,
-  getJob,
-  getJobPdfObjectUrl,
-  type Job,
-} from '../../../../../lib/jobs';
+import { applyToJob, formatCtc, getJob, type Job } from '../../../../../lib/jobs';
 import { listMyApplications, type Application } from '../../../../../lib/applications';
 import { PdfModal } from '../../../../../components/pdf-modal';
 import { ApplyModal } from '../../../../../components/apply-modal';
 import { ApplicationTimeline } from '../../../../../components/application-timeline';
 import { EligibilityCheckModal } from '../../../../../components/eligibility-check-modal';
 import { DetailSkeleton } from '../../../../../components/page-skeleton';
+import { mutate, useApi } from '../../../../../lib/use-api';
 
 const STATUS: Record<string, { label: string; tint: 'mint' | 'rose' | 'cream' | 'lavender' }> = {
   APPLIED: { label: 'Applied', tint: 'cream' },
@@ -32,31 +27,15 @@ const workModeLabel = (m: string | null) =>
 export default function StudentJobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const [job, setJob] = useState<Job | null>(null);
-  const [app, setApp] = useState<Application | null>(null);
-  const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [eligibilityOpen, setEligibilityOpen] = useState(false);
   const [pdfView, setPdfView] = useState<{ url: string; name?: string | null } | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  async function load() {
-    try {
-      const [j, apps] = await Promise.all([getJob(id), listMyApplications()]);
-      setJob(j);
-      setApp(apps.find((a) => a.job.id === id) ?? null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load job');
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { data: job } = useApi<Job>(`/student/job/${id}`, () => getJob(id));
+  const { data: apps } = useApi<Application[]>('/student/applications', listMyApplications);
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  const app = apps?.find((a) => a.job.id === id) ?? null;
 
   function onApplyClick() {
     if (!job) return;
@@ -75,20 +54,20 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
 
   async function apply(responses?: Record<string, string>) {
     setApplying(true);
-    setError(null);
     try {
       await applyToJob(id, responses);
       setFormOpen(false);
-      await load();
+      await mutate(`/student/job/${id}`);
+      await mutate('/student/applications');
+      await mutate('/student/jobs');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not apply');
+      throw err;
     } finally {
       setApplying(false);
     }
   }
 
-  if (loading) return <DetailSkeleton />;
-  if (!job) return <p className="text-danger">{error ?? 'Job not found'}</p>;
+  if (!job) return <DetailSkeleton />;
 
   const company = job.companyName ?? job.company?.name ?? 'Company';
   const chips = [job.jobType.replace(/_/g, ' '), workModeLabel(job.workMode), job.location].filter(
@@ -128,8 +107,6 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
           </span>
         ))}
       </div>
-
-      {error && <p className="text-sm text-danger">{error}</p>}
 
       {/* Track application (if applied) */}
       {applied && app && (
@@ -182,11 +159,10 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
         {job.pdfUrl && (
           <button
             onClick={async () => {
-              setError(null);
               try {
-                setPdfView({ url: await getJobPdfObjectUrl(id), name: job.pdfName });
+                setPdfView({ url: job.pdfUrl!, name: job.pdfName });
               } catch (err) {
-                setError(err instanceof Error ? err.message : 'Could not open PDF');
+                alert(err instanceof Error ? err.message : 'Could not open PDF');
               }
             }}
             className="press inline-flex w-fit items-center gap-2 rounded-md border border-border bg-white px-3 py-2 text-sm font-medium text-body"
@@ -217,11 +193,11 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
         <div className="rounded-md bg-tint-cream/50 px-3 py-2 text-xs text-tint-cream-fg">
           <span className="font-medium">Tap Apply to complete required details.</span>{' '}
           {(job.eligibilityReasons ?? []).filter((r) => r !== 'Profile not verified').join(' · ') ||
-            'You don&apos;t meet the criteria.'}
+            "You don't meet the criteria."}
         </div>
       )}
 
-      {/* Sticky action footer (replaces the bottom nav on this screen) */}
+      {/* Sticky action footer */}
       <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md border-t border-border bg-white/95 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
         {applied ? (
           <button
@@ -253,7 +229,6 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
           url={pdfView.url}
           name={pdfView.name}
           onClose={() => {
-            URL.revokeObjectURL(pdfView.url);
             setPdfView(null);
           }}
         />

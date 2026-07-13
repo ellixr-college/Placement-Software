@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Badge, Card } from '@ellixr/ui';
 import { useConfirm } from '../../../../components/confirm-provider';
 import { ApplicationTimeline } from '../../../../components/application-timeline';
@@ -10,6 +9,7 @@ import {
   withdrawApplication,
   type Application,
 } from '../../../../lib/applications';
+import { mutate, useApi } from '../../../../lib/use-api';
 
 const STATUS: Record<string, { label: string; tint: 'mint' | 'rose' | 'cream' | 'lavender' }> = {
   APPLIED: { label: 'Applied', tint: 'cream' },
@@ -19,26 +19,16 @@ const STATUS: Record<string, { label: string; tint: 'mint' | 'rose' | 'cream' | 
   WITHDRAWN: { label: 'Withdrawn', tint: 'cream' },
 };
 
+const APPS_KEY = '/student/applications';
+
 export default function MyApplicationsPage() {
   const confirm = useConfirm();
-  const [apps, setApps] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-
-  async function load() {
-    try {
-      setApps(await listMyApplications());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load applications');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
+  const {
+    data: apps,
+    error,
+    isLoading,
+    mutate: mutateApps,
+  } = useApi<Application[]>(APPS_KEY, listMyApplications);
 
   async function withdraw(id: string) {
     const ok = await confirm({
@@ -49,17 +39,27 @@ export default function MyApplicationsPage() {
       destructive: true,
     });
     if (!ok) return;
-    setBusyId(id);
-    setError(null);
     try {
       await withdrawApplication(id);
-      await load();
+      // Optimistically update local list, then revalidate.
+      if (apps) {
+        mutateApps(
+          apps.map((a) =>
+            a.id === id ? { ...a, status: 'WITHDRAWN', stage: 'WITHDRAWN' } : a,
+          ) as Application[],
+          false,
+        );
+      }
+      await mutate(APPS_KEY);
+      await mutate('/student/jobs');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not withdraw');
-    } finally {
-      setBusyId(null);
+      // Revert optimistic update on failure by revalidating.
+      await mutate(APPS_KEY);
+      alert(err instanceof Error ? err.message : 'Could not withdraw');
     }
   }
+
+  if (isLoading || !apps) return <ListSkeleton />;
 
   return (
     <div className="space-y-4">
@@ -68,11 +68,9 @@ export default function MyApplicationsPage() {
         <p className="text-sm text-subtle">{apps.length} application(s)</p>
       </header>
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <p className="text-sm text-danger">{error.message}</p>}
 
-      {loading ? (
-        <ListSkeleton />
-      ) : apps.length === 0 ? (
+      {apps.length === 0 ? (
         <Card className="p-6 text-center text-sm text-subtle">
           You haven&apos;t applied to any jobs yet.
         </Card>
@@ -123,10 +121,9 @@ export default function MyApplicationsPage() {
                 <div className="flex justify-end">
                   <button
                     onClick={() => withdraw(a.id)}
-                    disabled={busyId === a.id}
                     className="text-xs text-danger hover:underline"
                   >
-                    {busyId === a.id ? 'Withdrawing…' : 'Withdraw'}
+                    Withdraw
                   </button>
                 </div>
               )}

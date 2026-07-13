@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
 import { ListSkeleton } from '../../../../components/page-skeleton';
@@ -14,32 +14,22 @@ import {
   type InternshipInput,
 } from '../../../../lib/internships';
 import { isValidPhone, normalizePhoneDigits } from '@ellixr/shared';
+import { mutate, useApi } from '../../../../lib/use-api';
 
 const MAX_INTERNSHIPS = 3;
+const INTERNSHIPS_KEY = '/student/internships';
 
 export default function MyInternshipsPage() {
-  const [items, setItems] = useState<Internship[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: items,
+    error,
+    isLoading,
+  } = useApi<Internship[]>(INTERNSHIPS_KEY, listMyInternships);
   const [editing, setEditing] = useState<Internship | 'new' | null>(null);
 
-  async function load() {
-    setLoading(true);
-    setError(null);
-    try {
-      setItems(await listMyInternships());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load internships');
-    } finally {
-      setLoading(false);
-    }
-  }
+  const atLimit = (items?.length ?? 0) >= MAX_INTERNSHIPS;
 
-  useEffect(() => {
-    load();
-  }, []);
-
-  const atLimit = items.length >= MAX_INTERNSHIPS;
+  if (isLoading || !items) return <ListSkeleton />;
 
   return (
     <div className="space-y-5 pb-4">
@@ -62,16 +52,14 @@ export default function MyInternshipsPage() {
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
-            load();
+            mutate(INTERNSHIPS_KEY);
           }}
         />
       )}
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <p className="text-sm text-danger">{error.message}</p>}
 
-      {loading ? (
-        <ListSkeleton />
-      ) : items.length === 0 && editing === null ? (
+      {items.length === 0 && editing === null ? (
         <Card className="p-6 text-center text-sm text-subtle">
           No internships yet. Add one so your placement office has it on record.
         </Card>
@@ -149,7 +137,7 @@ function InternshipForm({
     certificateUrl: internship?.certificateUrl ?? '',
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const set =
     (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -158,7 +146,7 @@ function InternshipForm({
 
   async function submit() {
     setSaving(true);
-    setError(null);
+    setFormError(null);
     try {
       const phone = normalizePhoneDigits(form.pocPhone);
       if (!isValidPhone(phone)) {
@@ -186,7 +174,7 @@ function InternshipForm({
       else await createMyInternship(input);
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save internship');
+      setFormError(err instanceof Error ? err.message : 'Could not save internship');
     } finally {
       setSaving(false);
     }
@@ -345,7 +333,7 @@ function InternshipForm({
         </div>
       </div>
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {formError && <p className="text-sm text-danger">{formError}</p>}
       <div className="flex gap-2">
         <Button onClick={submit} loading={saving} disabled={!ready}>
           {saving ? 'Saving…' : 'Save'}

@@ -11,7 +11,6 @@ import {
   getEligibleStudents,
   getJob,
   getJobApplicants,
-  getJobPdfObjectUrl,
   publishJob,
   type EligibleStudent,
   type Job,
@@ -86,7 +85,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     setLoadingPdf(true);
     setError(null);
     try {
-      setPdfObjectUrl(await getJobPdfObjectUrl(id));
+      setPdfObjectUrl(job?.pdfUrl ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not open PDF');
     } finally {
@@ -95,7 +94,6 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   }
 
   function closePdf() {
-    if (pdfObjectUrl) URL.revokeObjectURL(pdfObjectUrl);
     setPdfObjectUrl(null);
   }
 

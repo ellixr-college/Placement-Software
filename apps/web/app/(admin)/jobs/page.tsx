@@ -108,7 +108,9 @@ export default function JobsPage() {
               key={s || 'ALL'}
               onClick={() => setStatus(s)}
               className={`rounded-pill px-4 py-1.5 text-sm font-medium ${
-                status === s ? 'bg-primary-600 text-white' : 'bg-white text-body hover:bg-primary-50'
+                status === s
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-white text-body hover:bg-primary-50'
               }`}
             >
               {s || 'All'}
@@ -118,14 +120,8 @@ export default function JobsPage() {
 
         {selectedCount > 0 && (
           <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-2 shadow-card">
-            <span className="text-sm font-medium text-strong">
-              {selectedCount} selected
-            </span>
-            <Button
-              size="sm"
-              onClick={handlePublishSelected}
-              disabled={publishing}
-            >
+            <span className="text-sm font-medium text-strong">{selectedCount} selected</span>
+            <Button size="sm" onClick={handlePublishSelected} disabled={publishing}>
               {publishing ? 'Publishing…' : 'Publish all'}
             </Button>
             <button
@@ -145,8 +141,8 @@ export default function JobsPage() {
       {!loading && draftIds.length > 0 && (
         <div className="rounded-xl bg-app p-3 text-xs text-body">
           <span className="font-medium text-strong">Tip:</span> Draft jobs are not visible to
-          students. Select drafts and tap <span className="font-medium text-strong">Publish all</span>{' '}
-          to make them live.
+          students. Select drafts and tap{' '}
+          <span className="font-medium text-strong">Publish all</span> to make them live.
         </div>
       )}
 
