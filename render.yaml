@@ -7,7 +7,7 @@ services:
     name: ellixr-api
     runtime: node
     plan: free
-    region: singapore # closest Render region to the CockroachDB Mumbai (ap-south-1) cluster
+    region: singapore # pick the Render region closest to your Supabase project
     autoDeploy: true
     # Render already provides pnpm (detected from packageManager); no corepack.
     # Install with NODE_ENV=development so devDependencies (prisma, nest CLI) are
@@ -28,6 +28,6 @@ services:
       - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: DATABASE_URL
-        sync: false # paste the CockroachDB production connection string in the dashboard
+        sync: false # paste the Supabase Postgres connection string in the dashboard
       - key: WEB_ORIGIN
         sync: false # set to your Vercel URL, e.g. https://ellixr.vercel.app

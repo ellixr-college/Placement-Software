@@ -46,8 +46,8 @@ function validateConnectionLimit() {
     if (numeric == null || Number.isNaN(numeric)) {
       console.warn(
         `[database] DATABASE_URL is missing connection_limit. ` +
-          `For CockroachDB Serverless / free tiers, add ` +
-          `connection_limit=${RECOMMENDED_CONNECTION_LIMIT} to avoid exhausting the cluster.`,
+          `For serverless / free-tier Postgres (e.g. Supabase), add ` +
+          `connection_limit=${RECOMMENDED_CONNECTION_LIMIT} to avoid exhausting the pool.`,
       );
       return;
     }
@@ -55,8 +55,8 @@ function validateConnectionLimit() {
     if (numeric > MAX_RECOMMENDED_CONNECTION_LIMIT) {
       console.warn(
         `[database] DATABASE_URL connection_limit=${numeric} is higher than recommended ` +
-          `(${MAX_RECOMMENDED_CONNECTION_LIMIT}) for CockroachDB Serverless. ` +
-          `Consider lowering it to reduce connection/RU pressure.`,
+          `(${MAX_RECOMMENDED_CONNECTION_LIMIT}) for serverless Postgres. ` +
+          `Consider lowering it to reduce connection pressure.`,
       );
     }
   } catch {

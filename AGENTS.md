@@ -168,6 +168,7 @@ pnpm format
 
 - The project uses `prisma db push` in practice; migration files do not currently exist under `packages/database/prisma/migrations`.
 - pnpm is configured with `node-linker=hoisted` (see `.npmrc`) so the bundled API and Prisma client resolve correctly on deploy.
+- The Prisma Client generator in `packages/database/prisma/schema.prisma` pins `output = "../../../node_modules/.prisma/client"` so the generated client always lands in the monorepo root. If you move the schema file, update that relative path.
 - The NestJS build uses a custom webpack config (`apps/api/webpack.config.js`) that bundles `@ellixr/*` workspace packages but keeps all other dependencies external.
 - There are no automated tests in the repository (see Section 6).
 
