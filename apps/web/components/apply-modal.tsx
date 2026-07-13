@@ -20,7 +20,7 @@ export function ApplyModal({
   onCancel: () => void;
   onSubmit: (responses: Record<string, string>) => void;
 }) {
-  const fields = job.applicationFormFields ?? [];
+  const fields = Array.isArray(job.applicationFormFields) ? job.applicationFormFields : [];
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);

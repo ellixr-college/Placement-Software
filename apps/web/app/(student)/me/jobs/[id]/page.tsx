@@ -48,7 +48,8 @@ export default function StudentJobDetailPage({ params }: { params: Promise<{ id:
 
   function continueApply() {
     if (!job) return;
-    if (job.applicationFormFields && job.applicationFormFields.length > 0) setFormOpen(true);
+    if (Array.isArray(job.applicationFormFields) && job.applicationFormFields.length > 0)
+      setFormOpen(true);
     else apply();
   }
 

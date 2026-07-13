@@ -627,7 +627,9 @@ export class JobsService {
     if (existing) throw new BadRequestException('Already applied to this job');
 
     // Validate answers against the job's custom application form, if any.
-    const fields = (job.applicationFormFields as ApplicationField[] | null) ?? [];
+    const fields = Array.isArray(job.applicationFormFields)
+      ? (job.applicationFormFields as unknown as ApplicationField[])
+      : [];
     const responses = this.sanitizeResponses(fields, formResponses);
 
     return this.prisma.application.create({
@@ -735,7 +737,9 @@ export class JobsService {
       maxActiveBacklogs: j.maxActiveBacklogs,
       maxTotalBacklogs: j.maxTotalBacklogs,
       graduationYears: j.graduationYears,
-      applicationFormFields: (j.applicationFormFields as ApplicationField[] | null) ?? [],
+      applicationFormFields: Array.isArray(j.applicationFormFields)
+        ? (j.applicationFormFields as unknown as ApplicationField[])
+        : [],
       pdfUrl: j.pdfUrl ?? null,
       pdfName: j.pdfName ?? null,
       status: j.status,
@@ -808,14 +812,14 @@ function toEligibilityJob(j: {
   maxTotalBacklogs: number | null;
 }): EligibilityJob {
   return {
-    eligibleCourses: j.eligibleCourses,
-    eligibleBranches: j.eligibleBranches,
-    graduationYears: j.graduationYears,
+    eligibleCourses: j.eligibleCourses ?? [],
+    eligibleBranches: j.eligibleBranches ?? [],
+    graduationYears: j.graduationYears ?? [],
     minCgpa: j.minCgpa != null ? Number(j.minCgpa) : null,
     minTenthPercentage: j.minTenthPercentage != null ? Number(j.minTenthPercentage) : null,
     minTwelfthPercentage: j.minTwelfthPercentage != null ? Number(j.minTwelfthPercentage) : null,
     minUgPercentage: j.minUgPercentage != null ? Number(j.minUgPercentage) : null,
-    eligibleGenders: j.eligibleGenders,
+    eligibleGenders: j.eligibleGenders ?? [],
     maxActiveBacklogs: j.maxActiveBacklogs,
     maxTotalBacklogs: j.maxTotalBacklogs,
   };

@@ -104,7 +104,7 @@ export default function StudentJobsPage() {
   }
 
   function continueApply(j: Job) {
-    if (j.applicationFormFields && j.applicationFormFields.length > 0) {
+    if (Array.isArray(j.applicationFormFields) && j.applicationFormFields.length > 0) {
       setFormJob(j);
     } else {
       apply(j.id).catch((err) =>
