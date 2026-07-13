@@ -47,9 +47,17 @@ function runEligibilityChecks(
     reasons.push('Profile not verified');
   }
   if (student.isPlaced) reasons.push('Already placed');
-  if (!job.eligibleCourses.includes(student.course)) reasons.push('Course not eligible');
+  // Course / branch / gender comparisons are case-insensitive and tolerate whitespace.
+  // Empty arrays mean "no filter" (common for quick/no-criteria jobs).
+  const normalizedCourses = job.eligibleCourses.map((c) => c.trim().toLowerCase());
+  if (
+    job.eligibleCourses.length > 0 &&
+    !normalizedCourses.includes(student.course.trim().toLowerCase())
+  ) {
+    reasons.push('Course not eligible');
+  }
   // Branch is intentionally NOT a restriction — students may apply across branches.
-  if (!job.graduationYears.includes(student.graduationYear)) {
+  if (job.graduationYears.length > 0 && !job.graduationYears.includes(student.graduationYear)) {
     reasons.push('Graduation year not eligible');
   }
   if (job.minCgpa != null && (student.cgpa == null || student.cgpa < job.minCgpa)) {
@@ -73,9 +81,10 @@ function runEligibilityChecks(
   ) {
     reasons.push(`UG below ${job.minUgPercentage}%`);
   }
+  const normalizedGenders = job.eligibleGenders.map((g) => g.trim().toUpperCase());
   if (
     job.eligibleGenders.length > 0 &&
-    (!student.gender || !job.eligibleGenders.includes(student.gender))
+    (!student.gender || !normalizedGenders.includes(student.gender.trim().toUpperCase()))
   ) {
     reasons.push(student.gender ? 'Gender not eligible' : 'Gender not set');
   }

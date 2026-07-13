@@ -81,6 +81,7 @@ export default function StudentJobsPage() {
 
   const [category, setCategory] = useState<Category>('ALL');
   const [search, setSearch] = useState('');
+  const [applyError, setApplyError] = useState<string | null>(null);
 
   const filteredJobs = useMemo(() => {
     if (!jobs) return [];
@@ -106,7 +107,9 @@ export default function StudentJobsPage() {
     if (j.applicationFormFields && j.applicationFormFields.length > 0) {
       setFormJob(j);
     } else {
-      apply(j.id);
+      apply(j.id).catch((err) =>
+        setApplyError(err instanceof Error ? err.message : 'Could not apply to this job'),
+      );
     }
   }
 
@@ -115,11 +118,12 @@ export default function StudentJobsPage() {
     try {
       await applyToJob(id, responses);
       setFormJob(null);
+      setApplyError(null);
       // Refetch jobs and the home dashboard application counts.
       await mutate(JOBS_KEY);
       await mutate('/student/applications');
     } catch (err) {
-      // Error is surfaced by the ApplyModal or EligibilityCheckModal callers.
+      // Re-throw so modals can show the error inline.
       throw err;
     } finally {
       setApplyingId(null);
@@ -140,6 +144,7 @@ export default function StudentJobsPage() {
       </header>
 
       {error && <p className="text-sm text-danger">{error.message}</p>}
+      {applyError && <p className="text-sm text-danger">{applyError}</p>}
 
       {/* Search */}
       <div className="relative">
@@ -182,7 +187,10 @@ export default function StudentJobsPage() {
         <ApplyModal
           job={formJob}
           submitting={applyingId === formJob.id}
-          onCancel={() => setFormJob(null)}
+          onCancel={() => {
+            setFormJob(null);
+            setApplyError(null);
+          }}
           onSubmit={(responses) => apply(formJob.id, responses)}
         />
       )}

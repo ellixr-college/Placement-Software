@@ -23,10 +23,11 @@ export function ApplyModal({
   const fields = job.applicationFormFields ?? [];
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const set = (id: string, value: string) => setResponses((r) => ({ ...r, [id]: value }));
 
-  function submit() {
+  async function submit() {
     for (const f of fields) {
       if (f.required && !(responses[f.id] ?? '').trim()) {
         setError(`"${f.label}" is required`);
@@ -34,7 +35,12 @@ export function ApplyModal({
       }
     }
     setError(null);
-    onSubmit(responses);
+    setSubmitError(null);
+    try {
+      await onSubmit(responses);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Could not apply. Please try again.');
+    }
   }
 
   return (
@@ -96,6 +102,7 @@ export function ApplyModal({
         ))}
 
         {error && <p className="text-sm text-danger">{error}</p>}
+        {submitError && <p className="text-sm text-danger">{submitError}</p>}
 
         <div className="flex gap-2 pt-1">
           <Button className="flex-1 press" onClick={submit} loading={submitting}>
