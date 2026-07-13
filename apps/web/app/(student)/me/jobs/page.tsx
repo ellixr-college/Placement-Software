@@ -15,7 +15,7 @@ import { useApi } from '../../../../lib/use-api';
 type Category = 'ALL' | 'APPLIED' | 'CLOSING_SOON' | 'CLOSED';
 
 const CATEGORIES: { key: Category; label: string }[] = [
-  { key: 'ALL', label: 'All' },
+  { key: 'ALL', label: 'Open' },
   { key: 'APPLIED', label: 'Applied' },
   { key: 'CLOSING_SOON', label: 'Closing soon' },
   { key: 'CLOSED', label: 'Closed' },
@@ -62,7 +62,7 @@ function emptyMessage(category: Category): string {
     case 'CLOSED':
       return 'No closed jobs to show.';
     default:
-      return 'No open jobs to apply right now. Check back soon.';
+      return 'No open jobs right now. Check back soon.';
   }
 }
 

@@ -41,6 +41,16 @@ body {
     transform: none;
   }
 }
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 
 .animate-rise {
   animation: riseIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -51,15 +61,24 @@ body {
 .animate-sheet {
   animation: sheetUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+.animate-page {
+  animation: pageIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
 
 /* Tap feedback for cards/buttons: <element className="press"> */
 .press {
   transition:
     transform 0.12s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    background-color 0.12s ease;
 }
 .press:active {
   transform: scale(0.98);
+}
+
+/* Stronger tap highlight for list rows / ghost buttons */
+.press-bg:active {
+  background-color: theme('colors.app');
 }
 
 /* Hide scrollbars for horizontally-scrolling tab bars (mobile) */
@@ -74,7 +93,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-rise,
   .animate-pop,
-  .animate-sheet {
+  .animate-sheet,
+  .animate-page {
     animation: none;
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { api, setAccessToken } from './api';
+import { mutate } from './use-api';
 import type { UserRole } from '@ellixr/shared';
 
 interface SessionUser {
@@ -29,6 +30,8 @@ export async function login(email: string, password: string): Promise<SessionUse
   });
   setAccessToken(result.accessToken);
   document.cookie = `ellixr_role=${result.user.role}; path=/; samesite=lax`;
+  // Prevent the previous user's cached data from flashing on the next screen.
+  await mutate(() => true, undefined, { revalidate: false });
   return result.user;
 }
 
@@ -38,6 +41,7 @@ export async function logout(): Promise<void> {
   } finally {
     setAccessToken(null);
     document.cookie = 'ellixr_role=; path=/; max-age=0';
+    await mutate(() => true, undefined, { revalidate: false });
   }
 }
 

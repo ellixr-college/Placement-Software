@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { useRouter } from 'next/navigation';
 import type { UserRole } from '@ellixr/shared';
 import { api, getAccessToken, setAccessToken, tryRefresh } from './api';
+import { mutate } from './use-api';
 
 export interface SessionUser {
   id: string;
@@ -77,6 +78,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setAccessToken(null);
       clearRoleCookie();
       setUser(null);
+      await mutate(() => true, undefined, { revalidate: false });
       router.replace('/login');
     }
   }, [router]);

@@ -36,6 +36,13 @@ function MyResume() {
 
   useEffect(() => {
     load();
+    // If the browser restores this page from back-forward cache after a login
+    // switch, reload so we never show the previous student's resume.
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) load();
+    };
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
   }, []);
 
   async function load() {

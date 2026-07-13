@@ -27,12 +27,15 @@ export function MobileBottomNav() {
             <Link
               key={href}
               href={href}
+              aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex flex-col items-center gap-0.5 rounded-pill px-4 py-1 text-[11px] font-medium text-white/80 transition',
-                active && 'text-white',
+                'flex flex-col items-center gap-0.5 rounded-pill px-4 py-1.5 text-[11px] font-medium transition press',
+                active
+                  ? 'bg-white text-primary-600 shadow-sm'
+                  : 'text-white/80 hover:text-white',
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className={cn('h-5 w-5 transition', active && 'scale-110')} />
               <span>{label}</span>
             </Link>
           );

@@ -16,6 +16,12 @@ export default function ProfileMenuPage() {
   const { signOut } = useSession();
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    await signOut();
+  }
 
   useEffect(() => {
     getOwnStudent()
@@ -165,15 +171,20 @@ export default function ProfileMenuPage() {
       </Card>
 
       <button
-        onClick={signOut}
-        className="flex w-full items-center gap-4 rounded-card border border-border bg-white p-4 text-left transition hover:shadow-card"
+        onClick={handleSignOut}
+        disabled={signingOut}
+        className="flex w-full items-center gap-4 rounded-card border border-border bg-white p-4 text-left transition hover:shadow-card press press-bg disabled:opacity-60"
       >
         <IconBox>
           <LogoutIcon />
         </IconBox>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-danger">Sign out</p>
-          <p className="text-xs text-subtle">Log out of this device</p>
+          <p className="text-sm font-semibold text-danger">
+            {signingOut ? 'Signing out…' : 'Sign out'}
+          </p>
+          <p className="text-xs text-subtle">
+            {signingOut ? 'Please wait' : 'Log out of this device'}
+          </p>
         </div>
       </button>
     </div>
@@ -192,7 +203,7 @@ function Row({
   icon: React.ReactNode;
 }) {
   return (
-    <Link href={href} className="flex items-center gap-4 px-4 py-4 transition hover:bg-app/50">
+    <Link href={href} className="flex items-center gap-4 px-4 py-4 transition hover:bg-app/50 press press-bg">
       <IconBox>{icon}</IconBox>
       <div className="flex-1">
         <p className="text-sm font-semibold text-strong">{title}</p>
