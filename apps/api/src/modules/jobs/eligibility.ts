@@ -48,10 +48,7 @@ function runEligibilityChecks(
   }
   if (student.isPlaced) reasons.push('Already placed');
   if (!job.eligibleCourses.includes(student.course)) reasons.push('Course not eligible');
-  // Empty eligibleBranches = branch is not a filter (e.g. courses with no branches).
-  if (job.eligibleBranches.length > 0 && !job.eligibleBranches.includes(student.branch)) {
-    reasons.push('Branch not eligible');
-  }
+  // Branch is intentionally NOT a restriction — students may apply across branches.
   if (!job.graduationYears.includes(student.graduationYear)) {
     reasons.push('Graduation year not eligible');
   }

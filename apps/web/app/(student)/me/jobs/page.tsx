@@ -40,7 +40,8 @@ function isClosed(job: Job): boolean {
 function matchesCategory(job: Job, category: Category): boolean {
   switch (category) {
     case 'ALL':
-      return true;
+      // Only show open jobs the student has not applied to.
+      return !isClosed(job) && !job.applied;
     case 'APPLIED':
       return job.applied === true;
     case 'CLOSING_SOON':
@@ -61,7 +62,7 @@ function emptyMessage(category: Category): string {
     case 'CLOSED':
       return 'No closed jobs to show.';
     default:
-      return 'No jobs posted at your college yet. Check back soon.';
+      return 'No open jobs to apply right now. Check back soon.';
   }
 }
 

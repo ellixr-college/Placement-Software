@@ -578,14 +578,14 @@ export class StudentsService {
             semesterMarks,
           }),
         },
-        include: { user: true },
+        include: { user: true, resume: { select: { fileUrl: true } } },
       });
       const { overall: completion } = computeCompletion(next);
       if (completion !== next.profileCompletion) {
         return tx.student.update({
           where: { id: student.id },
           data: { profileCompletion: completion },
-          include: { user: true },
+          include: { user: true, resume: { select: { fileUrl: true } } },
         });
       }
       return next;
@@ -606,7 +606,7 @@ export class StudentsService {
     const updated = await this.prisma.student.update({
       where: { id: student.id },
       data: { verificationStatus: 'SUBMITTED', rejectionReason: null },
-      include: { user: true },
+      include: { user: true, resume: { select: { fileUrl: true } } },
     });
 
     // Alert the college's officers that a profile is awaiting review.
@@ -623,7 +623,7 @@ export class StudentsService {
   private async ownStudent(userId: string) {
     const student = await this.prisma.student.findUnique({
       where: { userId },
-      include: { user: true },
+      include: { user: true, resume: { select: { fileUrl: true } } },
     });
     if (!student) throw new ForbiddenException('No student profile for this account');
     return student;

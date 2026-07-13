@@ -528,31 +528,19 @@ export class JobsService {
       orderBy: { publishedAt: 'desc' },
     });
 
-    // Include closed jobs the student applied to so they remain visible under
-    // "Applied" / "Closed" categories even after the posting closes.
-    const closedAppliedJobIds = await this.prisma.application.findMany({
-      where: {
-        studentId: student.id,
-        job: { status: 'CLOSED', ...this.visibleToCollege(student.collegeId) },
-      },
-      select: { jobId: true },
+    // Include all closed jobs visible to the college so students can browse
+    // archived postings under the "Closed" category.
+    const closedJobs = await this.prisma.job.findMany({
+      where: { status: 'CLOSED', ...this.visibleToCollege(student.collegeId) },
+      include: { company: true },
+      orderBy: { closedAt: 'desc' },
     });
-    const closedAppliedIds = new Set(closedAppliedJobIds.map((a) => a.jobId));
-
-    const closedAppliedJobs =
-      closedAppliedIds.size > 0
-        ? await this.prisma.job.findMany({
-            where: { id: { in: [...closedAppliedIds] }, status: 'CLOSED' },
-            include: { company: true },
-            orderBy: { closedAt: 'desc' },
-          })
-        : [];
 
     // There should be no overlap (statuses are mutually exclusive), but dedupe
     // defensively and keep published jobs first.
     const seen = new Set<string>();
     const jobs: typeof publishedJobs = [];
-    for (const j of [...publishedJobs, ...closedAppliedJobs]) {
+    for (const j of [...publishedJobs, ...closedJobs]) {
       if (seen.has(j.id)) continue;
       seen.add(j.id);
       jobs.push(j);
