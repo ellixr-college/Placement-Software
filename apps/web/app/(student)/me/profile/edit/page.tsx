@@ -4,7 +4,12 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Card } from '@ellixr/ui';
-import { PROFILE_STEPS, computeProfileCompletion, isProfileFieldFilled } from '@ellixr/shared';
+import {
+  PROFILE_STEPS,
+  computeProfileCompletion,
+  isProfileFieldFilled,
+  normalizePhoneDigits,
+} from '@ellixr/shared';
 import { useSession } from '../../../../../lib/session';
 import { PageSkeleton } from '../../../../../components/page-skeleton';
 import { getMyResume } from '../../../../../lib/resume';
@@ -470,6 +475,13 @@ function clean(form: UpdateOwnProfileInput): UpdateOwnProfileInput {
     const v = form[k];
     if (typeof v === 'string' && v.trim()) (out[k] as unknown) = v.trim();
   };
+  const phoneStr = (k: keyof UpdateOwnProfileInput) => {
+    const v = form[k];
+    if (typeof v === 'string') {
+      const normalized = normalizePhoneDigits(v);
+      if (normalized) (out[k] as unknown) = normalized;
+    }
+  };
   const num = (k: keyof UpdateOwnProfileInput) => {
     const v = form[k];
     if (v !== undefined && v !== '' && v !== null) (out[k] as unknown) = Number(v);
@@ -480,7 +492,7 @@ function clean(form: UpdateOwnProfileInput): UpdateOwnProfileInput {
   };
 
   str('fullName');
-  str('phone');
+  phoneStr('phone');
   str('enrollmentNumber');
   str('course');
   str('branch');
@@ -508,7 +520,7 @@ function clean(form: UpdateOwnProfileInput): UpdateOwnProfileInput {
   str('pinCode');
   str('fatherName');
   str('fatherOccupation');
-  str('fatherPhone');
+  phoneStr('fatherPhone');
   str('department');
   str('specialization');
   num('admissionYear');
